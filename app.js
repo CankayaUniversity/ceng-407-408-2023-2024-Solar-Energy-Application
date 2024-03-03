@@ -5,6 +5,9 @@ const companyRouter = require("./routers/company.router");
 const addressRouter = require("./routers/address.router");
 const customerRouter = require("./routers/customer.router")
 const app = express();
+var cors = require('cors')
+
+app.use(cors())
 
 const dbURI =
   "mongodb+srv://mongocuBiraderler:y3M7FAVqf8yCAlFa@solarenergyapp.ph7woum.mongodb.net/?retryWrites=true&w=majority";
@@ -13,11 +16,13 @@ mongoose
   .then((result) => app.listen(3001))
   .catch((err) => console.log(err));
 
+
 app.use(express.json());
 app.use(userRouter);
 app.use(companyRouter);
 app.use(addressRouter);
 app.use(customerRouter);
+
 
 const port = process.env.PORT || 3000;
 app.listen(port);
