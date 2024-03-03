@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const userRouter = require("./routers/user.router");
 const companyRouter = require("./routers/company.router");
 const addressRouter = require("./routers/address.router");
+const customerRouter = require("./routers/customer.router")
 const app = express();
 
 const dbURI =
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use(userRouter);
 app.use(companyRouter);
 app.use(addressRouter);
+app.use(customerRouter);
 
 const port = process.env.PORT || 3000;
 app.listen(port);

@@ -88,3 +88,4 @@ router.delete("/companies/:id", authenticateUser, async (req, res) => {
 });
 
 module.exports = router;
+  
