@@ -30,8 +30,11 @@ router.post("/companies/create-company", authenticateUser, async (req, res) => {
 });
 
 router.get("/companies", async (req, res) => {
+  //query tanınlaması ve parametreler ile çekme işi böyle yapılır ayrıca ? işareti sonrasında parametreyi vererek yapılır postmanda
   try {
-    const companies = await Company.find({});
+    const queryParams = req.query
+    console.log("query",queryParams)
+    const companies = await Company.find(queryParams);
     if (!companies) {
       throw new Error("No companies found");
     }

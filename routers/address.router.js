@@ -17,7 +17,9 @@ const router = express.Router();
 
 router.get("/addresses", async (req, res) => {
   try {
-    const addresses = await Address.find({});
+    const queryParams = req.query
+
+    const addresses = await Address.find(queryParams);
     if (!addresses) {
       throw new Error("No addresses found");
     }

@@ -38,7 +38,9 @@ router.post(
 
 router.get("/customers", async (req, res) => {
   try {
-    const customers = await Customer.find({});
+    const queryParams = req.query
+    console.log("asdsa",queryParams)
+    const customers = await Customer.find(queryParams);
     if (!customers) {
       throw new Error("No customer found");
     }
