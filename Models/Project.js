@@ -35,10 +35,12 @@ const ProjectSchema = new Schema ({
         type: Schema.Types.ObjectId,
         ref: "Customer",
     },
+
     consumption_profiles_id: {
         type: Schema.Types.ObjectId,
         ref: "ConsumptionProfile",
     }
+
 
 },
 {timestamps: true}
