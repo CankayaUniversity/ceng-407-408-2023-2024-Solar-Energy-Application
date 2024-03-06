@@ -5,6 +5,8 @@ const companyRouter = require("./routers/company.router");
 const addressRouter = require("./routers/address.router");
 const customerRouter = require("./routers/customer.router");
 const countryRouter = require("./routers/country.router");
+const projectRouter = require("./routers/project.router");
+const consumptionprofile = require("./routers/consumptionprofile.router");
 const app = express();
 var cors = require('cors')
 
@@ -24,6 +26,8 @@ app.use(companyRouter);
 app.use(addressRouter);
 app.use(customerRouter);
 app.use(countryRouter);
+app.use(projectRouter);
+app.use(consumptionprofile);
 
 
 const port = process.env.PORT || 3000;
