@@ -6,7 +6,7 @@ const authenticateUser = require("../middleware/authenticateUser");
 const router = express.Router();
 
 //adres create silip adresi burada oluşturuyorum. Düzenlemeler yapılabilir. Henüz test edilmedi.
-router.post("/companies/create-company", authenticateUser, async (req, res) => {
+router.post("/companies/create-company", async (req, res) => {
   const companyData = req.body;
   try {
     const address = new Address(req.body.address);
@@ -17,12 +17,8 @@ router.post("/companies/create-company", authenticateUser, async (req, res) => {
   }
 
   const company = new Company(companyData);
-  const user = req.user;
   try {
     await company.save();
-    user.company_id = company._id;
-    user.role = "company_admin";
-    await user.save();
     res.status(201).send(company);
   } catch (e) {
     res.status(400).send(e.message);
