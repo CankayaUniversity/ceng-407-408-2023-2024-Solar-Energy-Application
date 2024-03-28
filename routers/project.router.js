@@ -6,7 +6,15 @@ const router = express.Router();
 
 router.post("/project/create-project", async (req, res) => {
 //   console.log("project req", reg.body);
-  const projectData = req.body;
+const projectData = req.body;
+try {
+  const address = new Address(req.body.address);
+  await address.save();
+  projectData.address_id = address._id;
+} catch (e) {
+  return res.status(400).send(e.message);
+}
+  
   const project = new Project(projectData);
   try {
     await project.save();
