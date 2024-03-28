@@ -21,7 +21,7 @@ export default function AddCustomer() {
     mobile: "",
     notes: "",
   });
-//bura address eklenicek eğer yapacaksak update için 
+  //bura address eklenicek eğer yapacaksak update için
   useEffect(() => {
     const fetchCustomerAndAddressData = async () => {
       if (customerId && customerId !== "undefined") {
@@ -78,6 +78,13 @@ export default function AddCustomer() {
 
     const customerUpdateData = {
       name: customer.name,
+      email: customer.email,
+      street: customer.street,
+      houseNumber: customer.house_number,
+      country: customer.country,
+      city: customer.city,
+      postCode: customer.postcode,
+      addition: customer.addition,
       vat_number: customer.vat_number,
       vat_office: customer.vat_office,
       phone: customer.phone,
@@ -85,17 +92,17 @@ export default function AddCustomer() {
       notes: customer.notes,
     };
 
-    const [customerUpdateResponse, customerUpdateError] = await CUSTOMERS.patchCustomer(customerId, customerUpdateData);
-  
+    const [customerUpdateResponse, customerUpdateError] =
+      await CUSTOMERS.patchCustomer(customerId, customerUpdateData);
+
     if (customerUpdateError) {
       console.error("Error:", customerUpdateError);
       return;
     }
-  
+
     console.log("Succses");
     navigate("/paperbase");
   };
-  
 
   return (
     <Grid container spacing={2}>
@@ -132,7 +139,6 @@ export default function AddCustomer() {
             value={customer.email}
             onChange={handleChange}
             fullWidth
-            disabled
             sx={{ mb: 2 }}
           />
 
@@ -152,7 +158,6 @@ export default function AddCustomer() {
             value={customer.street}
             onChange={handleChange}
             fullWidth
-            disabled
             sx={{ mb: 2 }}
           />
           <Stack direction="row" spacing={2} sx={{ width: "100%", mb: 2 }}>
@@ -164,7 +169,6 @@ export default function AddCustomer() {
               value={customer.houseNumber}
               onChange={handleChange}
               fullWidth
-              disabled
             />
             <TextField
               id="country"
@@ -174,7 +178,6 @@ export default function AddCustomer() {
               value={customer.country}
               onChange={handleChange}
               fullWidth
-              disabled
             />
           </Stack>
           <Stack direction="row" spacing={2} sx={{ width: "100%", mb: 2 }}>
@@ -186,7 +189,6 @@ export default function AddCustomer() {
               value={customer.city}
               onChange={handleChange}
               fullWidth
-              disabled
             />
             <TextField
               id="postCode"
@@ -196,7 +198,6 @@ export default function AddCustomer() {
               value={customer.postCode}
               onChange={handleChange}
               fullWidth
-              disabled
             />
           </Stack>
           <TextField
@@ -210,7 +211,6 @@ export default function AddCustomer() {
             rows={2}
             fullWidth
             sx={{ mb: 2 }}
-            disabled
           />
 
           <Typography
