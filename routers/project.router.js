@@ -3,19 +3,29 @@ const Address = require("../Models/Address");
 const Customer = require("../Models/Customer");
 const Project = require("../Models/Project");
 const router = express.Router();
+const ConsumptionProfile = require("../Models/ConsumptionProfile");
 
 router.post("/project/create-project", async (req, res) => {
 //   console.log("project req", reg.body);
 const projectData = req.body;
-try {
-  const address = new Address(req.body.address);
-  await address.save();
-  projectData.address_id = address._id;
-} catch (e) {
-  return res.status(400).send(e.message);
-}
+const project = new Project(projectData);
+      try {
+        const address = new Address(req.body.address);
+        await address.save();
+        projectData.address_id = address._id;
+      } catch (e) {
+        return res.status(400).send(e.message);
+      }
+
+      try {
+        const consumption_profile = new ConsumptionProfile(req.body.address);
+        await consumption_profile.save();
+        projectData.consumption_profiles_id = consumption_profile._id;
+      } catch (e) {
+        return res.status(400).send(e.message);
+      }
   
-  const project = new Project(projectData);
+  
   try {
     await project.save();
     res.status(201).send(project);
