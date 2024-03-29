@@ -58,6 +58,8 @@ function SimulationTest() {
   const [model, setModel] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSelecting, setIsSelecting] = useState(false);
+  const [selectionStart, setSelectionStart] = useState(null);
+  const [selectionEnd, setSelectionEnd] = useState(null);
 
   const handleSelectModeToggle = () => {
     setIsSelecting(!isSelecting);
@@ -84,36 +86,55 @@ function SimulationTest() {
 
   return (
     <>
-    <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
-    <button
-        onClick={handleSelectModeToggle}
-        style={{
-          position: 'absolute', // Butonun üstte ve görünür olmasını sağlar
-          zIndex: 100, // Canvas'ın üzerinde görünmesini sağlar
-          top: '10px', // Sayfanın üstünden 10px aşağıda
-          left: '10px' // Sayfanın solundan 10px içerde
-        }}
-      >
-        Select Roof Area
-      </button>
-    <Canvas
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        width: "100vw",
-        height: "100vh",
-        color: "red",
-      }}
-    >
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[10, 10, 10]} intensity={1} />
-      <CameraControlled />
-      <Experience roofImage={roofImage} isSelecting={isSelecting} />
-      <OrbitControls enableRotate={false} />
-      {model && <primitive object={model} rotation={[Math.PI / 2, 0, 0]} />}
-    </Canvas>
-    </div>
+      <div style={{ position: "relative", width: "100vw", height: "100vh" }}>
+        <button
+          onClick={handleSelectModeToggle}
+          style={{
+            position: "absolute", // Butonun üstte ve görünür olmasını sağlar
+            zIndex: 100, // Canvas'ın üzerinde görünmesini sağlar
+            top: "10px", // Sayfanın üstünden 10px aşağıda
+            left: "10px", // Sayfanın solundan 10px içerde
+          }}
+        >
+          Select Roof Area
+        </button>
+        <button
+          onClick={() => {
+            setSelectionStart(null);
+            setSelectionEnd(null);
+          }}
+          style={{
+            position: "absolute",
+            zIndex: 100,
+            top: "30px",
+            left: "10px",
+          }}
+        >
+          Clear Selection
+        </button>
+        <Canvas
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            width: "100vw",
+            height: "100vh",
+            color: "red",
+          }}
+        >
+          <ambientLight intensity={0.5} />
+          <directionalLight position={[10, 10, 10]} intensity={1} />
+          <CameraControlled />
+          <Experience
+            roofImage={roofImage}
+            isSelecting={isSelecting}
+            selection={selectionStart}
+            selectionend={selectionEnd}
+          />
+          <OrbitControls enableRotate={false} />
+          {model && <primitive object={model} rotation={[Math.PI / 2, 0, 0]} />}
+        </Canvas>
+      </div>
     </>
   );
 }
@@ -248,4 +269,3 @@ export default SimulationTest;
 //     />
 //   );
 // }
-

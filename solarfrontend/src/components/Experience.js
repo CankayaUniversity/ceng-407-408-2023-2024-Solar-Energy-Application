@@ -1,102 +1,17 @@
-// import React, { useState, useEffect, useRef } from "react";
-// import { TextureLoader } from "three";
-// import { PlaneGeometry, MeshBasicMaterial, Mesh } from "three";
-// import * as THREE from "three";
-// import { useThree, useFrame } from "@react-three/fiber";
-
-// export const Experience = ({ roofImage, isSelecting }) => {
-//   const [roofTexture, setRoofTexture] = useState(null);
-//   const [textureLoaded, setTextureLoaded] = useState(false);
-//   const planeRef = useRef(); // Reference to the plane mesh
-//   const { mouse, camera, scene } = useThree(); // Get mouse and camera from r3f context
-//   const [selectedArea, setSelectedArea] = useState(null);
-
-//   useEffect(() => {
-//     const loader = new TextureLoader();
-//     loader.load(roofImage, (texture) => {
-//       setRoofTexture(texture);
-//       setTextureLoaded(true);
-//     });
-//   }, [roofImage]);
-
-//   useEffect(() => {
-//     const handleClick = (event) => {
-//       if (!isSelecting) return;
-
-//       event.preventDefault();
-//       const rect = planeRef.current.getBoundingClientRect();
-//       const x = (event.clientX - rect.left) / rect.width * 2 - 1;
-//       const y = -(event.clientY - rect.top) / rect.height * 2 + 1;
-
-//       // Raycaster kullanarak 3D dünyadaki pozisyonu bul
-//       const raycaster = new THREE.Raycaster();
-//       raycaster.setFromCamera({ x, y }, camera);
-//       const intersects = raycaster.intersectObject(planeRef.current);
-
-//       if (intersects.length > 0) {
-//         const { x, y, z } = intersects[0].point;
-//         setSelectedArea({ x, y, z }); // Seçilen alanı güncelle
-//       }
-//     };
-
-//     window.addEventListener('click', handleClick);
-//     return () => {
-//       window.removeEventListener('click', handleClick);
-//     };
-//   }, [isSelecting, camera]);
-
-//   useFrame(() => {
-//     // This function will be looped every frame. You can run your interactions check here.
-//     if (planeRef.current) {
-//       // Convert the mouse coordinates to 3D space
-//       const vector = new THREE.Vector3(mouse.x, mouse.y, 0.5);
-//       vector.unproject(camera);
-//       const dir = vector.sub(camera.position).normalize();
-//       const distance = -camera.position.z / dir.z;
-//       const pos = camera.position.clone().add(dir.multiplyScalar(distance));
-//       // Now pos is the position in 3D space corresponding to the mouse position
-
-//       // Use pos to determine if it's over a particular area of your plane (and thus the roof)
-//       // You can compare pos with the known boundaries of your roofs on the texture
-
-//       // For visual feedback, you can modify materials, set states, or directly manipulate objects here
-//     }
-//   });
-
-//   return (
-//     <>
-//       {textureLoaded && (
-//         <mesh ref={planeRef} position={[0, 0, 0]}>
-//           <planeGeometry
-//             args={[window.innerWidth / 1.5, window.innerHeight, 1, 1]}
-//           />
-//           <meshBasicMaterial map={roofTexture} />
-//         </mesh>
-//       )}
-//       {selectedArea && (
-//       <mesh position={[selectedArea.x, selectedArea.y, selectedArea.z]}>
-//         <boxGeometry args={[10, 10, 10]} />
-//         <meshBasicMaterial color="red" transparent opacity={0.5} />
-//       </mesh>
-//     )}
-//     </>
-//   );
-// };
-
 import React, { useState, useEffect, useRef } from "react";
 import * as THREE from "three";
 import { useThree, useFrame } from "@react-three/fiber";
 import { TextureLoader } from "three";
 import { PlaneGeometry, MeshBasicMaterial, Mesh } from "three";
 
-export const Experience = ({ roofImage, isSelecting }) => {
+export const Experience = ({ roofImage, isSelecting, selection, selectionend }) => {
   const [roofTexture, setRoofTexture] = useState(null);
   const planeRef = useRef();
   const selectionMeshRef = useRef();
   // `scene` nesnesini de `useThree` hook'u aracılığıyla alıyoruz
   const { camera, gl, scene } = useThree();
-  const [selectionStart, setSelectionStart] = useState(null);
-  const [selectionEnd, setSelectionEnd] = useState(null);
+  const [selectionStart, setSelectionStart] = useState(selection);
+  const [selectionEnd, setSelectionEnd] = useState(selectionend);
   const isDragging = useRef(false);
 
   useEffect(() => {
@@ -130,6 +45,7 @@ export const Experience = ({ roofImage, isSelecting }) => {
       if (intersects.length > 0) {
         const { x, y, z } = intersects[0].point;
         setSelectionStart({ x, y, z });
+        setSelectionEnd(null);
       }
     };
 
@@ -143,12 +59,24 @@ export const Experience = ({ roofImage, isSelecting }) => {
     };
 
     const handleMouseMove = (event) => {
-      if (!isSelecting || !isDragging.current) return;
-      const { offsetX, offsetY } = event;
-      const x = (offsetX / gl.domElement.clientWidth) * 2 - 1;
-      const y = -(offsetY / gl.domElement.clientHeight) * 2 + 1;
+      if (!isSelecting || !isDragging.current || !selectionStart) return;
+      // const { offsetX, offsetY } = event;
+      // const x = (offsetX / gl.domElement.clientWidth) * 2 - 1;
+      // const y = -(offsetY / gl.domElement.clientHeight) * 2 + 1;
 
-      setSelectionEnd({ x, y });
+      // setSelectionEnd({ x, y });
+      const rect = gl.domElement.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera({ x, y }, camera);
+      const intersects = raycaster.intersectObject(planeRef.current);
+
+      if (intersects.length > 0) {
+        const { x, y, z } = intersects[0].point;
+        setSelectionEnd({ x, y, z });
+      }
     };
 
     // gl.domElement.addEventListener("mousedown", handleMouseDown);
@@ -169,7 +97,7 @@ export const Experience = ({ roofImage, isSelecting }) => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isSelecting, gl.domElement, selectionStart]);
+  }, [isSelecting, gl.domElement, selectionStart, camera]);
 
   useFrame(() => {
     if (!selectionStart || !selectionEnd || !isDragging.current) {
