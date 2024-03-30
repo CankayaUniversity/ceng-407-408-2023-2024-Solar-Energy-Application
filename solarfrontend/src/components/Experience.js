@@ -4,15 +4,46 @@ import { useThree, useFrame } from "@react-three/fiber";
 import { TextureLoader } from "three";
 import { PlaneGeometry, MeshBasicMaterial, Mesh } from "three";
 
-export const Experience = ({ roofImage, isSelecting, selection, selectionend }) => {
+export const Experience = ({
+  roofImage,
+  isSelecting,
+  addPanelMode,
+  setPanelPosition,
+  onPanelPlace
+}) => {
   const [roofTexture, setRoofTexture] = useState(null);
   const planeRef = useRef();
   const selectionMeshRef = useRef();
-  // `scene` nesnesini de `useThree` hook'u aracılığıyla alıyoruz
   const { camera, gl, scene } = useThree();
-  const [selectionStart, setSelectionStart] = useState(selection);
-  const [selectionEnd, setSelectionEnd] = useState(selectionend);
+  const [selectionStart, setSelectionStart] = useState(null);
+  const [selectionEnd, setSelectionEnd] = useState(null);
   const isDragging = useRef(false);
+  const selectionBorderRef = useRef(); // Seçim sınırı için referans
+
+  useEffect(() => {
+    const handleMouseMove = (event) => {
+      if (!addPanelMode) return;
+
+      // Fare konumunu hesaplama
+      const rect = gl.domElement.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera({ x, y }, camera);
+      const intersects = raycaster.intersectObject(planeRef.current);
+
+      if (intersects.length > 0) {
+        const { x, y, z } = intersects[0].point;
+        setPanelPosition(new THREE.Vector3(x, y, z)); // Panelin konumunu güncelle
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, [addPanelMode, camera, setPanelPosition, gl.domElement]);
 
   useEffect(() => {
     const loader = new THREE.TextureLoader();
@@ -22,22 +53,44 @@ export const Experience = ({ roofImage, isSelecting, selection, selectionend }) 
   }, [roofImage]);
 
   useEffect(() => {
+    const handleClick = (event) => {
+      if (!addPanelMode) return; // Sadece panel ekleme modu aktifken işlem yap
+
+      // Fare konumunu hesaplama
+      const rect = gl.domElement.getBoundingClientRect();
+      const mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      const mouseY = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      // Raycaster kullanarak tıklanan noktayı bulma
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera({ x: mouseX, y: mouseY }, camera);
+      const intersects = raycaster.intersectObject(planeRef.current, true);
+
+      if (intersects.length > 0) {
+        const intersect = intersects[0];
+        setPanelPosition(intersect.point); // Tıklanan noktanın pozisyonunu kaydet
+      }
+
+      if(addPanelMode){
+        const intersect = intersects[0];
+        onPanelPlace(intersect.point);
+      }
+    };
+
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, [addPanelMode, camera, gl.domElement, setPanelPosition]);
+
+  useEffect(() => {
     const handleMouseDown = (event) => {
       if (!isSelecting) return;
       console.log("handleMosueDown");
       isDragging.current = true;
 
-      // const { offsetX, offsetY } = event;
-      // const x = (offsetX / gl.domElement.clientWidth) * 2 - 1;
-      // const y = -(offsetY / gl.domElement.clientHeight) * 2 + 1;
-
-      // setSelectionStart({ x, y });
-      // setSelectionEnd(null); // Yeni seçim başladığında önceki bitişi temizle
       const rect = gl.domElement.getBoundingClientRect();
       const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-      // Raycaster kullanarak mouse pozisyonunu sahne koordinatlarına dönüştür
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera({ x, y }, camera);
       const intersects = raycaster.intersectObject(planeRef.current);
@@ -60,11 +113,7 @@ export const Experience = ({ roofImage, isSelecting, selection, selectionend }) 
 
     const handleMouseMove = (event) => {
       if (!isSelecting || !isDragging.current || !selectionStart) return;
-      // const { offsetX, offsetY } = event;
-      // const x = (offsetX / gl.domElement.clientWidth) * 2 - 1;
-      // const y = -(offsetY / gl.domElement.clientHeight) * 2 + 1;
 
-      // setSelectionEnd({ x, y });
       const rect = gl.domElement.getBoundingClientRect();
       const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -79,15 +128,6 @@ export const Experience = ({ roofImage, isSelecting, selection, selectionend }) 
       }
     };
 
-    // gl.domElement.addEventListener("mousedown", handleMouseDown);
-    // gl.domElement.addEventListener("mouseup", handleMouseUp);
-    // gl.domElement.addEventListener("mousemove", handleMouseMove);
-
-    // return () => {
-    //   gl.domElement.removeEventListener("mousedown", handleMouseDown);
-    //   gl.domElement.removeEventListener("mouseup", handleMouseUp);
-    //   gl.domElement.removeEventListener("mousemove", handleMouseMove);
-    // };
     window.addEventListener("mousedown", handleMouseDown);
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
@@ -116,7 +156,6 @@ export const Experience = ({ roofImage, isSelecting, selection, selectionend }) 
       });
       const mesh = new Mesh(geometry, material);
       selectionMeshRef.current = mesh;
-      // Düzeltme: `scene.add(mesh)` burada kullanılıyor
       scene.add(mesh);
     }
 

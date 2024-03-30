@@ -1,0 +1,93 @@
+import React, { useState, useEffect, useRef } from "react";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"; // GLTFLoader'ı import et
+import { useThree } from "@react-three/fiber";
+import * as THREE from "three";
+
+const loadGLTFModel = async (path, onLoad) => {
+  const loader = new GLTFLoader();
+  loader.load(
+    path,
+    (gltf) => onLoad(gltf.scene),
+    undefined,
+    (error) => console.error(error)
+  );
+};
+
+export const AddPanel = ({ position }) => {
+  const [model, setModel] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const modelRef = useRef();
+  const { scene } = useThree();
+
+  useEffect(() => {
+    // Model yalnızca bir kez yüklenir
+    if (!modelRef.current) {
+      loadGLTFModel("solarpanel.glb", (model) => {
+        model.scale.set(1, 3, 2); // Örnek ölçeklendirme
+        modelRef.current = model;
+        scene.add(model);
+      });
+    }
+  }, [scene]);
+
+  useEffect(() => {
+    // 'position' prop'u her değiştiğinde modelin konumunu güncelle
+    if (modelRef.current && position) {
+      modelRef.current.position.copy(position);
+    }
+  }, [position]);
+
+  return null;
+};
+
+//   useEffect(() => {
+//     const loadModelAsync = async () => {
+//       try {
+//         const loadedModel = await loadGLBModel("solarpanel.glb"); // Dosya yolu örneği
+//         loadedModel.scale.set(1, 3, 2);
+//         //loadedModel.scale.set(roofWidth / 10, roofHeight / 4, 1); //according tp roof heigh and with
+//         loadedModel.position.set(15, 15, 15);
+//         console.log("Loaded model: ", loadedModel);
+//         setModel(loadedModel);
+//       } catch (error) {
+//         console.error("Error loading model:", error);
+//       } finally {
+//         setIsLoading(false);
+//       }
+//     };
+
+//     loadModelAsync();
+//   }, []);
+
+// const loadGLBModel = async (glbPath) => {
+//   const loader = new GLTFLoader();
+//   return new Promise((resolve, reject) => {
+//     loader.load(
+//       glbPath,
+//       (gltf) => resolve(gltf.scene),
+//       undefined,
+//       (error) => {
+//         console.error("Error loading model:", error);
+//         reject(error); // Reject the promise with the error
+//       }
+//     );
+//   });
+// };
+
+//   useEffect(() => {
+//     // Paneli yükleme ve konumlandırma kodları...
+//     const geometry = new THREE.BoxGeometry(10, 1, 10); // Geçici bir kutu geometrisi
+//     const material = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.5 });
+//     const mesh = new THREE.Mesh(geometry, material);
+//     mesh.position.copy(position); // Prop olarak geçirilen konuma paneli yerleştir
+//     scene.add(mesh);
+
+//     return () => {
+//       // Temizlik işlemleri
+//       scene.remove(mesh);
+//     };
+//   }, [position, scene]);
+
+//   return (
+//     <>{model && <primitive object={model} rotation={[Math.PI / 2, 0, 0]} />}</>
+//   );
