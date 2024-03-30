@@ -2,7 +2,6 @@ import { Token } from "@mui/icons-material";
 import axios from "axios";
 
 const API_BASE_URL = "https://solar-energy-app.azurewebsites.net";
-// const API_BASE_URL = "http://localhost:3000";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -64,7 +63,7 @@ export const ADDRESS = {
 
 export const PROJECT = {
   postProject: async (project) => {
-    return handleRequest(() => api.post(`/project/create-project`, project));
+      return handleRequest(() => api.post(`/project/create-project`, project));
   },
 };
 
