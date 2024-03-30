@@ -37,7 +37,7 @@ export const CUSTOMERS = {
     return handleRequest(() => api.get(`/customers/${id}`));
   },
   postCustomer: async (customer) => {
-    return handleRequest(() => api.post("/customers", customer));
+    return handleRequest(() => api.post("/customers/create-customer", customer));
   },
   putCustomer: async (customer) => {
     return handleRequest(() => api.put(`/customers/${customer.id}`, customer));
@@ -51,11 +51,20 @@ export const ADDRESS = {
   byId: async (id) => {
     return handleRequest(() => api.get(`/addresses/${id}`));
   },
-  postAddress: async (address) => {
-    return handleRequest(() => api.post("/addresses", address));
+  // postAddress: async (address) => {
+  //   return handleRequest(() => api.post("/addresses", address));
+  // },
+  putAddress: async (address, addresId) => {
+    return handleRequest(() => api.put(`/addresses/${addresId}`, address));
   },
-  putAddress: async (address) => {
-    return handleRequest(() => api.put(`/addresses/${address.id}`, address));
+  patchAddress: async (address) => {
+    return handleRequest(() => api.patch(`/addresses/${address.id}`, address));
+  },
+};
+
+export const PROJECT = {
+  postProject: async (project) => {
+    return handleRequest(() => api.post(`/project/create-project`, project));
   },
 };
 

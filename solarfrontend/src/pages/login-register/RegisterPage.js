@@ -77,16 +77,13 @@ export default function SignInSide() {
         return;
       }
       if (activeStep === 2) {
-        console.log("sihnup");
         navigate("/login");
         handleOpenSnackbar();
       }
-      console.log("uer ", userDetails, " hebele2: ", companyDetails);
       userDetails.name = userDetails.firstName + " " + userDetails.lastName;
 
       delete userDetails.firstName;
       delete userDetails.lastName;
-      console.log("userlan: ", USER)
       const [response, error] = await USER.register(
         userDetails,
         companyDetails

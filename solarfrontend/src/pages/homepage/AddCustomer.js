@@ -6,15 +6,18 @@ import { CUSTOMERS, ADDRESS } from "../../api/api";
 export default function AddCustomer() {
   const { customerId } = useParams();
   const navigate = useNavigate();
-  const [customer, setcustomer] = useState({
+  const [addresId, setAddressId] = useState(null);
+  const [customer, setCustomer] = useState({
     name: "",
     email: "",
-    street: "",
-    houseNumber: "",
-    country: "",
-    city: "",
-    postCode: "",
-    addition: "",
+    address: {
+      street: "",
+      houseNumber: "",
+      country: "",
+      city: "",
+      postCode: "",
+      addition: "",
+    },
     vat_number: "",
     vat_office: "",
     phone: "",
@@ -35,7 +38,7 @@ export default function AddCustomer() {
           );
           return;
         }
-
+        setAddressId(customerResponse.address_id);
         const [addressResponse, addressError] = await ADDRESS.byId(
           customerResponse.address_id
         );
@@ -44,9 +47,10 @@ export default function AddCustomer() {
           return;
         }
 
-        setcustomer({
+        setCustomer({
           name: customerResponse.name || "",
           email: customerResponse.email || "",
+
           street: addressResponse.street || "",
           houseNumber: addressResponse.house_number || "",
           country: addressResponse.country || "",
@@ -67,24 +71,78 @@ export default function AddCustomer() {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setcustomer((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
+    setCustomer((prevState) => {
+      const newState = { ...prevState };
+      if (newState.address.hasOwnProperty(name)) {
+        // Adres bilgilerini güncelle
+        newState.address[name] = value;
+      } else {
+        // Diğer müşteri bilgilerini güncelle
+        newState[name] = value;
+      }
+      return newState;
+    });
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    const customerUpdateData = {
-      name: customer.name,
-      email: customer.email,
+    // const customerData = {
+    //   name: customer.name,
+    //   email: customer.email,
+    //   address: {
+    //     street: customer.address.street,
+    //     houseNumber: customer.address.houseNumber,
+    //     country: customer.address.country,
+    //     city: customer.address.city,
+    //     postCode: customer.address.postCode,
+    //     addition: customer.address.addition,
+    //   },
+    //   vat_number: customer.vat_number,
+    //   vat_office: customer.vat_office,
+    //   phone: customer.phone,
+    //   mobile: customer.mobile,
+    //   notes: customer.notes,
+    // };
+
+    // // POST işlemi için tam müşteri bilgilerini kullan
+    // const [response, error] = await CUSTOMERS.postCustomer(customerData);
+    // if (error) {
+    //   console.error("Müşteri eklenirken hata oluştu:", error);
+    // } else {
+    //   console.log("Müşteri başarıyla eklendi:", response);
+    //   navigate("/paperbase");
+    // }
+
+    // const customerData = {
+    //   name: customer.name,
+    //   email: customer.email,
+    //   address: {
+    //     street: customer.address.street,
+    //     houseNumber: customer.address.houseNumber,
+    //     country: customer.address.country,
+    //     city: customer.address.city,
+    //     postCode: customer.address.postCode,
+    //     addition: customer.address.addition,
+    //   },
+    //   vat_number: customer.vat_number,
+    //   vat_office: customer.vat_office,
+    //   phone: customer.phone,
+    //   mobile: customer.mobile,
+    //   notes: customer.notes,
+    // };
+  
+    const addressData = {
       street: customer.street,
-      houseNumber: customer.house_number,
+      house_number: customer.houseNumber,
       country: customer.country,
       city: customer.city,
-      postCode: customer.postcode,
+      postcode: customer.postCode,
       addition: customer.addition,
+    };
+    const customerInfo = {
+      name: customer.name,
+      email: customer.email,
       vat_number: customer.vat_number,
       vat_office: customer.vat_office,
       phone: customer.phone,
@@ -92,16 +150,52 @@ export default function AddCustomer() {
       notes: customer.notes,
     };
 
-    const [customerUpdateResponse, customerUpdateError] =
-      await CUSTOMERS.patchCustomer(customerId, customerUpdateData);
+    if (customerId) {
+      const [response, error] = await CUSTOMERS.patchCustomer(
+        customerId,
+        customerInfo
+      );
+      if (error) {
+        console.error("Müşteri güncellenirken hata oluştu:", error);
+        return;
+      }
+      console.log("Müşteri başarıyla güncellendi:", response);
 
-    if (customerUpdateError) {
-      console.error("Error:", customerUpdateError);
-      return;
+      // Adres bilgilerini güncelle
+      if (addresId) {
+        const [addressResponse, addressError] = await ADDRESS.patchAddress(
+          addresId,
+          addressData
+        );
+        if (addressError) {
+          console.error("Adres güncellenirken hata oluştu:", addressError);
+          return;
+        }
+        console.log("Adres başarıyla güncellendi:", addressResponse);
+      }
+
+      navigate("/paperbase");
+    } else {
+      const [addressResponse, addressError] = await ADDRESS.putAddress(
+        addressData,
+        addresId
+      );
+      if (addressError) {
+        console.error("Adres kaydedilirken bir hata oluştu:", addressError);
+        return;
+      }
+      // Adres başarıyla kaydedildiğinde müşteri bilgisi ile birlikte müşteriyi kaydet
+      customerInfo.address_id = addressResponse._id;
+      const [customerResponse, customerError] = await CUSTOMERS.postCustomer(
+        customerInfo
+      );
+      if (customerError) {
+        console.error("Müşteri kaydedilirken bir hata oluştu:", customerError);
+      } else {
+        console.log("Yeni müşteri başarıyla kaydedildi:", customerResponse);
+        navigate("/paperbase");
+      }
     }
-
-    console.log("Succses");
-    navigate("/paperbase");
   };
 
   return (
