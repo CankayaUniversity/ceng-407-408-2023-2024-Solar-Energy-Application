@@ -2,15 +2,20 @@ const { Schema, model } = require("mongoose");
 const mongoose = require("mongoose");
 
 const AddressSchema = new Schema({
-  street: {
-    type: String,
-    required: true,
-  },
+  
   house_number: {
     type: String,
-    required: true,
+    required: true
   },
-  addition: {
+  street: {
+    type: String,
+    required: true
+  },
+  suburb: {
+    type: String,
+    required: false,
+  },
+  town: {
     type: String,
     required: false,
   },
@@ -18,12 +23,8 @@ const AddressSchema = new Schema({
     type: String,
     required: true,
   },
-  city: {
-    type: String,
-    required: true,
-  },
-  country: {
-    type: String,
+  country:{
+    type:String,
     required: true,
   },
   latitude: {
