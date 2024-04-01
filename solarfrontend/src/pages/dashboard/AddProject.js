@@ -60,6 +60,8 @@ export default function AddProject() {
       postcode: "",
       city: "",
       country: "",
+      suburb: "",
+      town: "",
     },
   });
 
@@ -133,13 +135,11 @@ export default function AddProject() {
     const newSelectedCustomerId = event.target.value;
     setSelectedCustomerId(newSelectedCustomerId);
 
-    // customer_id'yi projectData içinde güncelle
     setProjectData((prevState) => ({
       ...prevState,
       customer_id: newSelectedCustomerId,
     }));
 
-    // Müşteri detaylarını çek
     const [data, error] = await CUSTOMERS.byId(newSelectedCustomerId);
     if (data) {
       setCustomerDetails({
@@ -153,15 +153,46 @@ export default function AddProject() {
   };
 
   const handleSubmit = async () => {
-    console.log(projectData); 
+    console.log(projectData);
     const [data, error] = await PROJECT.postProject(projectData);
     if (data) {
       console.log("Proje başarıyla oluşturuldu:", data);
-      // Başarılı oluşturma sonrası işlemler
     } else {
       console.error("Proje oluşturulurken bir hata oluştu", error);
-      // Hata yönetimi
     }
+  };
+
+  const handleNext = () => {
+    if (value < 4) {
+      setValue((prevValue) => String(Number(prevValue) + 1));
+    } else {
+      console.log("Son tab'dayız, bu kısım çalışmamalı.");
+    }
+  };
+
+  // Finish butonu için handler. Post işlemi yapar.
+  const handleFinish = async () => {
+    console.log("Finish butonu tıklandı, post işlemi yapılıyor...");
+    handleSubmit();
+  };
+
+  const handleCancel = () => {
+    if (value > 1) {
+      setValue((prevValue) => String(Number(prevValue) - 1));
+    } else {
+      console.log("İlk tab'dayız, daha fazla geri gidemeyiz.");
+    }
+  };
+  const renderConfirmButton = () => {
+    return value < 4 ? (
+      <Button onClick={handleNext} variant="contained" color="primary">
+        Confirm
+      </Button>
+    ) : (
+      <Button onClick={handleFinish} variant="contained" color="primary">
+        Finish
+      </Button>
+    );
   };
 
   return (
@@ -301,7 +332,7 @@ export default function AddProject() {
                   <TextField
                     required
                     fullWidth
-                    name="consumption_profile.date" // Bu alanın doğru olduğundan emin olun
+                    name="consumption_profile.date"
                     label="Date"
                     type="date"
                     value={projectData.consumption_profile.date}
@@ -343,6 +374,26 @@ export default function AddProject() {
                     label="House Number"
                     margin="normal"
                     value={projectData.address.house_number}
+                    onChange={handleInputChange}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    name="address.suburb"
+                    label="Suburb"
+                    margin="normal"
+                    value={projectData.address.suburb}
+                    onChange={handleInputChange}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    name="address.town"
+                    label="Town"
+                    margin="normal"
+                    value={projectData.address.town}
                     onChange={handleInputChange}
                   />
                 </Grid>
@@ -457,10 +508,13 @@ export default function AddProject() {
 
       <Grid container spacing={1}>
         <Grid item xs={12} sm={4}>
-          <Button onClick={handleSubmit} variant="contained" color="primary">
-            Confirm
-          </Button>
-          <Button variant="contained" color="secondary" sx={{ ml: 2 }}>
+          {renderConfirmButton()}
+          <Button
+            onClick={handleCancel}
+            variant="contained"
+            color="secondary"
+            sx={{ ml: 2 }}
+          >
             Cancel
           </Button>
         </Grid>
