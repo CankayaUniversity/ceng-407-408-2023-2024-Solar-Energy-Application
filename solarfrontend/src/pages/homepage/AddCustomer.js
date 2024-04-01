@@ -10,6 +10,7 @@ export default function AddCustomer() {
   const [customer, setCustomer] = useState({
     name: "",
     email: "",
+    company_name: "",
     address: {
       street: "",
       houseNumber: "",
@@ -17,6 +18,8 @@ export default function AddCustomer() {
       city: "",
       postCode: "",
       addition: "",
+      suburb: "",
+      town: "",
     },
     vat_number: "",
     vat_office: "",
@@ -24,7 +27,6 @@ export default function AddCustomer() {
     mobile: "",
     notes: "",
   });
-  //bura address eklenicek eğer yapacaksak update için
   useEffect(() => {
     const fetchCustomerAndAddressData = async () => {
       if (customerId && customerId !== "undefined") {
@@ -50,9 +52,11 @@ export default function AddCustomer() {
         setCustomer({
           name: customerResponse.name || "",
           email: customerResponse.email || "",
-
+          company_name: customerResponse.company_name || "",
           street: addressResponse.street || "",
           houseNumber: addressResponse.house_number || "",
+          suburb: addressResponse.suburb || "",
+          town: addressResponse.town || "",
           country: addressResponse.country || "",
           city: addressResponse.city || "",
           postCode: addressResponse.postcode || "",
@@ -72,77 +76,79 @@ export default function AddCustomer() {
   const handleChange = (event) => {
     const { name, value } = event.target;
     setCustomer((prevState) => {
+      const addressFields = [
+        "street",
+        "houseNumber",
+        "country",
+        "city",
+        "postCode",
+        "addition",
+        "suburb",
+        "town",
+      ];
+
       const newState = { ...prevState };
-      if (newState.address.hasOwnProperty(name)) {
-        // Adres bilgilerini güncelle
-        newState.address[name] = value;
+
+      if (addressFields.includes(name)) {
+        newState.address = { ...prevState.address, [name]: value };
       } else {
-        // Diğer müşteri bilgilerini güncelle
         newState[name] = value;
       }
       return newState;
     });
   };
 
+  // const handleSubmit = async (event) => {
+  //   event.preventDefault();
+  //   const customerData = {
+  //     name: customer.name,
+  //     company_name: customer.company_name,
+  //     email: customer.email,
+  //     address: {
+  //       street: customer.address.street,
+  //       house_number: customer.address.houseNumber,
+  //       addition: customer.address.addition,
+  //       postcode: customer.address.postCode,
+  //       city: customer.address.city,
+  //       country: customer.address.country,
+  //       suburb: customer.address.suburb,
+  //       town: customer.address.town,
+  //     },
+  //     vat_number: customer.vat_number,
+  //     vat_office: customer.vat_office,
+  //     phone: customer.phone,
+  //     mobile: customer.mobile,
+  //     notes: customer.notes,
+  //   };
+
+  //   const [response, error] = await CUSTOMERS.postCustomer(customerData);
+  //   if (error) {
+  //     console.error("Müşteri kaydedilirken bir hata oluştu:", error);
+  //     return;
+  //   }
+  //   console.log("Yeni müşteri başarıyla kaydedildi:", response);
+  //   navigate("/paperbase");
+  // };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    // const customerData = {
-    //   name: customer.name,
-    //   email: customer.email,
-    //   address: {
-    //     street: customer.address.street,
-    //     houseNumber: customer.address.houseNumber,
-    //     country: customer.address.country,
-    //     city: customer.address.city,
-    //     postCode: customer.address.postCode,
-    //     addition: customer.address.addition,
-    //   },
-    //   vat_number: customer.vat_number,
-    //   vat_office: customer.vat_office,
-    //   phone: customer.phone,
-    //   mobile: customer.mobile,
-    //   notes: customer.notes,
-    // };
-
-    // // POST işlemi için tam müşteri bilgilerini kullan
-    // const [response, error] = await CUSTOMERS.postCustomer(customerData);
-    // if (error) {
-    //   console.error("Müşteri eklenirken hata oluştu:", error);
-    // } else {
-    //   console.log("Müşteri başarıyla eklendi:", response);
-    //   navigate("/paperbase");
-    // }
-
-    // const customerData = {
-    //   name: customer.name,
-    //   email: customer.email,
-    //   address: {
-    //     street: customer.address.street,
-    //     houseNumber: customer.address.houseNumber,
-    //     country: customer.address.country,
-    //     city: customer.address.city,
-    //     postCode: customer.address.postCode,
-    //     addition: customer.address.addition,
-    //   },
-    //   vat_number: customer.vat_number,
-    //   vat_office: customer.vat_office,
-    //   phone: customer.phone,
-    //   mobile: customer.mobile,
-    //   notes: customer.notes,
-    // };
-  
-    const addressData = {
-      street: customer.street,
-      house_number: customer.houseNumber,
-      country: customer.country,
-      city: customer.city,
-      postcode: customer.postCode,
-      addition: customer.addition,
-    };
-    const customerInfo = {
+    const customerData = {
       name: customer.name,
+      company_name: customer.company_name,
       email: customer.email,
+      address: customer.address
+        ? {
+            street: customer.address.street,
+            house_number: customer.address.houseNumber,
+            addition: customer.address.addition,
+            postcode: customer.address.postCode,
+            city: customer.address.city,
+            country: customer.address.country,
+            suburb: customer.address.suburb,
+            town: customer.address.town,
+          }
+        : {}, 
       vat_number: customer.vat_number,
       vat_office: customer.vat_office,
       phone: customer.phone,
@@ -150,126 +156,123 @@ export default function AddCustomer() {
       notes: customer.notes,
     };
 
+    let response, error;
+
     if (customerId) {
-      const [response, error] = await CUSTOMERS.patchCustomer(
+
+      [response, error] = await CUSTOMERS.patchCustomer(
         customerId,
-        customerInfo
+        customerData
       );
-      if (error) {
-        console.error("Müşteri güncellenirken hata oluştu:", error);
-        return;
-      }
-      console.log("Müşteri başarıyla güncellendi:", response);
-
-      // Adres bilgilerini güncelle
-      if (addresId) {
-        const [addressResponse, addressError] = await ADDRESS.patchAddress(
-          addresId,
-          addressData
-        );
-        if (addressError) {
-          console.error("Adres güncellenirken hata oluştu:", addressError);
-          return;
-        }
-        console.log("Adres başarıyla güncellendi:", addressResponse);
-      }
-
-      navigate("/paperbase");
     } else {
-      const [addressResponse, addressError] = await ADDRESS.putAddress(
-        addressData,
-        addresId
-      );
-      if (addressError) {
-        console.error("Adres kaydedilirken bir hata oluştu:", addressError);
-        return;
-      }
-      // Adres başarıyla kaydedildiğinde müşteri bilgisi ile birlikte müşteriyi kaydet
-      customerInfo.address_id = addressResponse._id;
-      const [customerResponse, customerError] = await CUSTOMERS.postCustomer(
-        customerInfo
-      );
-      if (customerError) {
-        console.error("Müşteri kaydedilirken bir hata oluştu:", customerError);
-      } else {
-        console.log("Yeni müşteri başarıyla kaydedildi:", customerResponse);
-        navigate("/paperbase");
-      }
+      [response, error] = await CUSTOMERS.postCustomer(customerData);
     }
+
+    if (error) {
+      console.error("İşlem sırasında bir hata oluştu:", error);
+      return;
+    }
+
+    console.log("İşlem başarıyla tamamlandı:", response);
+    navigate("/paperbase");
   };
 
   return (
-    <Grid container spacing={2}>
-      <Grid item xs={12} md={4}>
+    <Grid container spacing={2} justifyContent="center">
+      <Grid item xs={12} md={8} lg={6}>
         <Box
           sx={{
+            mt: 4,
+            px: 2,
             display: "flex",
             flexDirection: "column",
             justifyContent: "center",
             alignItems: "center",
-            height: "100vh",
+            gap: 2,
           }}
         >
-          <Typography color="inherit" variant="h5" component="h1">
+          <Typography variant="h5" component="h1" sx={{ alignSelf: "start" }}>
             Personal Information
           </Typography>
-          <Stack direction="row" spacing={2} sx={{ width: "100%", mb: 2 }}>
-            <TextField
-              id="name"
-              name="name"
-              label="Name"
-              variant="standard"
-              value={customer.name}
-              onChange={handleChange}
-              fullWidth
-            />
-          </Stack>
+
+          <TextField
+            id="name"
+            name="name"
+            label="Name"
+            variant="outlined"
+            value={customer.name}
+            onChange={handleChange}
+            fullWidth
+          />
+          <TextField
+            id="company_name"
+            name="company_name"
+            label="Company Name"
+            variant="outlined"
+            value={customer.company_name}
+            onChange={handleChange}
+            fullWidth
+          />
           <TextField
             id="email"
             name="email"
             label="Email"
             type="email"
-            variant="standard"
+            variant="outlined"
             value={customer.email}
             onChange={handleChange}
             fullWidth
-            sx={{ mb: 2 }}
           />
 
-          <Typography
-            color="inherit"
-            variant="h5"
-            component="h1"
-            sx={{ mt: 2 }}
-          >
+          <Typography variant="h5" component="h1" sx={{ alignSelf: "start" }}>
             Address Information
           </Typography>
-          <TextField
-            id="street"
-            name="street"
-            label="Street"
-            variant="standard"
-            value={customer.street}
-            onChange={handleChange}
-            fullWidth
-            sx={{ mb: 2 }}
-          />
+
           <Stack direction="row" spacing={2} sx={{ width: "100%", mb: 2 }}>
+            <TextField
+              id="street"
+              name="street"
+              label="Street"
+              variant="outlined"
+              value={customer.street}
+              onChange={handleChange}
+              fullWidth
+            />
             <TextField
               id="houseNumber"
               name="houseNumber"
               label="House Number"
-              variant="standard"
+              variant="outlined"
               value={customer.houseNumber}
               onChange={handleChange}
               fullWidth
             />
             <TextField
-              id="country"
-              name="country"
-              label="Country"
-              variant="standard"
-              value={customer.country}
+              id="postCode"
+              name="postCode"
+              label="Post Code"
+              variant="outlined"
+              value={customer.postCode}
+              onChange={handleChange}
+              fullWidth
+            />
+          </Stack>
+          <Stack direction="row" spacing={2} sx={{ width: "100%", mb: 2 }}>
+            <TextField
+              id="suburb"
+              name="suburb"
+              label="Suburb"
+              variant="outlined"
+              value={customer.suburb}
+              onChange={handleChange}
+              fullWidth
+            />
+            <TextField
+              id="town"
+              name="town"
+              label="Town"
+              variant="outlined"
+              value={customer.town}
               onChange={handleChange}
               fullWidth
             />
@@ -279,17 +282,17 @@ export default function AddCustomer() {
               id="city"
               name="city"
               label="City"
-              variant="standard"
               value={customer.city}
+              variant="outlined"
               onChange={handleChange}
               fullWidth
             />
             <TextField
-              id="postCode"
-              name="postCode"
-              label="Post Code"
-              variant="standard"
-              value={customer.postCode}
+              id="country"
+              name="country"
+              label="Country"
+              variant="outlined"
+              value={customer.country}
               onChange={handleChange}
               fullWidth
             />
@@ -298,7 +301,7 @@ export default function AddCustomer() {
             id="addition"
             name="addition"
             label="Addition"
-            variant="standard"
+            variant="outlined"
             value={customer.addition}
             onChange={handleChange}
             multiline
@@ -307,12 +310,7 @@ export default function AddCustomer() {
             sx={{ mb: 2 }}
           />
 
-          <Typography
-            color="inherit"
-            variant="h5"
-            component="h1"
-            sx={{ mt: 2 }}
-          >
+          <Typography variant="h5" component="h1" sx={{ alignSelf: "start" }}>
             Contact Information
           </Typography>
           <Stack direction="row" spacing={2} sx={{ width: "100%", mb: 2 }}>
@@ -320,7 +318,7 @@ export default function AddCustomer() {
               id="vat_number"
               name="vat_number"
               label="VAT Number"
-              variant="standard"
+              variant="outlined"
               value={customer.vat_number}
               onChange={handleChange}
               fullWidth
@@ -329,7 +327,7 @@ export default function AddCustomer() {
               id="vat_office"
               name="vat_office"
               label="VAT Office"
-              variant="standard"
+              variant="outlined"
               value={customer.vat_office}
               onChange={handleChange}
               fullWidth
@@ -340,7 +338,7 @@ export default function AddCustomer() {
               id="phone"
               name="phone"
               label="Phone"
-              variant="standard"
+              variant="outlined"
               value={customer.phone}
               onChange={handleChange}
               fullWidth
@@ -349,7 +347,7 @@ export default function AddCustomer() {
               id="mobile"
               name="mobile"
               label="Mobile"
-              variant="standard"
+              variant="outlined"
               value={customer.mobile}
               onChange={handleChange}
               fullWidth
@@ -359,7 +357,7 @@ export default function AddCustomer() {
             id="notes"
             name="notes"
             label="Notes"
-            variant="standard"
+            variant="outlined"
             value={customer.notes}
             onChange={handleChange}
             multiline
@@ -370,35 +368,10 @@ export default function AddCustomer() {
           <Button
             variant="contained"
             onClick={handleSubmit}
-            sx={{ width: "100%" }}
+            sx={{ width: "100%", mt: 2 }}
           >
             Save
           </Button>
-        </Box>
-      </Grid>
-      <Grid item xs={12} md={8}>
-        <Box
-          sx={{
-            display: "flex",
-            background: "#eaeff1",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "98%",
-          }}
-        >
-          <Box
-            component="img"
-            sx={{
-              display: "flex",
-              background: "#eaeff1",
-              justifyContent: "center",
-              alignItems: "center",
-              height: "100%",
-              width: "100%",
-            }}
-            alt="The house from the offer."
-            src="https://f.hubspotusercontent30.net/hubfs/6069238/images/blogs/meauring-roofs.jpg"
-          />
         </Box>
       </Grid>
     </Grid>
