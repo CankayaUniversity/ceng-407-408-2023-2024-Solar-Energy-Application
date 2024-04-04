@@ -62,6 +62,8 @@ router.patch("/addresses/:id", authenticateUser, async (req, res) => {
   }
 });
 
+
+
 router.delete("/addresses/:id", authenticateUser, async (req, res) => {
   const user = req.user;
   const company = await Company.findById(user.company_id);

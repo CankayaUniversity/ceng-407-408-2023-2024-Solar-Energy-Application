@@ -7,6 +7,7 @@ const customerRouter = require("./routers/customer.router");
 const countryRouter = require("./routers/country.router");
 const projectRouter = require("./routers/project.router");
 const consumptionprofile = require("./routers/consumptionprofile.router");
+const solarpanels = require("./routers/solarpanels.router");
 const app = express();
 var cors = require('cors')
 
@@ -28,7 +29,7 @@ app.use(customerRouter);
 app.use(countryRouter);
 app.use(projectRouter);
 app.use(consumptionprofile);
-
+app.use(solarpanels);
 
 const port = process.env.PORT || 3000;
 app.listen(port);

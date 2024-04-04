@@ -6,33 +6,70 @@ const router = express.Router();
 const ConsumptionProfile = require("../Models/ConsumptionProfile");
 
 router.post("/project/create-project", async (req, res) => {
-//   console.log("project req", reg.body);
-const projectData = req.body;
-const project = new Project(projectData);
-      try {
-        const address = new Address(req.body.address);
-        await address.save();
-        projectData.address_id = address._id;
-      } catch (e) {
-        return res.status(400).send(e.message);
-      }
-
-      try {
-        const consumption_profile = new ConsumptionProfile(req.body.address);
-        await consumption_profile.save();
-        projectData.consumption_profiles_id = consumption_profile._id;
-      } catch (e) {
-        return res.status(400).send(e.message);
-      }
-  
+  const projectData = req.body;
   
   try {
-    await project.save();
-    res.status(201).send(project);
+      // Adresten koordinatları al
+      const coordinates = await getCoordinatesFromAddress(req.body.address);
+      
+      // Koordinatları adres bilgisine ekle
+      const addressWithCoords = {
+          ...req.body.address,
+          latitude: coordinates.latitude,
+          longitude: coordinates.longitude
+      };
+
+      const address = new Address(addressWithCoords);
+      await address.save();
+      projectData.address_id = address._id;
+
+      if (req.body.consumptionProfile) {
+          const consumptionProfile = new ConsumptionProfile(req.body.consumptionProfile);
+          await consumptionProfile.save();
+          projectData.consumption_profiles_id = consumptionProfile._id;
+      }
+
+      const project = new Project(projectData);
+      await project.save();
+      res.status(201).send(project);
   } catch (e) {
-    res.status(400).send(e.message);
+      res.status(400).send(e.message);
   }
 });
+
+async function getCoordinatesFromAddress(address) {
+  let encodedAddress;
+  if (typeof address === 'string') {
+    encodedAddress = encodeURIComponent(address);
+  } else if (typeof address === 'object') {
+    // Eğer address bir nesne ise, nesneyi uygun bir şekilde stringe dönüştür
+    // Örneğin, adresin street, city, country gibi özellikleri varsa, bunları kullanarak bir adres stringi oluşturabilirsiniz.
+    encodedAddress = encodeURIComponent( address.house_number + ', ' + address.street + ', ' + address.suburb + ', ' + address.town + ', ' + address.postcode + ', ' + address.country );
+  } else {
+    throw new Error('Geçersiz adres formatı');
+  }
+
+  const apiKey = '660883944cfe3221313858wzhe0754b'; 
+  // const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`;
+  const url =`https://geocode.maps.co/search?q=${encodedAddress}&api_key=${apiKey}`
+  console.log("url",url);
+  try {
+    const response = await axios.get(url);
+    console.log("ress",response.data[0].lat);
+    const { lat,lon } = response.data[0];
+    console.log("lat,lon",lat.length);
+    if (lat.length > 0 && lon.length > 0) {
+     
+      console.log("lat ve lon amq",lat,lon);
+      return { latitude: lat, longitude: lon};
+    } else {
+      
+    }
+  } catch (error) {
+    throw new Error('Koordinatları alırken bir hata oluştu: ' + error.message);
+  }
+}
+
 
 router.get("/project", async (req, res) => {
   try {
