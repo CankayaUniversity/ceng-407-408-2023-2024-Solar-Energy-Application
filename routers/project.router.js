@@ -44,7 +44,7 @@ async function getCoordinatesFromAddress(address) {
   } else if (typeof address === 'object') {
     // Eğer address bir nesne ise, nesneyi uygun bir şekilde stringe dönüştür
     // Örneğin, adresin street, city, country gibi özellikleri varsa, bunları kullanarak bir adres stringi oluşturabilirsiniz.
-    encodedAddress = encodeURIComponent( address.house_number + ', ' + address.street + ', ' + address.suburb + ', ' + address.town + ', ' + address.postcode + ', ' + address.country );
+    encodedAddress = encodeURIComponent( address.house_number + ', ' + address.street + ', ' + address.suburb + ', ' + address.town + ', ' + address.postcode + ', ' + address.city + ', ' + address.country );
   } else {
     throw new Error('Geçersiz adres formatı');
   }
