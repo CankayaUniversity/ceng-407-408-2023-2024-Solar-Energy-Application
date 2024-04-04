@@ -39,15 +39,39 @@ function CameraControlled() {
   return null;
 }
 
+function pointInPolygon(point, polygon) {
+  // Bu fonksiyon, verilen bir noktanın (point) verilen bir poligon (polygon) içerisinde olup olmadığını kontrol eder.
+  // Burada basit bir algoritma kullanılmıştır, daha karmaşık geometriler için daha gelişmiş yöntemler gerekebilir.
+  let isInside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    if (
+      polygon[i].y > point.y !== polygon[j].y > point.y &&
+      point.x <
+        ((polygon[j].x - polygon[i].x) * (point.y - polygon[i].y)) /
+          (polygon[j].y - polygon[i].y) +
+          polygon[i].x
+    ) {
+      isInside = !isInside;
+    }
+  }
+  return isInside;
+}
+
 function SimulationTest() {
   const [isSelecting, setIsSelecting] = useState(false);
   const [showModelPreview, setShowModelPreview] = useState(false);
   const [addPanelMode, setAddPanelMode] = useState(false); // Güneş paneli ekleme modunu takip etmek için
   const [panelPosition, setPanelPosition] = useState(new THREE.Vector3()); // Panelin konumunu tutacak
   const [panels, setPanels] = useState([]); // Yerleştirilen panellerin listesi
+  const [isCancelled, setIsCancelled] = useState(false);
+  const [roofSelectionActive, setRoofSelectionActive] = useState(false);
+  const [selectedRoofPoints, setSelectedRoofPoints] = useState([]);
 
   // Güneş paneli ekleme modunu ve önizlemeyi kontrol edecek fonksiyonlar
   const toggleAddPanelMode = () => setAddPanelMode(!addPanelMode);
+
+  const toggleRoofSelection = () =>
+    setRoofSelectionActive(!roofSelectionActive);
 
   const handleSelectModeToggle = () => {
     setIsSelecting(!isSelecting);
@@ -55,23 +79,66 @@ function SimulationTest() {
   };
 
   const handleAddPanelClick = () => {
-    setShowModelPreview(!showModelPreview);
-    setAddPanelMode(!addPanelMode); // Panel ekleme modunu değiştir
+    if (!addPanelMode) {
+      setIsCancelled(false);
+      setShowModelPreview(!showModelPreview);
+      setAddPanelMode(!addPanelMode); // Panel ekleme modunu değiştir
+    } else {
+      console.log("add panel mod açık kaldı aq");
+    }
   };
 
+  useEffect(() => {
+    console.log("addpnael mode: ", addPanelMode);
+  }, [addPanelMode]);
+
+  // const placePanel = (position) => {
+  //   console.log("panels", panels);
+
+  //   if (!isCancelled) {
+  //     setPanels([...panels, position]); // Düzeltme burada yapıldı
+  //     setIsCancelled(false);
+  //   }
+  //   setAddPanelMode(false); // Panel yerleştirildikten sonra modu kapat
+  // };
+
   const placePanel = (position) => {
-    setPanels([...panels, position]); // Düzeltme burada yapıldı
+    if (!pointInPolygon(position, selectedRoofPoints)) {
+      console.warn("Panel can only be placed within the selected area.");
+      return; // Seçilen alanın dışındaysa, işlemi durdur
+    }
+
+    if (!isCancelled) {
+      setPanels([...panels, position]);
+      setIsCancelled(false);
+    }
     setAddPanelMode(false); // Panel yerleştirildikten sonra modu kapat
   };
 
   const handleCancel = () => {
-    setAddPanelMode(false);
-    setShowModelPreview(false);
+    if (addPanelMode) {
+      console.log("handle canceldayım");
+      setIsCancelled(true); // İptal işlemi gerçekleşti
+      setAddPanelMode(false);
+      setShowModelPreview(false);
+      setPanelPosition(new THREE.Vector3()); // Panelin önizleme pozisyonunu sıfırla
+    }
   };
 
   return (
     <>
       <div style={{ position: "relative", width: "100vw", height: "100vh" }}>
+        <button
+          onClick={toggleRoofSelection}
+          style={{
+            position: "absolute",
+            zIndex: 100,
+            top: "30px",
+            left: "10px",
+          }}
+        >
+          {roofSelectionActive ? "Finish Selecting" : "Select Roof Area"}
+        </button>
         <button
           onClick={handleSelectModeToggle}
           style={{
@@ -81,7 +148,7 @@ function SimulationTest() {
             left: "10px", // Sayfanın solundan 10px içerde
           }}
         >
-          {isSelecting ? "Cancel" : "Select Roof Area"}
+          {isSelecting ? "Cancel" : "Select Obstacles"}
         </button>
         <button
           onClick={handleAddPanelClick}
@@ -92,7 +159,18 @@ function SimulationTest() {
             right: "10px",
           }}
         >
-          {showModelPreview ? "Cancel" : "Add Solar Panel"}
+          Add Solar Panel
+        </button>
+        <button
+          onClick={handleCancel}
+          style={{
+            position: "absolute",
+            zIndex: 100,
+            top: "10px",
+            right: "10px",
+          }}
+        >
+          Cancel
         </button>
 
         <Canvas
@@ -114,11 +192,25 @@ function SimulationTest() {
             addPanelMode={addPanelMode}
             setPanelPosition={setPanelPosition}
             onPanelPlace={placePanel}
+            roofSelectionActive={roofSelectionActive}
+            setSelectedRoofPoints={setSelectedRoofPoints}
+            selectedRoofPoints={selectedRoofPoints}
           />
           {panels.map((position, index) => (
-            <AddPanel key={index} position={position} /> // Yerleştirilen panelleri render et
+            <AddPanel
+              key={index}
+              position={position}
+              isPlaced={true}
+              isCancelled={isCancelled}
+            />
           ))}
-          {addPanelMode && <AddPanel position={panelPosition} />}
+          {addPanelMode && (
+            <AddPanel
+              position={panelPosition}
+              isPlaced={false}
+              isCancelled={isCancelled}
+            />
+          )}
           <OrbitControls enableRotate={false} />
         </Canvas>
       </div>

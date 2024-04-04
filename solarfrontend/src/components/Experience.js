@@ -4,12 +4,17 @@ import { useThree, useFrame } from "@react-three/fiber";
 import { TextureLoader } from "three";
 import { PlaneGeometry, MeshBasicMaterial, Mesh } from "three";
 
+
+
 export const Experience = ({
   roofImage,
   isSelecting,
   addPanelMode,
   setPanelPosition,
-  onPanelPlace
+  onPanelPlace,
+  roofSelectionActive,
+  setSelectedRoofPoints,
+  selectedRoofPoints,
 }) => {
   const [roofTexture, setRoofTexture] = useState(null);
   const planeRef = useRef();
@@ -19,6 +24,8 @@ export const Experience = ({
   const [selectionEnd, setSelectionEnd] = useState(null);
   const isDragging = useRef(false);
   const selectionBorderRef = useRef(); // Seçim sınırı için referans
+  const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 })
+  const pointsGeometry = new THREE.BufferGeometry();
 
   useEffect(() => {
     const handleMouseMove = (event) => {
@@ -66,12 +73,7 @@ export const Experience = ({
       raycaster.setFromCamera({ x: mouseX, y: mouseY }, camera);
       const intersects = raycaster.intersectObject(planeRef.current, true);
 
-      if (intersects.length > 0) {
-        const intersect = intersects[0];
-        setPanelPosition(intersect.point); // Tıklanan noktanın pozisyonunu kaydet
-      }
-
-      if(addPanelMode){
+      if (intersects.length > 0 && addPanelMode) {
         const intersect = intersects[0];
         onPanelPlace(intersect.point);
       }
@@ -167,6 +169,50 @@ export const Experience = ({
     mesh.scale.x = Math.abs(selectionEnd.x - selectionStart.x);
     mesh.scale.y = Math.abs(selectionEnd.y - selectionStart.y);
   });
+
+  useEffect(() => {
+    if (!roofSelectionActive) return;
+  
+    const handleClick = (event) => {
+      // Tıklama pozisyonunu hesapla
+      const rect = gl.domElement.getBoundingClientRect();
+      const mouseX = (event.clientX - rect.left) / rect.width * 2 - 1;
+      const mouseY = -(event.clientY - rect.top) / rect.height * 2 + 1;
+  
+      // Raycaster ile çatı üzerindeki noktayı bul
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera({ x: mouseX, y: mouseY }, camera);
+      const intersects = raycaster.intersectObject(planeRef.current);
+  
+      if (intersects.length > 0) {
+        const intersect = intersects[0];
+        const point = intersect.point;
+        // Seçilen noktaları güncelle
+        setSelectedRoofPoints(prevPoints => [...prevPoints, point]);
+      }
+    };
+  
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, [roofSelectionActive, setSelectedRoofPoints, camera, gl.domElement]);
+
+  // Seçilen noktaları birleştiren çizgiyi oluştur
+  useEffect(() => {
+    // Eğer seçilen nokta yoksa veya sadece bir nokta varsa çizgi çizme
+    if (selectedRoofPoints.length < 2) return;
+
+    // Seçilen noktaları birleştiren çizgiyi oluştur
+    pointsGeometry.setFromPoints(selectedRoofPoints);
+    const line = new THREE.Line(pointsGeometry, lineMaterial);
+
+    scene.add(line);
+
+    // Cleanup function: Component unmount olduğunda çizgiyi sahneden kaldır
+    return () => {
+      scene.remove(line);
+      pointsGeometry.dispose();
+    };
+  }, [selectedRoofPoints, scene]);
 
   return (
     <>
