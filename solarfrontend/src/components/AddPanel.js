@@ -18,6 +18,7 @@ export const AddPanel = ({ position, isPlaced, isCancelled }) => {
   const [isLoading, setIsLoading] = useState(true);
   const modelRef = useRef();
   const { scene } = useThree();
+  const [rotation, setRotation] = useState(0); // Başlangıç dönüş açısı 0 derece. Panelin dönmesi için gerekli
 
   useEffect(() => {}, [scene]);
 
@@ -58,6 +59,31 @@ export const AddPanel = ({ position, isPlaced, isCancelled }) => {
       });
     }
   }, [scene, isPlaced, isCancelled]);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      // `+` tuşuna basıldığında dönüş açısını artır
+      if (event.key === "+" || event.key === "NumpadAdd") {
+        setRotation((prevRotation) => prevRotation + 0.1); // Açıyı artır
+      }
+      // `-` tuşuna basıldığında dönüş açısını azalt
+      else if (event.key === "-" || event.key === "NumpadSubtract") {
+        setRotation((prevRotation) => prevRotation - 0.1); // Açıyı azalt
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (modelRef.current) {
+      modelRef.current.rotation.y = rotation; // Y ekseninde dönüşü güncelle
+    }
+  }, [rotation]);
 
   return null;
 };
