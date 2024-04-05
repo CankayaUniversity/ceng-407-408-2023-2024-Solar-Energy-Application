@@ -39,9 +39,13 @@ function CameraControlled() {
   return null;
 }
 
+//şu fonksiyonu CHECKLE
 function pointInPolygon(point, polygon) {
   // Bu fonksiyon, verilen bir noktanın (point) verilen bir poligon (polygon) içerisinde olup olmadığını kontrol eder.
   // Burada basit bir algoritma kullanılmıştır, daha karmaşık geometriler için daha gelişmiş yöntemler gerekebilir.
+  console.log("polygon içi point: ", point);
+  console.log("polygon içi polygon: ", polygon);
+
   let isInside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
     if (
@@ -54,6 +58,7 @@ function pointInPolygon(point, polygon) {
       isInside = !isInside;
     }
   }
+  console.log("isInside: ", isInside);
   return isInside;
 }
 
@@ -66,6 +71,8 @@ function SimulationTest() {
   const [isCancelled, setIsCancelled] = useState(false);
   const [roofSelectionActive, setRoofSelectionActive] = useState(false);
   const [selectedRoofPoints, setSelectedRoofPoints] = useState([]);
+  const [selectionStart, setSelectionStart] = useState(null);
+  const [selectionEnd, setSelectionEnd] = useState(null);
 
   // Güneş paneli ekleme modunu ve önizlemeyi kontrol edecek fonksiyonlar
   const toggleAddPanelMode = () => setAddPanelMode(!addPanelMode);
@@ -83,14 +90,8 @@ function SimulationTest() {
       setIsCancelled(false);
       setShowModelPreview(!showModelPreview);
       setAddPanelMode(!addPanelMode); // Panel ekleme modunu değiştir
-    } else {
-      console.log("add panel mod açık kaldı aq");
     }
   };
-
-  useEffect(() => {
-    console.log("addpnael mode: ", addPanelMode);
-  }, [addPanelMode]);
 
   // const placePanel = (position) => {
   //   console.log("panels", panels);
@@ -103,8 +104,16 @@ function SimulationTest() {
   // };
 
   const placePanel = (position) => {
+    let topRight = { x: selectionEnd.x, y: selectionStart.y, z: 0 };
+    let bottomLeft = { x: selectionStart.x, y: selectionEnd.y, z: 0 };
+    let points = [selectionStart, topRight, selectionEnd, bottomLeft];
     if (!pointInPolygon(position, selectedRoofPoints)) {
       console.warn("Panel can only be placed within the selected area.");
+      return; // Seçilen alanın dışındaysa, işlemi durdur
+    }
+
+    if (pointInPolygon(position, points)) {
+      console.warn("Panel can not placed on obstacles.");
       return; // Seçilen alanın dışındaysa, işlemi durdur
     }
 
@@ -117,7 +126,6 @@ function SimulationTest() {
 
   const handleCancel = () => {
     if (addPanelMode) {
-      console.log("handle canceldayım");
       setIsCancelled(true); // İptal işlemi gerçekleşti
       setAddPanelMode(false);
       setShowModelPreview(false);
@@ -195,6 +203,10 @@ function SimulationTest() {
             roofSelectionActive={roofSelectionActive}
             setSelectedRoofPoints={setSelectedRoofPoints}
             selectedRoofPoints={selectedRoofPoints}
+            selectionStart={selectionStart}
+            setSelectionStart={setSelectionStart}
+            selectionEnd={selectionEnd}
+            setSelectionEnd={setSelectionEnd}
           />
           {panels.map((position, index) => (
             <AddPanel

@@ -4,7 +4,35 @@ import { useThree, useFrame } from "@react-three/fiber";
 import { TextureLoader } from "three";
 import { PlaneGeometry, MeshBasicMaterial, Mesh } from "three";
 
-
+function createHatchTexture() {
+  const canvas = document.createElement('canvas');
+  const size = 128; // Doku boyutu
+  canvas.width = size;
+  canvas.height = size;
+  
+  const context = canvas.getContext('2d');
+  
+  // Arka planı saydam olarak bırak (yani hiçbir şey yapma)
+  
+  // Çizgileri çiz
+  context.strokeStyle = 'rgba(0, 0, 0, 2)'; // Siyah çizgi rengi, yarı saydam
+  context.lineWidth = 1; // Çizgi kalınlığı daha ince
+  const step = 10; // Çizgiler arası mesafe
+  for (let i = 0; i < size; i += step) {
+    context.beginPath();
+    context.moveTo(i, 0);
+    context.lineTo(i, size);
+    context.stroke();
+    
+    // Diagonal çizgiler ekleyerek taralı görünümü zenginleştirebiliriz
+    context.moveTo(0, i);
+    context.lineTo(size, i);
+    context.stroke();
+  }
+  
+  // Canvas'tan bir doku oluştur
+  return new THREE.CanvasTexture(canvas);
+}
 
 export const Experience = ({
   roofImage,
@@ -15,17 +43,21 @@ export const Experience = ({
   roofSelectionActive,
   setSelectedRoofPoints,
   selectedRoofPoints,
+  selectionStart,
+  selectionEnd,
+  setSelectionStart,
+  setSelectionEnd,
 }) => {
   const [roofTexture, setRoofTexture] = useState(null);
   const planeRef = useRef();
   const selectionMeshRef = useRef();
   const { camera, gl, scene } = useThree();
-  const [selectionStart, setSelectionStart] = useState(null);
-  const [selectionEnd, setSelectionEnd] = useState(null);
+  
   const isDragging = useRef(false);
   const selectionBorderRef = useRef(); // Seçim sınırı için referans
-  const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 })
+  const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
   const pointsGeometry = new THREE.BufferGeometry();
+  const hatchTexture = createHatchTexture();
 
   useEffect(() => {
     const handleMouseMove = (event) => {
@@ -123,6 +155,7 @@ export const Experience = ({
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera({ x, y }, camera);
       const intersects = raycaster.intersectObject(planeRef.current);
+      console.log("aha konum:", intersects[0].point)
 
       if (intersects.length > 0) {
         const { x, y, z } = intersects[0].point;
@@ -172,28 +205,28 @@ export const Experience = ({
 
   useEffect(() => {
     if (!roofSelectionActive) return;
-  
+
     const handleClick = (event) => {
       // Tıklama pozisyonunu hesapla
       const rect = gl.domElement.getBoundingClientRect();
-      const mouseX = (event.clientX - rect.left) / rect.width * 2 - 1;
-      const mouseY = -(event.clientY - rect.top) / rect.height * 2 + 1;
-  
+      const mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      const mouseY = (-(event.clientY - rect.top) / rect.height) * 2 + 1;
+
       // Raycaster ile çatı üzerindeki noktayı bul
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera({ x: mouseX, y: mouseY }, camera);
       const intersects = raycaster.intersectObject(planeRef.current);
-  
+
       if (intersects.length > 0) {
         const intersect = intersects[0];
         const point = intersect.point;
         // Seçilen noktaları güncelle
-        setSelectedRoofPoints(prevPoints => [...prevPoints, point]);
+        setSelectedRoofPoints((prevPoints) => [...prevPoints, point]);
       }
     };
-  
-    window.addEventListener('click', handleClick);
-    return () => window.removeEventListener('click', handleClick);
+
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
   }, [roofSelectionActive, setSelectedRoofPoints, camera, gl.domElement]);
 
   // Seçilen noktaları birleştiren çizgiyi oluştur
@@ -229,20 +262,20 @@ export const Experience = ({
           position={[
             (selectionStart.x + selectionEnd.x) / 2,
             (selectionStart.y + selectionEnd.y) / 2,
-            0, // Z ekseninde bir değer, burada örnek olarak 0 verilmiştir
+            0,
           ]}
           scale={[
             Math.abs(selectionEnd.x - selectionStart.x),
             Math.abs(selectionEnd.y - selectionStart.y),
-            1, // Z ekseninde ölçeklendirme, burada örnek olarak 1 verilmiştir
+            1,
           ]}
-          visible={true} // Bu mesh'in her zaman görünür olmasını sağlayın
+          visible={true}
         >
           <planeGeometry args={[1, 1, 1, 1]} />
           <meshBasicMaterial
-            color="rgba(0, 255, 0, 0.5)"
+            map={hatchTexture} // Taralı doku burada kullanılır
             side={THREE.DoubleSide}
-            transparent
+            transparent={true}
           />
         </mesh>
       )}
