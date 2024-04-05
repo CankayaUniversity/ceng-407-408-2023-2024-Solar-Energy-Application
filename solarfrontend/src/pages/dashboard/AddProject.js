@@ -19,10 +19,9 @@ import {
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Map from "./Map";
+import DrawIcon from "@mui/icons-material/Draw";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import HomeIcon from "@mui/icons-material/Home";
-import InfoIcon from "@mui/icons-material/Info";
-import PlaceIcon from "@mui/icons-material/Place";
-import NoteIcon from "@mui/icons-material/Note";
 import MapIcon from "@mui/icons-material/Map";
 import Tab from "@mui/material/Tab";
 import TabContext from "@mui/lab/TabContext";
@@ -39,6 +38,16 @@ export default function AddProject() {
   });
   const [expanded, setExpanded] = React.useState(false);
   const [value, setValue] = React.useState("1");
+  const [mapAddress, setMapAddress] = useState("");
+  const [screenshot, setScreenshot] = useState(null);
+
+  const takeStaticMapScreenshot = () => {
+    const addressForAPI = `${projectData.address.suburb},${projectData.address.street},${projectData.address.house_number}, ${projectData.address.postcode},${projectData.address.town}, ${projectData.address.city}`;
+    const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(
+      addressForAPI
+    )}&zoom=20&size=1200x1200&maptype=satellite&key=AIzaSyCbE_AjQyCkjKY8KYNyGJbz2Jy9uEhO9us`;
+    setScreenshot(staticMapURL);
+  };
 
   const [projectData, setProjectData] = useState({
     consumption: "",
@@ -88,16 +97,11 @@ export default function AddProject() {
     setValue(newValue);
   };
 
-  // Drawer'ı kontrol etmek için fonksiyon
   const handleAccordionChange = (panel) => (event, isExpanded) => {
     setExpanded(isExpanded ? panel : false);
   };
 
-  // İkon listesi
-  const icons = [<HomeIcon />, <InfoIcon />, <PlaceIcon />, <NoteIcon />];
-
   useEffect(() => {
-    console.log("buaraya girdim");
     console.log("Seçilen müşteri ıd:", selectedCustomerId);
     const fetchCustomers = async () => {
       const [data, error] = await CUSTOMERS.getAll();
@@ -113,7 +117,6 @@ export default function AddProject() {
   }, []);
 
   useEffect(() => {
-    console.log("buaraya girdimm");
     const fetchCustomerDetails = async () => {
       if (selectedCustomerId) {
         const [data, error] = await CUSTOMERS.byId(selectedCustomerId);
@@ -121,6 +124,7 @@ export default function AddProject() {
           setCustomerDetails({
             name: data.name || "Ad Bilinmiyor",
             email: data.email || "E-posta Bilinmiyor",
+            company_name: data.company_name || "Company name bilinmiyor",
           });
         } else {
           console.error("Müşteri detayları yüklenirken bir hata oluştu", error);
@@ -163,6 +167,9 @@ export default function AddProject() {
   };
 
   const handleNext = () => {
+    if (value === "3") {
+      takeStaticMapScreenshot();
+    }
     if (value < 4) {
       setValue((prevValue) => String(Number(prevValue) + 1));
     } else {
@@ -170,9 +177,7 @@ export default function AddProject() {
     }
   };
 
-  // Finish butonu için handler. Post işlemi yapar.
   const handleFinish = async () => {
-    console.log("Finish butonu tıklandı, post işlemi yapılıyor...");
     handleSubmit();
   };
 
@@ -210,9 +215,9 @@ export default function AddProject() {
           sx={{ ".MuiTabs-flexContainer": { justifyContent: "center" } }}
         >
           <Tab icon={<HomeIcon />} label="Project" value="1" />
-          <Tab icon={<PlaceIcon />} label="Location" value="2" />
+          <Tab icon={<PersonAddIcon />} label="Customers" value="2" />
           <Tab icon={<MapIcon />} label="Maps" value="3" />
-          <Tab icon={<NoteIcon />} label="Panels" value="4" />
+          <Tab icon={<DrawIcon />} label="Panels" value="4" />
         </Tabs>
       </AppBar>
 
@@ -349,98 +354,6 @@ export default function AddProject() {
 
         <TabPanel value="2">
           <Accordion
-            expanded={expanded === "address"}
-            onChange={handleAccordionChange("address")}
-          >
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography variant="h6">Address</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    name="address.street"
-                    label="Street"
-                    margin="normal"
-                    value={projectData.address.street}
-                    onChange={handleInputChange}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    name="address.house_number"
-                    label="House Number"
-                    margin="normal"
-                    value={projectData.address.house_number}
-                    onChange={handleInputChange}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    name="address.suburb"
-                    label="Suburb"
-                    margin="normal"
-                    value={projectData.address.suburb}
-                    onChange={handleInputChange}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    name="address.town"
-                    label="Town"
-                    margin="normal"
-                    value={projectData.address.town}
-                    onChange={handleInputChange}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    name="address.addition"
-                    label="Addition"
-                    margin="normal"
-                    value={projectData.address.addition}
-                    onChange={handleInputChange}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    name="address.postcode"
-                    label="Postcode"
-                    margin="normal"
-                    value={projectData.address.postcode}
-                    onChange={handleInputChange}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    name="address.city"
-                    label="City"
-                    margin="normal"
-                    value={projectData.address.city}
-                    onChange={handleInputChange}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    name="address.country"
-                    label="Country"
-                    margin="normal"
-                    value={projectData.address.country}
-                    onChange={handleInputChange}
-                  />
-                </Grid>
-              </Grid>
-            </AccordionDetails>
-          </Accordion>
-          <Accordion
             expanded={expanded === "Customer"}
             onChange={handleAccordionChange("Customer")}
           >
@@ -470,9 +383,9 @@ export default function AddProject() {
 
                 <TextField
                   fullWidth
-                  label="Name"
+                  label="Company Name"
                   margin="normal"
-                  value={customerDetails.name || ""}
+                  value={customerDetails.company_name || ""}
                   InputLabelProps={{
                     shrink: true,
                   }}
@@ -490,20 +403,134 @@ export default function AddProject() {
                   disabled
                 />
               </Box>
-
-              {/* <Grid item xs={12} md={6}>
-              </Grid> */}
             </AccordionDetails>
           </Accordion>
         </TabPanel>
+        <TabPanel value="3" sx={{ p: 2 }}>
+          <Accordion
+            expanded={expanded === "address"}
+            onChange={handleAccordionChange("address")}
+          >
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">Address</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    name="address.suburb"
+                    label="Suburb"
+                    margin="normal"
+                    value={projectData.address.suburb}
+                    onChange={handleInputChange}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    name="address.street"
+                    label="Street"
+                    margin="normal"
+                    value={projectData.address.street}
+                    onChange={handleInputChange}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    name="address.house_number"
+                    label="House Number"
+                    margin="normal"
+                    value={projectData.address.house_number}
+                    onChange={handleInputChange}
+                  />
+                </Grid>
 
-        <TabPanel value="3" sx={{ p: 0 }}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    name="address.town"
+                    label="Town"
+                    margin="normal"
+                    value={projectData.address.town}
+                    onChange={handleInputChange}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    name="address.city"
+                    label="City"
+                    margin="normal"
+                    value={projectData.address.city}
+                    onChange={handleInputChange}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    name="address.country"
+                    label="Country"
+                    margin="normal"
+                    value={projectData.address.country}
+                    onChange={handleInputChange}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    name="address.postcode"
+                    label="Postcode"
+                    margin="normal"
+                    value={projectData.address.postcode}
+                    onChange={handleInputChange}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    name="address.addition"
+                    label="Addition"
+                    margin="normal"
+                    value={projectData.address.addition}
+                    onChange={handleInputChange}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Button
+                    variant="contained"
+                    onClick={() => {
+                      const fullAddress = `${projectData.address.suburb},${projectData.address.street},${projectData.address.house_number}, ${projectData.address.postcode},${projectData.address.town}, ${projectData.address.city}`;
+                      setMapAddress(fullAddress);
+                    }}
+                  >
+                    Show Map
+                  </Button>
+                </Grid>
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
           <div style={{ width: "100%", height: "75vh" }}>
-            <Map />
+            <Map address={mapAddress} />
           </div>
+          {/* <Button onClick={takeScreenshot} variant="contained" color="primary">
+            Take Screenshot
+          </Button> */}
         </TabPanel>
 
-        <TabPanel value="4"></TabPanel>
+        <TabPanel value="4">
+          Erhanın yeri
+          {screenshot && (
+            <img
+              src={screenshot}
+              alt="Static Map Screenshot"
+              style={{ maxWidth: "100%", height: "auto" }}
+            />
+          )}
+        </TabPanel>
       </TabContext>
 
       <Grid container spacing={1}>

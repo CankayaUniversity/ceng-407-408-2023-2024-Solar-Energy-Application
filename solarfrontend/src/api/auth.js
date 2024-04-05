@@ -34,9 +34,9 @@ export const auth = {
       localStorage.setItem('accessToken', token);
       localStorage.setItem('userProfile', JSON.stringify(response.user));
       return response.user;
-    } catch (error) {
-      console.error("Login failed:", error);
-      throw error;
+    } catch (e) {
+      
+      
     }
   },
   logout: () => {

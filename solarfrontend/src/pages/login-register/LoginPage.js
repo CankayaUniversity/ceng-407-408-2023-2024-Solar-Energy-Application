@@ -24,6 +24,8 @@ import IconButton from "@mui/material/IconButton";
 import SearchIcon from "@mui/icons-material/Search";
 import { auth } from "../../api/auth";
 import { useNavigate } from "react-router-dom";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
 
 function Header(props) {
   const { sections, title } = props;
@@ -102,6 +104,7 @@ export default function SignInSide() {
     const theme = useTheme();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [snackbar, setSnackbar] = useState({ open: false, message: "" });
 
     const handleEmailChange = (event) => {
       setEmail(event.target.value);
@@ -146,7 +149,7 @@ export default function SignInSide() {
         }
       } catch (error) {
         // Hata yakalama
-        alert('Yanlış şifre veya e-mail.');
+        setSnackbar({ open: true, message: "Yanlış şifre veya e-mail." });
       }
     };
 
@@ -159,7 +162,7 @@ export default function SignInSide() {
           sm={4}
           md={7}
           sx={{
-            backgroundImage: `url(${loginCover})`, // Resmi kullanmak için güncellenmiş yol
+            backgroundImage: `url(${loginCover})`,
             backgroundRepeat: "no-repeat",
             backgroundColor: (t) =>
               t.palette.mode === "light"
@@ -168,7 +171,7 @@ export default function SignInSide() {
             backgroundSize: "cover",
             backgroundPosition: "center",
             [theme.breakpoints.down("sm")]: {
-              backgroundImage: "none", // Bu ekran boyutunda arka plan görüntüsünü kaldırır
+              backgroundImage: "none",
             },
           }}
         />
@@ -197,8 +200,8 @@ export default function SignInSide() {
                 label="Email Address"
                 name="email"
                 autoComplete="email"
-                value={email} // Bind the TextField to the email state variable
-                onChange={handleEmailChange} // Update the email state on change
+                value={email}
+                onChange={handleEmailChange}
               />
 
               <TextField
@@ -242,6 +245,19 @@ export default function SignInSide() {
             </Box>
           </Box>
         </Grid>
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+        >
+          <Alert
+            onClose={() => setSnackbar({ ...snackbar, open: false })}
+            severity="error"
+            sx={{ width: "100%" }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Grid>
     );
   }
