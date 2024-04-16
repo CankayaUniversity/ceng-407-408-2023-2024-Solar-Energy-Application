@@ -6,6 +6,7 @@ import { AddPanel } from "../../components/AddPanel";
 import roofImage from "../../assets/images/roof.jpg";
 import { Vector3 } from "three";
 import * as THREE from "three";
+import { Button, Stack, Box } from "@mui/material";
 
 function CameraControlled() {
   const { camera } = useThree();
@@ -58,7 +59,7 @@ function pointInPolygon(point, polygon) {
   return isInside;
 }
 
-function SimulationTest() {
+function SimulationTest({ screenshot }) {
   const [isSelecting, setIsSelecting] = useState(false);
   const [showModelPreview, setShowModelPreview] = useState(false);
   const [addPanelMode, setAddPanelMode] = useState(false); // Güneş paneli ekleme modunu takip etmek için
@@ -131,51 +132,38 @@ function SimulationTest() {
 
   return (
     <>
-      <div style={{ position: "relative", width: "100vw", height: "100vh" }}>
-        <button
-          onClick={toggleRoofSelection}
-          style={{
+      <Box sx={{  overflowX: 'hidden' ,position: "relative", width: "100vw", height: "100vh" }} >
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{
             position: "absolute",
             zIndex: 100,
-            top: "30px",
+            top: "10px",
             left: "10px",
           }}
         >
-          {roofSelectionActive ? "Finish Selecting" : "Select Roof Area"}
-        </button>
-        <button
-          onClick={handleSelectModeToggle}
-          style={{
-            position: "absolute", // Butonun üstte ve görünür olmasını sağlar
-            zIndex: 100, // Canvas'ın üzerinde görünmesini sağlar
-            top: "10px", // Sayfanın üstünden 10px aşağıda
-            left: "10px", // Sayfanın solundan 10px içerde
-          }}
-        >
-          {isSelecting ? "Cancel" : "Select Obstacles"}
-        </button>
-        <button
-          onClick={handleAddPanelClick}
-          style={{
-            position: "absolute",
-            zIndex: 100,
-            top: "10px",
-            right: "10px",
-          }}
-        >
-          Add Solar Panel
-        </button>
-        <button
-          onClick={handleCancel}
-          style={{
-            position: "absolute",
-            zIndex: 100,
-            top: "10px",
-            right: "10px",
-          }}
-        >
-          Cancel
-        </button>
+          <Button variant="contained" onClick={toggleRoofSelection}>
+            {roofSelectionActive ? "Finish Selecting" : "Select Roof Area"}
+          </Button>
+          <Button variant="contained" onClick={handleSelectModeToggle}>
+            {isSelecting ? "Cancel" : "Select Obstacles"}
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleAddPanelClick}
+            sx={{ alignSelf: "flex-end" }}
+          >
+            Add Solar Panel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleCancel}
+            sx={{ alignSelf: "flex-end" }}
+          >
+            Cancel
+          </Button>
+        </Stack>
 
         <Canvas
           style={{
@@ -191,7 +179,7 @@ function SimulationTest() {
           <directionalLight position={[0, 0, 1]} intensity={1} />
           <CameraControlled />
           <Experience
-            roofImage={roofImage}
+            roofImage={screenshot}
             isSelecting={isSelecting}
             addPanelMode={addPanelMode}
             setPanelPosition={setPanelPosition}
@@ -212,7 +200,7 @@ function SimulationTest() {
           )}
           <OrbitControls enableRotate={false} />
         </Canvas>
-      </div>
+      </Box>
     </>
   );
 }

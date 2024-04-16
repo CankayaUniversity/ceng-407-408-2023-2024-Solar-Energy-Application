@@ -189,6 +189,12 @@ export default function AddProject() {
       console.log("İlk tab'dayız, daha fazla geri gidemeyiz.");
     }
   };
+
+  const handleLocationChange = (lat, lng) => {
+    const newAddress = `latitude: ${lat}, longitude: ${lng}`;
+    setMapAddress(newAddress);
+  };
+
   const renderConfirmButton = () => {
     return value < 4 ? (
       <Button onClick={handleNext} variant="contained" color="primary">
@@ -515,7 +521,7 @@ export default function AddProject() {
             </AccordionDetails>
           </Accordion>
           <div style={{ width: "100%", height: "75vh" }}>
-            <Map address={mapAddress} />
+            <Map address={mapAddress} onLocationChange={handleLocationChange} />
           </div>
           {/* <Button onClick={takeScreenshot} variant="contained" color="primary">
             Take Screenshot
@@ -523,7 +529,7 @@ export default function AddProject() {
         </TabPanel>
 
         <TabPanel value="4">
-          <SimulationTest />
+          <SimulationTest screenshot={screenshot} />
           {/* {screenshot && (
             <img
               src={screenshot}
