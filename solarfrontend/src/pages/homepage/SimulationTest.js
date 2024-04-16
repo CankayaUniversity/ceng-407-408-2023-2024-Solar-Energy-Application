@@ -39,12 +39,9 @@ function CameraControlled() {
   return null;
 }
 
-//şu fonksiyonu CHECKLE
 function pointInPolygon(point, polygon) {
   // Bu fonksiyon, verilen bir noktanın (point) verilen bir poligon (polygon) içerisinde olup olmadığını kontrol eder.
   // Burada basit bir algoritma kullanılmıştır, daha karmaşık geometriler için daha gelişmiş yöntemler gerekebilir.
-  console.log("polygon içi point: ", point);
-  console.log("polygon içi polygon: ", polygon);
 
   let isInside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -58,7 +55,6 @@ function pointInPolygon(point, polygon) {
       isInside = !isInside;
     }
   }
-  console.log("isInside: ", isInside);
   return isInside;
 }
 
@@ -86,11 +82,9 @@ function SimulationTest() {
   };
 
   const handleAddPanelClick = () => {
-    if (!addPanelMode) {
-      setIsCancelled(false);
-      setShowModelPreview(!showModelPreview);
-      setAddPanelMode(!addPanelMode); // Panel ekleme modunu değiştir
-    }
+    setIsCancelled(false);
+    setShowModelPreview(!showModelPreview);
+    setAddPanelMode(!addPanelMode); // Panel ekleme modunu değiştir
   };
 
   // const placePanel = (position) => {
@@ -104,16 +98,18 @@ function SimulationTest() {
   // };
 
   const placePanel = (position) => {
-    let topRight = { x: selectionEnd.x, y: selectionStart.y, z: 0 };
-    let bottomLeft = { x: selectionStart.x, y: selectionEnd.y, z: 0 };
-    let points = [selectionStart, topRight, selectionEnd, bottomLeft];
-    if (!pointInPolygon(position, selectedRoofPoints)) {
-      console.warn("Panel can only be placed within the selected area.");
-      return; // Seçilen alanın dışındaysa, işlemi durdur
+    if (selectionStart != null && selectionEnd != null) {
+      let topRight = { x: selectionEnd.x, y: selectionStart.y, z: 0 };
+      let bottomLeft = { x: selectionStart.x, y: selectionEnd.y, z: 0 };
+      let points = [selectionStart, topRight, selectionEnd, bottomLeft];
+      if (pointInPolygon(position, points)) {
+        console.warn("Panel can not placed on obstacles.");
+        return; // Seçilen alanın dışındaysa, işlemi durdur
+      }
     }
 
-    if (pointInPolygon(position, points)) {
-      console.warn("Panel can not placed on obstacles.");
+    if (!pointInPolygon(position, selectedRoofPoints)) {
+      console.warn("Panel can only be placed within the selected area.");
       return; // Seçilen alanın dışındaysa, işlemi durdur
     }
 
@@ -192,7 +188,7 @@ function SimulationTest() {
           }}
         >
           <ambientLight intensity={0.5} />
-          <directionalLight position={[10, 10, 10]} intensity={1} />
+          <directionalLight position={[0, 0, 1]} intensity={1} />
           <CameraControlled />
           <Experience
             roofImage={roofImage}
@@ -208,21 +204,12 @@ function SimulationTest() {
             selectionEnd={selectionEnd}
             setSelectionEnd={setSelectionEnd}
           />
-          {panels.map((position, index) => (
-            <AddPanel
-              key={index}
-              position={position}
-              isPlaced={true}
-              isCancelled={isCancelled}
-            />
-          ))}
-          {addPanelMode && (
-            <AddPanel
-              position={panelPosition}
-              isPlaced={false}
-              isCancelled={isCancelled}
-            />
-          )}
+
+          <AddPanel
+            position={panelPosition}
+            isVisible={addPanelMode} // Yeni isVisible prop'u
+          />
+
           <OrbitControls enableRotate={false} />
         </Canvas>
       </div>

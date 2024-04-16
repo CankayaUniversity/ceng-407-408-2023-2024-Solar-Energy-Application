@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"; // GLTFLoader'ı import et
 import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import { loadOriginalModel } from "./LoadOriginalModel";
 
 const loadGLTFModel = async (path, onLoad) => {
   const loader = new GLTFLoader();
@@ -13,14 +14,12 @@ const loadGLTFModel = async (path, onLoad) => {
   );
 };
 
-export const AddPanel = ({ position, isPlaced, isCancelled }) => {
+export const AddPanel = ({ position, isVisible }) => {
   const [model, setModel] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const modelRef = useRef();
   const { scene } = useThree();
   const [rotation, setRotation] = useState(0); // Başlangıç dönüş açısı 0 derece. Panelin dönmesi için gerekli
-
-  useEffect(() => {}, [scene]);
 
   useEffect(() => {
     // 'position' prop'u her değiştiğinde modelin konumunu güncelle
@@ -30,35 +29,27 @@ export const AddPanel = ({ position, isPlaced, isCancelled }) => {
   }, [position]);
 
   useEffect(() => {
-    // Model yalnızca bir kez yüklenir
-
-    // Model varsa ve sahnede ise, modeli sahneden kaldır
-    console.log(
-      "isp: ",
-      isPlaced,
-      " model.ref: ",
-      modelRef.current,
-      " iscan: ",
-      isCancelled
-    );
-    if (modelRef.current && isCancelled) {
-      console.log("3");
-      scene.remove(modelRef.current);
-      modelRef.current = null;
+    if (isVisible) {
+      // Modeli yükle
+      if (!modelRef.current) {
+        loadOriginalModel((originalModel) => {
+          const modelClone = originalModel.clone();
+          modelClone.scale.set(2, 3, 2);
+          modelClone.rotation.x = Math.PI / 2;
+          modelClone.position.copy(position);
+          scene.add(modelClone);
+          modelRef.current = modelClone;
+        });
+      }
+    } else {
+      // Modeli kaldır
+      if (modelRef.current) {
+        console.log("Model sahneden kaldırılıyor...");
+        scene.remove(modelRef.current);
+        modelRef.current = null;
+      }
     }
-
-    console.log("abuduk");
-    if (!modelRef.current) {
-      console.log("leyn");
-      loadGLTFModel("solarpanel.glb", (model) => {
-        model.scale.set(2, 3, 2); // Örnek ölçeklendirme
-        model.rotation.x = Math.PI / 2;
-        modelRef.current = model;
-        scene.add(model);
-        console.log("1");
-      });
-    }
-  }, [scene, isPlaced, isCancelled]);
+  }, [isVisible, position, scene]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -139,3 +130,15 @@ export const AddPanel = ({ position, isPlaced, isCancelled }) => {
 //   return (
 //     <>{model && <primitive object={model} rotation={[Math.PI / 2, 0, 0]} />}</>
 //   );
+// console.log("abuduk");
+// if (!modelRef.current) {
+//   console.log("leyn");
+//   loadGLTFModel("solarpanel.glb", (model) => {
+//     model.scale.set(2, 3, 2); // Örnek ölçeklendirme
+//     model.rotation.x = Math.PI / 2;
+//     modelRef.current = model;
+//     scene.add(model);
+//     console.log("1");
+//   });
+// }
+//

@@ -118,7 +118,6 @@ export const Experience = ({
   useEffect(() => {
     const handleMouseDown = (event) => {
       if (!isSelecting) return;
-      console.log("handleMosueDown");
       isDragging.current = true;
 
       const rect = gl.domElement.getBoundingClientRect();
@@ -137,9 +136,7 @@ export const Experience = ({
     };
 
     const handleMouseUp = (event) => {
-      console.log("handleMosueUp");
-      console.log("selectionstart", selectionStart);
-      console.log("selectionend", selectionEnd);
+
       isDragging.current = false;
 
       if (!isSelecting || !selectionStart) return;
@@ -155,7 +152,6 @@ export const Experience = ({
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera({ x, y }, camera);
       const intersects = raycaster.intersectObject(planeRef.current);
-      console.log("aha konum:", intersects[0].point)
 
       if (intersects.length > 0) {
         const { x, y, z } = intersects[0].point;
