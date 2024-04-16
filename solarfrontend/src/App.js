@@ -9,6 +9,7 @@ import Customers from './pages/homepage/Customers';
 import Content from './pages/dashboard/Content';
 import AddCustomer from './pages/homepage/AddCustomer';
 import AddProject from './pages/dashboard/AddProject';
+import SimulationTest from "./pages/homepage/SimulationTest";
 
 // Giriş yapılmış mı kontrol eden fonksiyon
 const isAuthenticated = () => {
@@ -65,6 +66,11 @@ function App() {
         <Route path="/add-customer/:customerId" element={
           <ProtectedRoute>
             <AddCustomer />
+          </ProtectedRoute>
+        } />
+        <Route path="/add-sim" element={
+          <ProtectedRoute>
+            <SimulationTest />
           </ProtectedRoute>
         } />
       </Routes>

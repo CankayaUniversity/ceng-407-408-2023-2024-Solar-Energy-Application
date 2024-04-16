@@ -180,6 +180,7 @@ function EnhancedTableToolbar(props) {
     setShowAddProject(true);
   };
 
+
   return (
     <Toolbar
       sx={{
@@ -253,6 +254,17 @@ function EnhancedTableToolbar(props) {
           <Typography>Add</Typography>
           &nbsp;
           <Typography>Project</Typography>
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<AddCircleIcon />}
+          sx={{ ml: 1 }}
+          component={Link}
+          to="/add-sim"
+        >
+          <Typography>Add</Typography>
+          &nbsp;
+          <Typography>Sim</Typography>
         </Button>
       </Box>
     </Toolbar>
