@@ -12,7 +12,7 @@ function CameraControlled() {
   useEffect(() => {
     const initialDistance = 500;
     const maxDistance = 1000;
-    const minDistance = 300;
+    const minDistance = 650;
 
     const updateCameraPosition = () => {
       if (camera.position.z > maxDistance) {
@@ -204,12 +204,12 @@ function SimulationTest() {
             selectionEnd={selectionEnd}
             setSelectionEnd={setSelectionEnd}
           />
-
-          <AddPanel
-            position={panelPosition}
-            isVisible={addPanelMode} // Yeni isVisible prop'u
-          />
-
+          {addPanelMode && (
+            <AddPanel
+              position={panelPosition}
+              isVisible={addPanelMode} // Yeni isVisible prop'u
+            />
+          )}
           <OrbitControls enableRotate={false} />
         </Canvas>
       </div>

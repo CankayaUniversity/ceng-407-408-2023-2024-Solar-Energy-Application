@@ -28,6 +28,7 @@ import TabContext from "@mui/lab/TabContext";
 import TabList from "@mui/lab/TabList";
 import TabPanel from "@mui/lab/TabPanel";
 import { CUSTOMERS, PROJECT } from "./../../api/api";
+import SimulationTest from "../homepage/SimulationTest";
 
 export default function AddProject() {
   const [customers, setCustomers] = useState([]);
@@ -522,14 +523,14 @@ export default function AddProject() {
         </TabPanel>
 
         <TabPanel value="4">
-          Erhanın yeri
-          {screenshot && (
+          <SimulationTest />
+          {/* {screenshot && (
             <img
               src={screenshot}
               alt="Static Map Screenshot"
               style={{ maxWidth: "100%", height: "auto" }}
             />
-          )}
+          )} */}
         </TabPanel>
       </TabContext>
 
