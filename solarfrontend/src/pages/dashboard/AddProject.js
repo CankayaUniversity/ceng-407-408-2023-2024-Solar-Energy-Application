@@ -41,14 +41,27 @@ export default function AddProject() {
   const [value, setValue] = React.useState("1");
   const [mapAddress, setMapAddress] = useState("");
   const [screenshot, setScreenshot] = useState(null);
+  const [selectedLocation, setSelectedLocation] = useState(null);
 
-  const takeStaticMapScreenshot = () => {
-    const addressForAPI = `${projectData.address.suburb},${projectData.address.street},${projectData.address.house_number}, ${projectData.address.postcode},${projectData.address.town}, ${projectData.address.city}`;
-    const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(
-      addressForAPI
-    )}&zoom=20&size=1200x1200&maptype=satellite&key=AIzaSyCbE_AjQyCkjKY8KYNyGJbz2Jy9uEhO9us`;
-    setScreenshot(staticMapURL);
+  const handleLocationSelect = (location) => {
+    if (location && location.lat && location.lng) {
+      setSelectedLocation(location);
+      const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${location.lat},${location.lng}&zoom=20&size=1200x1200&maptype=satellite&key=AIzaSyCbE_AjQyCkjKY8KYNyGJbz2Jy9uEhO9us`;
+      setScreenshot(staticMapURL);
+    } else {
+      console.error("Geçerli bir konum sağlanmadı");
+      // Burada alternatif bir işlem yapabilirsiniz veya kullanıcıya bir mesaj gösterebilirsiniz.
+    }
   };
+  
+
+  // const takeStaticMapScreenshot = () => {
+  //   const addressForAPI = `${projectData.address.suburb},${projectData.address.street},${projectData.address.house_number}, ${projectData.address.postcode},${projectData.address.town}, ${projectData.address.city}`;
+  //   const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(
+  //     addressForAPI
+  //   )}&zoom=20&size=1200x1200&maptype=satellite&key=AIzaSyCbE_AjQyCkjKY8KYNyGJbz2Jy9uEhO9us`;
+  //   setScreenshot(staticMapURL);
+  // };
 
   const [projectData, setProjectData] = useState({
     consumption: "",
@@ -169,7 +182,7 @@ export default function AddProject() {
 
   const handleNext = () => {
     if (value === "3") {
-      takeStaticMapScreenshot();
+      handleLocationSelect(selectedLocation);
     }
     if (value < 4) {
       setValue((prevValue) => String(Number(prevValue) + 1));
@@ -190,10 +203,10 @@ export default function AddProject() {
     }
   };
 
-  const handleLocationChange = (lat, lng) => {
-    const newAddress = `latitude: ${lat}, longitude: ${lng}`;
-    setMapAddress(newAddress);
-  };
+  // const handleLocationChange = (lat, lng) => {
+  //   const newAddress = `latitude: ${lat}, longitude: ${lng}`;
+  //   setMapAddress(newAddress);
+  // };
 
   const renderConfirmButton = () => {
     return value < 4 ? (
@@ -521,7 +534,8 @@ export default function AddProject() {
             </AccordionDetails>
           </Accordion>
           <div style={{ width: "100%", height: "75vh" }}>
-            <Map address={mapAddress} onLocationChange={handleLocationChange} />
+            {/* <Map address={mapAddress} onLocationChange={handleLocationChange} /> */}
+            <Map address={mapAddress} onLocationSelect={handleLocationSelect} />
           </div>
           {/* <Button onClick={takeScreenshot} variant="contained" color="primary">
             Take Screenshot
