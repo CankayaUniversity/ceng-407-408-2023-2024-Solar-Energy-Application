@@ -42,19 +42,22 @@ export default function AddProject() {
   const [mapAddress, setMapAddress] = useState("");
   const [screenshot, setScreenshot] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [currentCenter, setCurrentCenter] = useState(null);
 
-  const handleLocationSelect = (location) => {
-    if (location && location.lat && location.lng) {
-      setSelectedLocation(location);
-      const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${location.lat},${location.lng}&zoom=20&size=1200x1200&maptype=satellite&key=AIzaSyCbE_AjQyCkjKY8KYNyGJbz2Jy9uEhO9us`;
-      setScreenshot(staticMapURL);
-    } else {
-      console.error("Geçerli bir konum sağlanmadı");
-      // Burada alternatif bir işlem yapabilirsiniz veya kullanıcıya bir mesaj gösterebilirsiniz.
-    }
+  // const handleLocationSelect = (location) => {
+  //   if (location && location.lat && location.lng) {
+  //     setSelectedLocation(location);
+  //     const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${location.lat},${location.lng}&zoom=20&size=1200x1200&maptype=satellite&key=AIzaSyCbE_AjQyCkjKY8KYNyGJbz2Jy9uEhO9us`;
+  //     setScreenshot(staticMapURL);
+  //   } else {
+  //     console.error("Geçerli bir konum sağlanmadı");
+  //   }
+  // };
+  
+  const onCenterChange = (center) => {
+    setCurrentCenter(center);
   };
   
-
   // const takeStaticMapScreenshot = () => {
   //   const addressForAPI = `${projectData.address.suburb},${projectData.address.street},${projectData.address.house_number}, ${projectData.address.postcode},${projectData.address.town}, ${projectData.address.city}`;
   //   const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(
@@ -181,8 +184,9 @@ export default function AddProject() {
   };
 
   const handleNext = () => {
-    if (value === "3") {
-      handleLocationSelect(selectedLocation);
+    if (value === "3" && currentCenter) {
+      const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${currentCenter.lat},${currentCenter.lng}&zoom=20&size=1200x1200&maptype=satellite&key=AIzaSyCbE_AjQyCkjKY8KYNyGJbz2Jy9uEhO9us`;
+      setScreenshot(staticMapURL);
     }
     if (value < 4) {
       setValue((prevValue) => String(Number(prevValue) + 1));
@@ -202,11 +206,6 @@ export default function AddProject() {
       console.log("İlk tab'dayız, daha fazla geri gidemeyiz.");
     }
   };
-
-  // const handleLocationChange = (lat, lng) => {
-  //   const newAddress = `latitude: ${lat}, longitude: ${lng}`;
-  //   setMapAddress(newAddress);
-  // };
 
   const renderConfirmButton = () => {
     return value < 4 ? (
@@ -534,8 +533,7 @@ export default function AddProject() {
             </AccordionDetails>
           </Accordion>
           <div style={{ width: "100%", height: "75vh" }}>
-            {/* <Map address={mapAddress} onLocationChange={handleLocationChange} /> */}
-            <Map address={mapAddress} onLocationSelect={handleLocationSelect} />
+            <Map address={mapAddress} onCenterChange={onCenterChange} />
           </div>
           {/* <Button onClick={takeScreenshot} variant="contained" color="primary">
             Take Screenshot
