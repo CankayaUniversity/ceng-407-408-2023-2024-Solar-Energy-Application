@@ -59,7 +59,7 @@ def azimuth_to_label_class(az, label_classes):
         az_class = label_classes[az_id]
     return az_class
 
-
+# işlem durumunu gösterir 0 dan 100 >>>--------- gibi
 def get_progress_string(progress):
     number_of_dashes = 100
     progress_string = '| >'
@@ -243,11 +243,20 @@ def get_static_map_bounds(latitude, longitude, zoom, width, height):
 
 
 def get_image_gdf_in_directory(DIR_IMAGES_GEOTIFF, save_to_png_path=[]):
+    # .tif dosya uzantılı olanların adlarını listeye kaydediyor.
     image_id_list = [id[:-4] for id in os.listdir(DIR_IMAGES_GEOTIFF) if id[-4:] == '.tif']
+    print(image_id_list)
 
     # open image
+    # image_id_list içindeki her image_id için işlemi tekrarlayarak, her bir dosyayı açar ve elde edilen raster nesnelerini bir liste içinde toplar.
+
     raster_srcs = [gdal.Open(DIR_IMAGES_GEOTIFF + "\\" + str(image_id) + ".tif", gdal.GA_ReadOnly) for image_id in
             image_id_list]
+    # Raster nesnesi, GDAL (Geospatial Data Abstraction Library) kütüphanesi içinde raster tabanlı coğrafi verileri temsil eder. Bu nesne, coğrafi veri setleri ile çalışırken bir dizi işlevsellik sağlar ve raster verileri okuma, yazma, işleme ve analiz etme imkanı verir.
+    # Örneğin, bir çatının güneye bakan kısmının eğimi solar panel kurulumu için idealdir ve raster veriler bu bilgileri sağlar.
+    # GeoTIFF gibi raster dosya formatları, uydu ve hava fotoğraflarından elde edilen yüksek çözünürlüklü görüntü verilerini saklar. Bu veriler, çatı yapılarını, malzemelerini ve çevresel engelleri (örneğin ağaçlar veya diğer binalar) tespit etmek için kullanılabilir.
+    # Raster veriler, pixel bazında analiz yapılmasına olanak tanır, böylece her bir pixelin çatıda temsil ettiği alanın özellikleri belirlenebilir.
+
     image_bbox_list = []
     print('')
     for i, image_id in enumerate(image_id_list):
@@ -257,12 +266,15 @@ def get_image_gdf_in_directory(DIR_IMAGES_GEOTIFF, save_to_png_path=[]):
         # print('Currently processing image # ' + str(count) + '/' + str(len(raster_srcs)), end="\r")
 
         # initialize rgb image with shape of .tif
+        # .tif resmini rgb iel başka renge çevirir ve png olarak kaydeder ama kullanmıyoruz.
         if len(save_to_png_path) > 0:
             filename_mask = save_to_png_path + str(image_id) + '.png'
             data = raster_src.ReadAsArray()
+            # buradaki np. yani numpy çalışması için 1.20 ve üzeri olması gerekiyor
             img = np.dstack((data[0, :, :], data[1, :, :], data[2, :, :]))
             cv2.imwrite(filename_mask, img)
-        #
+
+        # GeoTIFF dosyasından RGB görüntüsü oluşturma sürecini başka bir yöntemle gerçekleştirmek için tasarlanmış.
         # band_shape = np.shape(raster_src.GetRasterBand(1).ReadAsArray())
         # image_rgb = np.zeros([band_shape[0], band_shape[1], 3])
         #
@@ -270,17 +282,30 @@ def get_image_gdf_in_directory(DIR_IMAGES_GEOTIFF, save_to_png_path=[]):
         # for i in np.arange(0, 3):
         #     image_rgb[:, :, i] = raster_src.GetRasterBand(int(i + 1)).ReadAsArray() / 256
 
+
          # add image bounding box from geotiff to geodataframe
+        # koordinatlarını falan alıyor polygon sonra image_bbox_liste koordinatları ekliyor.
         ulx, xres, xskew, uly, yskew, yres = raster_src.GetGeoTransform()  # coordinates of upper left corner and resolution
         lrx = ulx + (raster_src.RasterXSize * xres)  # coordinates of lower right corner
         lry = uly + (raster_src.RasterYSize * yres)  # coordinates of lower right corner
 
         image_bbox = shapely.geometry.box(ulx, lry, lrx, uly)
         image_bbox_list.append(image_bbox)
+
+    #Burada image_id_list içindeki tüm ID'ler tamsayıya çevriliyor.
     image_id_list = [int(id) for id in image_id_list]
+
     # initialize geodataframe of image coordinates
+    # çatı resimleri ve bunların coğrafi veri çerçeveleri (GeoDataFrame) ile ilişkilendirilmesi, özellikle uydu
+    # görüntüleri üzerinden çatı analizi yapmak ve solar panel yerleştirme projeleri için oldukça önemlidir.
+    # 1. Çatı Tanımlama ve Sınırlarının Belirlenmesi
+    # 2. Çatı Eğimleri ve Yönelimleri
+    # 3. Gölgeleme ve Engellerin Analizi
+    # 5. Alan Hesaplamaları ve Kapasite Tahmini: Çatının alani, GeoDataFrame üzerinden doğru bir şekilde hesaplanabilir, böylece belirli bir çatı için kaç adet panel sığabileceği ve tahmini üretim kapasitesi değerlendirilebilir.
     gdf_images = gpd.GeoDataFrame({'id': image_id_list, 'geometry': image_bbox_list})
+
     # todo: save all gdf with their crs already
+    # Bu satır, oluşturulan GeoDataFrame'in Koordinat Referans Sistemini (CRS) ayarlar. 4326 değeri, WGS 84 lat-long koordinat sistemini ifade eder. Bu CRS, genellikle dünya çapında coğrafi verilerin bir standart olarak ifade edilmesi için kullanılır.
     gdf_images.crs = 4326
     return gdf_images
 

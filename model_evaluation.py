@@ -102,11 +102,11 @@ def save_prediction_masks(model, image_dataset, label_classes, DIR_PREDICTIONS):
             filter_to_one_roof_only=False
         )
         image_name = image_dataset.ids[id]
-        # filepath = os.path.join(DIR_PREDICTIONS, image_name)
-        # cv2.imwrite(filepath, predcition)
+        filepath = os.path.join(DIR_PREDICTIONS, image_name)
+        cv2.imwrite(filepath, predcition)
         # # for debugging:
-        filepath = os.path.join(DIR_PREDICTIONS + '_visible', image_name)
-        cv2.imwrite(filepath, predcition * 255 /(len(label_classes)-1))
+        # filepath = os.path.join(DIR_PREDICTIONS + '_visible', image_name)
+        # cv2.imwrite(filepath, predcition * 255 /(len(label_classes)-1))
     return
 
 #############################################################

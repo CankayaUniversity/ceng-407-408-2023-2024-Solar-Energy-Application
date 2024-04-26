@@ -41,6 +41,7 @@ if not os.path.isdir(DIR_BASE + "\\plots"): os.mkdir(DIR_BASE + "\\plots")
 
 # image directories
 DIR_IMAGES_GEOTIFF = DIR_DATA + "\\images_roof_centered_geotiff"  # "images_annotation_experiment_geotiff" #
+DIR_IMAGES_A = DIR_DATA + "\\a"
 DIR_IMAGES_PNG = DIR_DATA + "\\images_roof_centered_png"  # "images_annotation_experiment_png"
 # mask directories
 DIR_MASKS_SUPERSTRUCTURES = DIR_DATA + "\\masks_superstructures_reviewed" #_initial"

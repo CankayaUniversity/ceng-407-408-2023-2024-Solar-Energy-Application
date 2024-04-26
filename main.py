@@ -64,13 +64,30 @@ from definitions import \
 ### Import images
 ########################################################################################################################
 # initialize png images, if pngs do not exist.
+# tiff resmi varsa ama onun png si yoksa tiff resmini png ye dönüştürüp png klasörüne kaydeder.
+# DIR_IMAGES_GEOTIFF = \RID-master\data\images_roof_centered_geotiff
+# DIR_IMAGES_PNG = \RID-master\data\images_roof_centered_png
+# utils.py
 geotif_to_png(DIR_IMAGES_GEOTIFF, DIR_IMAGES_PNG)
 
 # Get ids of all images in geotiff image folder
+# DIR_IMAGES_GEOTIFF = \RID-master\data\images_roof_centered_geotiff
+# image_id_list main.py de hiç kullanılmamış.
+# bu kodun aynısı utils.py get_image_gdf_in_directory fonksiyonunun içinde yer alıyor ve kullanılıyor.
 image_id_list = [id[:-4] for id in os.listdir(DIR_IMAGES_GEOTIFF) if id[-4:] == '.tif']
+
+# Bu kod parçası, raster görüntü verilerinin coğrafi işlemler için hazırlanmasında temel adımları yansıtır ve veri setlerinin analiz edilmesi, görselleştirilmesi veya başka bir coğrafi bilgi sistemine aktarılması amacıyla kullanılabilir.
+# utils.py
 gdf_images = get_image_gdf_in_directory(DIR_IMAGES_GEOTIFF)
 
 # import labels from annotation experiment
+# FILE_VECTOR_LABELS_ANNOTATION_EXPERIMENT = "data\\" + "obstacles_annotation_experiment.csv"
+# LABEL_CLASSES_SUPERSTRUCTURES = ['pvmodule', 'dormer', 'window', 'ladder', 'chimney', 'shadow',
+#                                                        'tree', 'unknown']
+# mask_generation.py
+# çeşitli senaryolar için vektör etiketlerini içeren bir CSV dosyasından veri okuyarak bir coğrafi veri çerçevesi (GeoDataFrame) oluşturur. İşlev, özellikle belirli yapıların (superstructures, segments, pv_areas gibi) etiketlenmesi ve bu etiketlerin coğrafi analizlere uygun şekilde düzenlenmesi için tasarlanmıştır.
+# superstructures = engeller
+# segment = engelsiz çatılar
 gdf_test_labels = import_vector_labels(
     FILE_VECTOR_LABELS_ANNOTATION_EXPERIMENT,
     'superstructures',
@@ -83,6 +100,7 @@ gdf_test_labels = import_vector_labels(
 # ########################################################################################################################
 # gdf_labels_superstructure = vector_labels_to_masks(
 #     FILE_VECTOR_LABELS_SUPERSTRUCTURES,
+    # #  DIR_DATA + "\\masks_superstructures_reviewed"
 #     DIR_MASKS_SUPERSTRUCTURES,
 #     'superstructures',
 #     LABEL_CLASSES_SUPERSTRUCTURES,
@@ -96,6 +114,7 @@ gdf_test_labels = import_vector_labels(
 #     VAL_DATA_CENTER_POINTS,
 #     LABEL_CLASSES_SUPERSTRUCTURES,
 #     DIR_IMAGES_PNG,
+      # #  DIR_DATA + "\\masks_superstructures_reviewed"
 #     DIR_MASKS_SUPERSTRUCTURES,
 #     DIR_SEGMENTATION_MODEL_DATA
 # )
@@ -166,10 +185,15 @@ gdf_test_labels = import_vector_labels(
 # Evaluation annotation agreement of superstructure labels. This takes long time to compute.
 # Check if results of evaluation are already saved as pkl file.
 # Important: change the pkl filename when evaluating multiple models!
+
 if os.path.isfile('data\\res_annotation_experiment.pkl'):
     with open('data\\res_annotation_experiment.pkl', 'rb') as f:
+        # CM = Confusion Matrix
+        # AE = Annotation Experiment (Etiketleme Deneyi)
         [CM_AE_all, CM_AE_list, CM_AE_class_agnostic_all, CM_AE_class_agnostic_list] = pickle.load(f)
     # generate dataframes with all class specific IoUs
+    # Intersection over Union, iki farklı kümenin kesişiminin birleşimine bölünmesiyle elde edilen bir metriktir. Makine öğrenimi ve bilgisayarlı görü işlemlerinde, özellikle nesne tespiti ve segmentasyon görevlerinde sıklıkla kullanılır. Bir tahminin gerçek değerle ne kadar iyi örtüştüğünü ölçmek için kullanılır.
+    # df = DataFrame
     df_IoU_AE = df_IoU_from_confusion_matrix(CM_AE_list, LABEL_CLASSES_SUPERSTRUCTURES)
     df_IoU_AE_class_agnostic = df_IoU_from_confusion_matrix(CM_AE_class_agnostic_list, ['label_class', 'background'])
 else:
@@ -178,6 +202,7 @@ else:
     df_IoU_AE, CM_AE_all, CM_AE_list, df_IoU_AE_class_agnostic, CM_AE_class_agnostic_all, CM_AE_class_agnostic_list =\
         evaluate_annotation_experiment(
             LABEL_CLASSES_SUPERSTRUCTURES,
+            # masks_superstructures_annotation_experiment
             DIR_MASKS_SUPERSTRUCTURES_ANNOTATION_EXPERIMENT,
             image_id_list_annotation_experiment
         )
@@ -222,6 +247,7 @@ else:
 ########################################################################################################################
 ### 6) Evaluate model and visualize results
 ########################################################################################################################
+
 DIR_SEGMENTATION_MODEL_DATA = DIR_SEGMENTATION_MODEL_DATA  # + '_3' # use validation split 3
 
 # load model and datasets
@@ -259,7 +285,7 @@ else:
         )
 
     with open(results_path, 'wb') as f:
-        pickle.dump([CM_all, CM_list, CM_class_agnostic_all, CM_class_agnostic_list], f)
+        pickle.dump([df_IoUs,CM_all, CM_list, CM_class_agnostic_all, CM_class_agnostic_list], f)
 
 # calculate normalized confusion matrix
 CM_all_normalized = normalize_confusion_matrix_by_rows(CM_all)
@@ -293,7 +319,9 @@ visualize_top_median_bottom_predictions_and_ground_truth(
 ### 7) Conduct PV Potential Assessment
 ########################################################################################################################
 # calculate predictions on the validation dataset and save the masks
+
 save_prediction_masks(model, valid_dataset, LABEL_CLASSES_SUPERSTRUCTURES, DIR_PREDICTIONS)
+
 # use prediction masks to calculate pv potential for 6 use cases
 pv_potential_analysis()
 print("x")

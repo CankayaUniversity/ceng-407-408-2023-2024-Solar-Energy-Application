@@ -62,7 +62,7 @@ def process_and_save_image(image_path, model, preprocess_input, save_path):
 
 
 # Example usage
-tif_image_path = r'C:\Users\emre_\Desktop\Yeni\RID-master\data\images_roof_centered_geotiff\69.tif'  # Replace with
+tif_image_path = r'C:\Users\emre_\Desktop\Yeni\RID-master\data\deneme3.png'  # Replace with
 # your TIFF file path
 output_png_path = r'C:\Users\emre_\Desktop\Yeni\RID-master\data\output_mask.png'
 process_and_save_image(tif_image_path, model, preprocess_input, output_png_path)

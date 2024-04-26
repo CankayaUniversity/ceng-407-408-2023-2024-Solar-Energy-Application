@@ -252,7 +252,7 @@ def pv_potential_analysis():
                                                                       gdf_segments_GT['E_kWp']
 
     # visualize
-    image_ids = [533, 257, 355]
+    image_ids = [1, 10, 20]
     visualize_module_placement(image_ids, gdf_images, gdf_segments_GT, gdf_superstructures_PR, gdf_modules_PR,
                                DIR_IMAGES_PNG)
 
