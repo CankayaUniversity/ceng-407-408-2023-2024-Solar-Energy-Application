@@ -184,6 +184,7 @@ export const Experience = ({
         color: "rgba(0, 255, 0, 0.5)",
         side: THREE.DoubleSide,
         transparent: true,
+        
       });
       const mesh = new Mesh(geometry, material);
       selectionMeshRef.current = mesh;

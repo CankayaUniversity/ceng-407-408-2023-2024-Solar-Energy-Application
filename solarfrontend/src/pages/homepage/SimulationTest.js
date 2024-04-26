@@ -166,17 +166,14 @@ function SimulationTest({ screenshot }) {
         </Stack>
 
         <Canvas
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            width: "100vw",
-            height: "100vh",
-            color: "red",
-          }}
-        >
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[0, 0, 1]} intensity={1} />
+          style={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100vw", height: "100vh", color: "red" }}
+          >
+              <ambientLight intensity={0.5} />
+          {/* Directional lights positioned closer to the scene's scale */}
+          <directionalLight
+            position={[0, 0, 1]}
+            intensity={1}
+            />
           <CameraControlled />
           <Experience
             roofImage={screenshot}

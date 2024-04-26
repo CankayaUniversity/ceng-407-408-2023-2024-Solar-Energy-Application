@@ -52,7 +52,7 @@ export const AddPanel = ({ position, isPlaced, isCancelled }) => {
     if (!modelRef.current) {
       loadOriginalModel((originalModel) => {
         const modelClone = originalModel.clone();
-        modelClone.scale.set(2, 3, 2);
+        modelClone.scale.set(64, 128, 64); // Boyutları iki katına çıkarır
         modelClone.rotation.x = Math.PI / 2;
         modelClone.position.copy(position);
         scene.add(modelClone);
