@@ -3,19 +3,20 @@ import * as THREE from "three";
 import { useThree, useFrame } from "@react-three/fiber";
 import { TextureLoader } from "three";
 import { PlaneGeometry, MeshBasicMaterial, Mesh } from "three";
+import { AddPanel } from "../components/AddPanel";
 
 function createHatchTexture() {
-  const canvas = document.createElement('canvas');
+  const canvas = document.createElement("canvas");
   const size = 128; // Doku boyutu
   canvas.width = size;
   canvas.height = size;
-  
-  const context = canvas.getContext('2d');
-  
+
+  const context = canvas.getContext("2d");
+
   // Arka planı saydam olarak bırak (yani hiçbir şey yapma)
-  
+
   // Çizgileri çiz
-  context.strokeStyle = 'rgba(0, 0, 0, 2)'; // Siyah çizgi rengi, yarı saydam
+  context.strokeStyle = "rgba(0, 0, 0, 2)"; // Siyah çizgi rengi, yarı saydam
   context.lineWidth = 1; // Çizgi kalınlığı daha ince
   const step = 10; // Çizgiler arası mesafe
   for (let i = 0; i < size; i += step) {
@@ -23,13 +24,13 @@ function createHatchTexture() {
     context.moveTo(i, 0);
     context.lineTo(i, size);
     context.stroke();
-    
+
     // Diagonal çizgiler ekleyerek taralı görünümü zenginleştirebiliriz
     context.moveTo(0, i);
     context.lineTo(size, i);
     context.stroke();
   }
-  
+
   // Canvas'tan bir doku oluştur
   return new THREE.CanvasTexture(canvas);
 }
@@ -47,12 +48,14 @@ export const Experience = ({
   selectionEnd,
   setSelectionStart,
   setSelectionEnd,
+  batchAddPanelMode,
+  gridPositions,
 }) => {
   const [roofTexture, setRoofTexture] = useState(null);
   const planeRef = useRef();
   const selectionMeshRef = useRef();
   const { camera, gl, scene } = useThree();
-  
+
   const isDragging = useRef(false);
   const selectionBorderRef = useRef(); // Seçim sınırı için referans
   const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
@@ -136,7 +139,6 @@ export const Experience = ({
     };
 
     const handleMouseUp = (event) => {
-
       isDragging.current = false;
 
       if (!isSelecting || !selectionStart) return;
@@ -184,7 +186,6 @@ export const Experience = ({
         color: "rgba(0, 255, 0, 0.5)",
         side: THREE.DoubleSide,
         transparent: true,
-        
       });
       const mesh = new Mesh(geometry, material);
       selectionMeshRef.current = mesh;
@@ -199,6 +200,18 @@ export const Experience = ({
     mesh.scale.x = Math.abs(selectionEnd.x - selectionStart.x);
     mesh.scale.y = Math.abs(selectionEnd.y - selectionStart.y);
   });
+
+  const renderPanelPreviews = () => {
+    if (!batchAddPanelMode || gridPositions.length === 0) return null;
+
+    // return gridPositions.map((position, index) => (
+    //   <AddPanel
+    //     key={index}
+    //     position={position}
+    //     isVisible={true} /* other props */
+    //   />
+    // ));
+  };
 
   useEffect(() => {
     if (!roofSelectionActive) return;
@@ -246,6 +259,7 @@ export const Experience = ({
 
   return (
     <>
+      {renderPanelPreviews()}
       {roofTexture && (
         <mesh ref={planeRef} position={[0, 0, 0]}>
           <planeGeometry

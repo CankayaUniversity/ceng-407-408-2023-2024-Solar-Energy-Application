@@ -7,13 +7,16 @@ import roofImage from "../../assets/images/roof.jpg";
 import { Vector3 } from "three";
 import * as THREE from "three";
 import { Button, Stack, Box } from "@mui/material";
+import { useMemo } from "react";
+import { AddPanelArea } from "../../components/AddPanelArea"
+import { loadOriginalModel } from "../../components/LoadOriginalModel"
 
 function CameraControlled() {
   const { camera } = useThree();
   useEffect(() => {
     const initialDistance = 500;
     const maxDistance = 1000;
-    const minDistance = 650;
+    const minDistance = 400;
 
     const updateCameraPosition = () => {
       if (camera.position.z > maxDistance) {
@@ -70,9 +73,16 @@ function SimulationTest({ screenshot }) {
   const [selectedRoofPoints, setSelectedRoofPoints] = useState([]);
   const [selectionStart, setSelectionStart] = useState(null);
   const [selectionEnd, setSelectionEnd] = useState(null);
+  const [batchAddPanelMode, setBatchAddPanelMode] = useState(false);
 
   // Güneş paneli ekleme modunu ve önizlemeyi kontrol edecek fonksiyonlar
   const toggleAddPanelMode = () => setAddPanelMode(!addPanelMode);
+
+  useEffect(() => {
+    loadOriginalModel((originalModel) => {
+          const modelClone = originalModel.clone();
+    });
+  }, []);
 
   const toggleRoofSelection = () =>
     setRoofSelectionActive(!roofSelectionActive);
@@ -88,6 +98,39 @@ function SimulationTest({ screenshot }) {
     setAddPanelMode(!addPanelMode); // Panel ekleme modunu değiştir
   };
 
+  // Assuming each panel is 1x1 in size for demonstration purposes
+  const panelSize = { width: 1, height: 1 }; // Update this with actual panel size
+  
+
+  const calculateGridPositions = (selectedRoofPoints, panelSize) => {
+    // Calculate the bounding box of the selected roof area
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+    selectedRoofPoints.forEach((point) => {
+      if (point.x < minX) minX = point.x;
+      if (point.y < minY) minY = point.y;
+      if (point.x > maxX) maxX = point.x;
+      if (point.y > maxY) maxY = point.y;
+    });
+
+    
+
+    // Calculate positions in a grid within the bounding box
+    const positions = [];
+    for (let x = minX; x <= maxX; x += panelSize.width) {
+      for (let y = minY; y <= maxY; y += panelSize.height) {
+        positions.push(new THREE.Vector3(x, y, 0)); // Z-coordinate can be adjusted as needed
+      }
+    }
+
+    // Filter positions that are actually within the selected area
+    return positions.filter((position) =>
+      pointInPolygon(position, selectedRoofPoints)
+    );
+  };
+
   // const placePanel = (position) => {
   //   console.log("panels", panels);
 
@@ -98,6 +141,14 @@ function SimulationTest({ screenshot }) {
   //   setAddPanelMode(false); // Panel yerleştirildikten sonra modu kapat
   // };
 
+    // Calculate positions whenever the selection changes or when batch mode is toggled
+    const gridPositions = useMemo(() => {
+      if (batchAddPanelMode) {
+        return calculateGridPositions(selectedRoofPoints, panelSize);
+      }
+      return [];
+    }, [batchAddPanelMode, selectedRoofPoints]);
+    
   const placePanel = (position) => {
     if (selectionStart != null && selectionEnd != null) {
       let topRight = { x: selectionEnd.x, y: selectionStart.y, z: 0 };
@@ -114,11 +165,22 @@ function SimulationTest({ screenshot }) {
       return; // Seçilen alanın dışındaysa, işlemi durdur
     }
 
-    if (!isCancelled) {
-      setPanels([...panels, position]);
-      setIsCancelled(false);
+    if (batchAddPanelMode) {
+      console.log("batchaddpanelmoddayım bro")
+      // Use the calculateGridPositions function to get all the positions where panels should be placed
+      const gridPositions = calculateGridPositions(
+        selectedRoofPoints,
+        panelSize
+      );
+      setPanels([...panels, ...gridPositions]);
+      setBatchAddPanelMode(false);
+    } else {
+      if (!isCancelled) {
+        setPanels([...panels, position]);
+        setIsCancelled(false);
+      }
+      setAddPanelMode(false); // Panel yerleştirildikten sonra modu kapat
     }
-    setAddPanelMode(false); // Panel yerleştirildikten sonra modu kapat
   };
 
   const handleCancel = () => {
@@ -132,7 +194,14 @@ function SimulationTest({ screenshot }) {
 
   return (
     <>
-      <Box sx={{  overflowX: 'hidden' ,position: "relative", width: "100vw", height: "100vh" }} >
+      <Box
+        sx={{
+          overflowX: "hidden",
+          position: "relative",
+          width: "100vw",
+          height: "100vh",
+        }}
+      >
         <Stack
           direction="row"
           spacing={2}
@@ -163,17 +232,27 @@ function SimulationTest({ screenshot }) {
           >
             Cancel
           </Button>
+          <Button
+            variant="contained"
+            onClick={() => setBatchAddPanelMode(!batchAddPanelMode)}
+          >
+            {batchAddPanelMode ? "Finish Batch Add" : "Batch Add Panels"}
+          </Button>
         </Stack>
 
         <Canvas
-          style={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100vw", height: "100vh", color: "red" }}
-          >
-              <ambientLight intensity={0.5} />
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            width: "100vw",
+            height: "100vh",
+            color: "red",
+          }}
+        >
+          <ambientLight intensity={0.5} />
           {/* Directional lights positioned closer to the scene's scale */}
-          <directionalLight
-            position={[0, 0, 1]}
-            intensity={1}
-            />
+          <directionalLight position={[0, 0, 1]} intensity={1} />
           <CameraControlled />
           <Experience
             roofImage={screenshot}
@@ -188,7 +267,12 @@ function SimulationTest({ screenshot }) {
             setSelectionStart={setSelectionStart}
             selectionEnd={selectionEnd}
             setSelectionEnd={setSelectionEnd}
+            batchAddPanelMode={batchAddPanelMode}
+            gridPositions={gridPositions} // Pass the calculated positions
           />
+          {batchAddPanelMode && (
+            <AddPanelArea/>
+          )}
           {addPanelMode && (
             <AddPanel
               position={panelPosition}

@@ -1,35 +1,64 @@
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
-import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader';
+// models.js
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
-const modelPath = "solarpanelll.obj"; // Model path
-const materialPath = "solarpanel.mtl"; // Material file path
+const modelPath = "solarpanel.glb"; // Modelin yolu
+let originalModel = null; // Orijinal modeli saklamak için
 
-let originalModel = null; // Cache for the original model
-
+// Modeli yükleme fonksiyonu
 export const loadOriginalModel = async (onLoad) => {
   if (originalModel) {
-    console.log("Original model cached, returning.");
+    console.log("orjinal model boş returndeyim");
     onLoad(originalModel);
     return;
   }
 
-  console.log("Loading materials...");
-  const mtlLoader = new MTLLoader();
-  mtlLoader.load(materialPath, (materials) => {
-    materials.preload();
-    console.log("Materials loaded.");
-
-    const objLoader = new OBJLoader();
-    objLoader.setMaterials(materials);  // Set the loaded materials
-    console.log("Loading model...");
-    objLoader.load(
-      modelPath,
-      (obj) => {
-        originalModel = obj;
-        onLoad(originalModel);
-      },
-      undefined,
-      (error) => console.error("Error loading the model:", error)
-    );
-  });
+  console.log("modeli load ediyorum");
+  const loader = new GLTFLoader();
+  loader.load(
+    modelPath,
+    (gltf) => {
+      originalModel = gltf.scene;
+      onLoad(originalModel);
+    },
+    undefined,
+    (error) => {
+      console.error(error);
+    }
+  );
 };
+
+// import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
+// import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader";
+
+// const modelPath = "3d-model.obj"; // Model path
+// const materialPath = "3d-model.mtl"; // Material file path
+
+// let originalModel = null; // Cache for the original model
+
+// export const loadOriginalModel = async (onLoad) => {
+//   if (originalModel) {
+//     console.log("Original model cached, returning.");
+//     onLoad(originalModel);
+//     return;
+//   }
+
+//   console.log("Loading materials...");
+//   const mtlLoader = new MTLLoader();
+//   mtlLoader.load(materialPath, (materials) => {
+//     materials.preload();
+//     console.log("Materials loaded.");
+
+//     const objLoader = new OBJLoader();
+//     objLoader.setMaterials(materials); // Set the loaded materials
+//     console.log("Loading model...");
+//     objLoader.load(
+//       modelPath,
+//       (obj) => {
+//         originalModel = obj;
+//         onLoad(originalModel);
+//       },
+//       undefined,
+//       (error) => console.error("Error loading the model:", error)
+//     );
+//   });
+// };
