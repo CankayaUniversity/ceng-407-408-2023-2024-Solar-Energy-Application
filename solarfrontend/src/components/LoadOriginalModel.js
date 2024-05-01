@@ -7,7 +7,6 @@ let originalModel = null; // Orijinal modeli saklamak için
 // Modeli yükleme fonksiyonu
 export const loadOriginalModel = async (onLoad) => {
   if (originalModel) {
-    console.log("orjinal model boş returndeyim");
     onLoad(originalModel);
     return;
   }

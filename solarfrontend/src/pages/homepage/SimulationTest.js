@@ -8,8 +8,8 @@ import { Vector3 } from "three";
 import * as THREE from "three";
 import { Button, Stack, Box } from "@mui/material";
 import { useMemo } from "react";
-import { AddPanelArea } from "../../components/AddPanelArea"
-import { loadOriginalModel } from "../../components/LoadOriginalModel"
+import { AddPanelArea } from "../../components/AddPanelArea";
+import { loadOriginalModel } from "../../components/LoadOriginalModel";
 
 function CameraControlled() {
   const { camera } = useThree();
@@ -43,7 +43,7 @@ function CameraControlled() {
   return null;
 }
 
-function pointInPolygon(point, polygon) {
+export function pointInPolygon(point, polygon) {
   // Bu fonksiyon, verilen bir noktanın (point) verilen bir poligon (polygon) içerisinde olup olmadığını kontrol eder.
   // Burada basit bir algoritma kullanılmıştır, daha karmaşık geometriler için daha gelişmiş yöntemler gerekebilir.
 
@@ -80,7 +80,7 @@ function SimulationTest({ screenshot }) {
 
   useEffect(() => {
     loadOriginalModel((originalModel) => {
-          const modelClone = originalModel.clone();
+      const modelClone = originalModel.clone();
     });
   }, []);
 
@@ -100,7 +100,6 @@ function SimulationTest({ screenshot }) {
 
   // Assuming each panel is 1x1 in size for demonstration purposes
   const panelSize = { width: 1, height: 1 }; // Update this with actual panel size
-  
 
   const calculateGridPositions = (selectedRoofPoints, panelSize) => {
     // Calculate the bounding box of the selected roof area
@@ -114,8 +113,6 @@ function SimulationTest({ screenshot }) {
       if (point.x > maxX) maxX = point.x;
       if (point.y > maxY) maxY = point.y;
     });
-
-    
 
     // Calculate positions in a grid within the bounding box
     const positions = [];
@@ -141,14 +138,14 @@ function SimulationTest({ screenshot }) {
   //   setAddPanelMode(false); // Panel yerleştirildikten sonra modu kapat
   // };
 
-    // Calculate positions whenever the selection changes or when batch mode is toggled
-    const gridPositions = useMemo(() => {
-      if (batchAddPanelMode) {
-        return calculateGridPositions(selectedRoofPoints, panelSize);
-      }
-      return [];
-    }, [batchAddPanelMode, selectedRoofPoints]);
-    
+  // Calculate positions whenever the selection changes or when batch mode is toggled
+  const gridPositions = useMemo(() => {
+    if (batchAddPanelMode) {
+      return calculateGridPositions(selectedRoofPoints, panelSize);
+    }
+    return [];
+  }, [batchAddPanelMode, selectedRoofPoints]);
+
   const placePanel = (position) => {
     if (selectionStart != null && selectionEnd != null) {
       let topRight = { x: selectionEnd.x, y: selectionStart.y, z: 0 };
@@ -166,7 +163,7 @@ function SimulationTest({ screenshot }) {
     }
 
     if (batchAddPanelMode) {
-      console.log("batchaddpanelmoddayım bro")
+      console.log("batchaddpanelmoddayım bro");
       // Use the calculateGridPositions function to get all the positions where panels should be placed
       const gridPositions = calculateGridPositions(
         selectedRoofPoints,
@@ -175,6 +172,7 @@ function SimulationTest({ screenshot }) {
       setPanels([...panels, ...gridPositions]);
       setBatchAddPanelMode(false);
     } else {
+      console.log("addpanel placedeyim")
       if (!isCancelled) {
         setPanels([...panels, position]);
         setIsCancelled(false);
@@ -270,9 +268,7 @@ function SimulationTest({ screenshot }) {
             batchAddPanelMode={batchAddPanelMode}
             gridPositions={gridPositions} // Pass the calculated positions
           />
-          {batchAddPanelMode && (
-            <AddPanelArea/>
-          )}
+          {batchAddPanelMode && <AddPanelArea selectedRoofPoints={selectedRoofPoints}/>}
           {addPanelMode && (
             <AddPanel
               position={panelPosition}
