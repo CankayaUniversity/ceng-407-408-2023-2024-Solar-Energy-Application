@@ -4,7 +4,7 @@ import { loadOriginalModel } from "./LoadOriginalModel"; // Adjust path as neces
 import * as THREE from "three";
 import { pointInPolygon } from "../pages/homepage/SimulationTest";
 
-export const AddPanelArea = ({ selectedRoofPoints }) => {
+export const AddPanelArea = ({ selectedRoofPoints, orientationAngle }) => {
   const [startPosition, setStartPosition] = useState(null);
   const [currentPosition, setCurrentPosition] = useState(null);
   const { scene, camera, gl, size } = useThree();
@@ -22,18 +22,27 @@ export const AddPanelArea = ({ selectedRoofPoints }) => {
   };
 
   useEffect(() => {
+    if (startPosition && currentPosition) {
+      updatePanelLayout(startPosition, currentPosition, orientationAngle);
+    }
+  }, [rotationAngle, orientationAngle]); // Listen to orientationAngle changes
+
+  
+
+  useEffect(() => {
     const handleKeyDown = (event) => {
-      if (event.key === '+' || event.key === '=') { // Bazı klavyelerde + tuşu = ile birlikte
+      if (event.key === "+" || event.key === "=") {
+        // Bazı klavyelerde + tuşu = ile birlikte
         rotatePanelsRight();
-      } else if (event.key === '-') {
+      } else if (event.key === "-") {
         rotatePanelsLeft();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
 
@@ -105,7 +114,7 @@ export const AddPanelArea = ({ selectedRoofPoints }) => {
     }
   });
 
-  const updatePanelLayout = (startPos, currentPos) => {
+  const updatePanelLayout = (startPos, currentPos, orientationAngle) => {
     if (!startPos || !currentPos) return; // Güvenlik kontrolü
     const gap = 3; // Model arası boşluk
     const modelWidth = 12; // Model genişliği
@@ -137,7 +146,7 @@ export const AddPanelArea = ({ selectedRoofPoints }) => {
         for (let j = 0; j < numY; j++) {
           const modelClone = originalModel.clone();
           modelClone.scale.set(1, 2, 1); // Model ölçeklendirmesi
-          modelClone.rotation.x = Math.PI / 2; // Modeli yatay çevir
+          modelClone.rotation.x = orientationAngle; // Modeli yatay çevir
           modelClone.rotation.y = rotationAngle;
 
           const positionX = minX + i * paddedModelWidth;

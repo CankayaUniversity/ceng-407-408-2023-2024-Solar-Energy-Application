@@ -74,6 +74,16 @@ function SimulationTest({ screenshot }) {
   const [selectionStart, setSelectionStart] = useState(null);
   const [selectionEnd, setSelectionEnd] = useState(null);
   const [batchAddPanelMode, setBatchAddPanelMode] = useState(false);
+  const [orientationMode, setOrientationMode] = useState(false);
+  const [orientationAngle, setOrientationAngle] = useState(90);
+
+  const handleOrientationToggle = () => {
+    setOrientationMode(!orientationMode);
+  };
+
+  const handleOrientationChange = (event) => {
+    setOrientationAngle(Number(event.target.value)); // Derece cinsinden değeri doğrudan güncelle
+  };
 
   // Güneş paneli ekleme modunu ve önizlemeyi kontrol edecek fonksiyonlar
   const toggleAddPanelMode = () => setAddPanelMode(!addPanelMode);
@@ -172,7 +182,7 @@ function SimulationTest({ screenshot }) {
       setPanels([...panels, ...gridPositions]);
       setBatchAddPanelMode(false);
     } else {
-      console.log("addpanel placedeyim")
+      console.log("addpanel placedeyim");
       if (!isCancelled) {
         setPanels([...panels, position]);
         setIsCancelled(false);
@@ -236,6 +246,26 @@ function SimulationTest({ screenshot }) {
           >
             {batchAddPanelMode ? "Finish Batch Add" : "Batch Add Panels"}
           </Button>
+          <Button variant="contained" onClick={handleOrientationToggle}>
+            {orientationMode ? "Set Orientation" : "Adjust Orientation"}
+          </Button>
+
+          {orientationMode && (
+            <input
+              type="number"
+              value={orientationAngle}
+              onChange={handleOrientationChange}
+              min="0" // Minimum değer
+              max="360" // Maksimum değer
+              step="1" // Her adımda değişim miktarı
+              style={{
+                position: "absolute",
+                zIndex: 100,
+                top: "50px",
+                left: "10px",
+              }}
+            />
+          )}
         </Stack>
 
         <Canvas
@@ -268,7 +298,12 @@ function SimulationTest({ screenshot }) {
             batchAddPanelMode={batchAddPanelMode}
             gridPositions={gridPositions} // Pass the calculated positions
           />
-          {batchAddPanelMode && <AddPanelArea selectedRoofPoints={selectedRoofPoints}/>}
+          {batchAddPanelMode && (
+            <AddPanelArea
+              selectedRoofPoints={selectedRoofPoints}
+              orientationAngle={orientationAngle * Math.PI / 180}
+            />
+          )}
           {addPanelMode && (
             <AddPanel
               position={panelPosition}
