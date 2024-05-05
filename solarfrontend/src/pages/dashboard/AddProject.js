@@ -43,6 +43,7 @@ export default function AddProject() {
   const [screenshot, setScreenshot] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [currentCenter, setCurrentCenter] = useState(null);
+  const [edgeLengths, setEdgeLengths] = useState([]);
 
   // const handleLocationSelect = (location) => {
   //   if (location && location.lat && location.lng) {
@@ -53,11 +54,11 @@ export default function AddProject() {
   //     console.error("Geçerli bir konum sağlanmadı");
   //   }
   // };
-  
+
   const onCenterChange = (center) => {
     setCurrentCenter(center);
   };
-  
+
   // const takeStaticMapScreenshot = () => {
   //   const addressForAPI = `${projectData.address.suburb},${projectData.address.street},${projectData.address.house_number}, ${projectData.address.postcode},${projectData.address.town}, ${projectData.address.city}`;
   //   const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(
@@ -152,6 +153,10 @@ export default function AddProject() {
     fetchCustomerDetails();
   }, [selectedCustomerId]);
 
+  useEffect(() => {
+    console.log("Güncel Kenar Uzunlukları:", edgeLengths);
+  }, [edgeLengths]);
+
   const handleCustomerChange = async (event) => {
     const newSelectedCustomerId = event.target.value;
     setSelectedCustomerId(newSelectedCustomerId);
@@ -217,6 +222,15 @@ export default function AddProject() {
         Finish
       </Button>
     );
+  };
+
+  const handleSavePhoto = () => {
+    const link = document.createElement("a");
+    link.href = screenshot; // Screenshot'ın URL'si
+    link.download = "MapScreenshot.png"; // Kaydedilecek dosya adı
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -533,22 +547,25 @@ export default function AddProject() {
             </AccordionDetails>
           </Accordion>
           <div style={{ width: "100%", height: "75vh" }}>
-            <Map address={mapAddress} onCenterChange={onCenterChange} />
+            <Map
+              address={mapAddress}
+              onCenterChange={onCenterChange}
+              onEdgesUpdate={setEdgeLengths}
+            />
           </div>
-          {/* <Button onClick={takeScreenshot} variant="contained" color="primary">
-            Take Screenshot
-          </Button> */}
         </TabPanel>
 
         <TabPanel value="4">
           <SimulationTest screenshot={screenshot} />
-          {/* {screenshot && (
-            <img
-              src={screenshot}
-              alt="Static Map Screenshot"
-              style={{ maxWidth: "100%", height: "auto" }}
-            />
-          )} */}
+          {screenshot && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleSavePhoto}
+            >
+              Save Photo
+            </Button>
+          )}
         </TabPanel>
       </TabContext>
 
