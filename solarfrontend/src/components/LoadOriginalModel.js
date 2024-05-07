@@ -1,7 +1,7 @@
 // models.js
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
-const modelPath = "solarpanel.glb"; // Modelin yolu
+const modelPath = "z1.glb"; // Modelin yolu
 let originalModel = null; // Orijinal modeli saklamak için
 
 // Modeli yükleme fonksiyonu
@@ -29,8 +29,8 @@ export const loadOriginalModel = async (onLoad) => {
 // import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 // import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader";
 
-// const modelPath = "3d-model.obj"; // Model path
-// const materialPath = "3d-model.mtl"; // Material file path
+// const modelPath = "b.obj"; // Model path
+// const materialPath = "b.mtl"; // Material file path
 
 // let originalModel = null; // Cache for the original model
 

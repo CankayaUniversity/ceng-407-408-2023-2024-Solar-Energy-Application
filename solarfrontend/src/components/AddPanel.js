@@ -20,6 +20,7 @@ export const AddPanel = ({ position, isPlaced, isCancelled }) => {
   const modelRef = useRef();
   const { scene } = useThree();
   const [rotation, setRotation] = useState(0); // Başlangıç dönüş açısı 0 derece. Panelin dönmesi için gerekli
+  const light = new THREE.AmbientLight(undefined, 0.5); // soft white light with 0.5 intensity
 
   useEffect(() => {}, [scene]);
 
@@ -43,15 +44,18 @@ export const AddPanel = ({ position, isPlaced, isCancelled }) => {
       isCancelled
     );
     if (modelRef.current && isCancelled) {
-      console.log("3");
+      console.log("isCancelled: ", isCancelled);
       scene.remove(modelRef.current);
       modelRef.current = null;
+      console.log("girdi");
     }
 
     console.log("abuduk");
     if (!modelRef.current) {
+      scene.add(light);
       loadOriginalModel((originalModel) => {
         const modelClone = originalModel.clone();
+        modelClone.rotation.y = Math.PI / 2;
         modelClone.scale.set(2, 4, 2); // Boyutları iki katına çıkarır
         modelClone.rotation.x = Math.PI / 2;
         modelClone.position.copy(position);
@@ -59,7 +63,7 @@ export const AddPanel = ({ position, isPlaced, isCancelled }) => {
         modelRef.current = modelClone;
       });
     }
-  }, [scene, isPlaced, isCancelled]);
+  }, [scene, isCancelled]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
