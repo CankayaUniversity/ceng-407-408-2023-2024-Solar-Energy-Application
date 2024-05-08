@@ -4,7 +4,7 @@ import { loadOriginalModel } from "./LoadOriginalModel"; // Adjust path as neces
 import * as THREE from "three";
 import { pointInPolygon } from "../pages/homepage/SimulationTest";
 
-export const AddPanelArea = ({ selectedRoofPoints }) => {
+export const AddPanelArea = ({ selectedRoofPoints, orientationAngle }) => {
   const [startPosition, setStartPosition] = useState(null);
   const [currentPosition, setCurrentPosition] = useState(null);
   const { scene, camera, gl, size } = useThree();
@@ -22,18 +22,25 @@ export const AddPanelArea = ({ selectedRoofPoints }) => {
   };
 
   useEffect(() => {
+    if (startPosition && currentPosition) {
+      updatePanelLayout(startPosition, currentPosition, orientationAngle);
+    }
+  }, [rotationAngle, orientationAngle]); // Listen to orientationAngle changes
+
+  useEffect(() => {
     const handleKeyDown = (event) => {
-      if (event.key === '+' || event.key === '=') { // Bazı klavyelerde + tuşu = ile birlikte
+      if (event.key === "+" || event.key === "=") {
+        // Bazı klavyelerde + tuşu = ile birlikte
         rotatePanelsRight();
-      } else if (event.key === '-') {
+      } else if (event.key === "-") {
         rotatePanelsLeft();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
 
@@ -56,7 +63,7 @@ export const AddPanelArea = ({ selectedRoofPoints }) => {
     const pos = camera.position.clone().add(dir.multiplyScalar(distance));
     return pos;
   };
- 
+
   useEffect(() => {
     const handleMouseDown = (event) => {
       if (!event.target.closest("canvas")) return;
@@ -105,69 +112,82 @@ export const AddPanelArea = ({ selectedRoofPoints }) => {
     }
   });
 
-  const updatePanelLayout = (startPos, currentPos) => {
+  const updatePanelLayout = (startPos, currentPos, orientationAngle) => {
     if (!startPos || !currentPos) return; // Güvenlik kontrolü
     const gap = 0.8; // Model arası boşluk
     const baseModelWidth = 9; // Temel Model genişliği
     const baseModelHeight = 7; // Temel Model yüksekliği
-  
+
     // Modelin ölçeklendirilmiş boyutlarını hesapla
     const scaleX = 2.7; // Yatay ölçeklendirme
     const scaleY = 8.5; // Dikey ölçeklendirme
     const modelWidth = baseModelWidth * scaleX;
     const modelHeight = baseModelHeight * scaleY;
-  
-    const paddedModelWidth = modelWidth + gap;
-    const paddedModelHeight = modelHeight + gap;
-  
+
+    // Model döndürüldüğünde boyutların yönünü değiştir
+    const effectiveModelWidth = Math.PI / 2 ? modelHeight : modelWidth;
+    const effectiveModelHeight = Math.PI / 2 ? modelWidth : modelHeight;
+
+    const paddedModelWidth = effectiveModelWidth + gap;
+    const paddedModelHeight = effectiveModelHeight + gap;
+
     const xDistance = Math.abs(currentPos.x - startPos.x);
     const yDistance = Math.abs(currentPos.y - startPos.y);
-  
+
     const numX = Math.floor(xDistance / paddedModelWidth);
     const numY = Math.floor(yDistance / paddedModelHeight);
-  
+
     const minX = Math.min(startPos.x, currentPos.x);
     const minY = Math.min(startPos.y, currentPos.y);
-  
+
     scene.remove(modelGroupRef.current);
     modelGroupRef.current = new THREE.Group();
-  
+
     loadOriginalModel((originalModel) => {
       const placedPanels = [];
       const rotationMatrix = new THREE.Matrix4().makeRotationZ(rotationAngle);
-  
+
       for (let i = 0; i < numX; i++) {
         for (let j = 0; j < numY; j++) {
           const modelClone = originalModel.clone();
-          modelClone.scale.set(scaleX, scaleY,4); // Model ölçeklendirme uygula
-          modelClone.rotation.x = Math.PI / 2; // Modeli yatay çevir
+          modelClone.scale.set(scaleX, scaleY, 4); // Model ölçeklendirme uygula
+          modelClone.rotation.x = orientationAngle; // Modeli yatay çevir
           modelClone.rotation.y = rotationAngle; // Selection box'ın açısına göre döndür
-  
-          const unrotatedX = minX + i * paddedModelWidth;
-          const unrotatedY = minY + j * paddedModelHeight;
-          const panelCenter = new THREE.Vector3(unrotatedX, unrotatedY, 0);
-          const rotatedPanelCenter = panelCenter.clone().applyMatrix4(rotationMatrix);
-  
+
+          const positionX = minX + i * paddedModelWidth;
+          const positionY = minY + j * paddedModelHeight;
+
           const corners = [
-            new THREE.Vector3(-modelWidth / 2, -modelHeight / 2, 0),
-            new THREE.Vector3(modelWidth / 2, -modelHeight / 2, 0),
-            new THREE.Vector3(modelWidth / 2, modelHeight / 2, 0),
-            new THREE.Vector3(-modelWidth / 2, modelHeight / 2, 0)
-          ].map(corner => corner.applyMatrix4(rotationMatrix).add(rotatedPanelCenter));
-  
-          if (corners.every(corner => pointInPolygon(corner, selectedRoofPoints))) {
-            modelClone.position.copy(rotatedPanelCenter);
+            new THREE.Vector3(positionX, positionY, 0),
+            new THREE.Vector3(positionX + effectiveModelWidth, positionY, 0),
+            new THREE.Vector3(positionX, positionY + effectiveModelHeight, 0),
+            new THREE.Vector3(
+              positionX + effectiveModelWidth,
+              positionY + effectiveModelHeight,
+              0
+            ),
+          ];
+
+          const allCornersInside = corners.every((corner) =>
+            pointInPolygon(corner, selectedRoofPoints)
+          );
+
+          if (allCornersInside) {
+            modelClone.position.set(
+              positionX + effectiveModelWidth / 2,
+              positionY + effectiveModelHeight / 2,
+              0
+            );
             placedPanels.push(modelClone);
           }
         }
       }
-  
-      placedPanels.forEach(panel => modelGroupRef.current.add(panel));
+
+      placedPanels.forEach((panel) => modelGroupRef.current.add(panel));
       scene.add(modelGroupRef.current);
     });
   };
-  
-  
+
   const updateSelectionBox = (startPos, currentPos) => {
     if (!selectionBoxRef.current) {
       const material = new THREE.LineBasicMaterial({ color: 0xffffff });
@@ -182,32 +202,23 @@ export const AddPanelArea = ({ selectedRoofPoints }) => {
     const maxX = Math.max(startPos.x, currentPos.x);
     const minY = Math.min(startPos.y, currentPos.y);
     const maxY = Math.max(startPos.y, currentPos.y);
-
-    // Calculate center point of the selection box
-    const centerX = (minX + maxX) / 2;
-    const centerY = (minY + maxY) / 2;
-
-    // Apply rotation around the center point
-    const rotatedVertices = [
-      new THREE.Vector3(minX, minY, 0),
-      new THREE.Vector3(maxX, minY, 0),
-      new THREE.Vector3(maxX, maxY, 0),
-      new THREE.Vector3(minX, maxY, 0),
-    ].map((vertex) => {
-      const vec = vertex.clone().sub(new THREE.Vector3(centerX, centerY, 0));
-      vec.applyAxisAngle(new THREE.Vector3(0, 0, 1), rotationAngle); // Rotate around Z-axis
-      return vec.add(new THREE.Vector3(centerX, centerY, 0));
-    });
-
-    const vertices = [];
-    rotatedVertices.forEach((vertex) => {
-      vertices.push(vertex.x, vertex.y, vertex.z);
-    });
-
+    const vertices = [
+      minX,
+      minY,
+      0, // Vertex 1
+      maxX,
+      minY,
+      0, // Vertex 2
+      maxX,
+      maxY,
+      0, // Vertex 3
+      minX,
+      maxY,
+      0, // Vertex 4
+    ];
     positions.array.set(vertices);
     positions.needsUpdate = true;
   };
-
 
   const removeSelectionBox = () => {
     if (selectionBoxRef.current) {
@@ -220,5 +231,3 @@ export const AddPanelArea = ({ selectedRoofPoints }) => {
 
   return null;
 };
-
-
