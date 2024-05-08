@@ -43,7 +43,7 @@ export default function AddProject() {
   const [screenshot, setScreenshot] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [currentCenter, setCurrentCenter] = useState(null);
-  const [edgeLengths, setEdgeLengths] = useState([]);
+  // const [edgeLengths, setEdgeLengths] = useState([]);
 
   // const handleLocationSelect = (location) => {
   //   if (location && location.lat && location.lng) {
@@ -153,9 +153,9 @@ export default function AddProject() {
     fetchCustomerDetails();
   }, [selectedCustomerId]);
 
-  useEffect(() => {
-    console.log("Güncel Kenar Uzunlukları:", edgeLengths);
-  }, [edgeLengths]);
+  // useEffect(() => {
+  //   console.log("Güncel Kenar Uzunlukları:", edgeLengths);
+  // }, [edgeLengths]);
 
   const handleCustomerChange = async (event) => {
     const newSelectedCustomerId = event.target.value;
@@ -550,7 +550,7 @@ export default function AddProject() {
             <Map
               address={mapAddress}
               onCenterChange={onCenterChange}
-              onEdgesUpdate={setEdgeLengths}
+              // onEdgesUpdate={setEdgeLengths}
             />
           </div>
         </TabPanel>
