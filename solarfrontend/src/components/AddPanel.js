@@ -20,33 +20,50 @@ export const AddPanel = ({ position, isPlaced, isCancelled }) => {
   const modelRef = useRef();
   const { scene } = useThree();
   const [rotation, setRotation] = useState(0); // Başlangıç dönüş açısı 0 derece. Panelin dönmesi için gerekli
+  const light = new THREE.AmbientLight(undefined, 0.5); // soft white light with 0.5 intensity
+  const [rotationX, setRotationX] = useState(Math.PI / 2);
+
+  useEffect(() => {}, [scene]);
+
+  useEffect(() => {
+    // 'position' prop'u her değiştiğinde modelin konumunu güncelle
+    if (modelRef.current && position) {
+      modelRef.current.position.copy(position);
+    }
+  }, [position]);
 
   useEffect(() => {
     // Model yalnızca bir kez yüklenir
+
+    // Model varsa ve sahnede ise, modeli sahneden kaldır
+    console.log(
+      "isp: ",
+      isPlaced,
+      " model.ref: ",
+      modelRef.current,
+      " iscan: ",
+      isCancelled
+    );
+    if (modelRef.current && isCancelled) {
+      console.log("3");
+      scene.remove(modelRef.current);
+      modelRef.current = null;
+    }
+
+    console.log("abuduk");
     if (!modelRef.current) {
+      scene.add(light);
       loadOriginalModel((originalModel) => {
         const modelClone = originalModel.clone();
-        modelClone.scale.set(2, 3, 2);
+        modelClone.rotation.y = Math.PI / 2;
+        modelClone.scale.set(2, 4, 2); // Boyutları iki katına çıkarır
         modelClone.rotation.x = Math.PI / 2;
         modelClone.position.copy(position);
         scene.add(modelClone);
         modelRef.current = modelClone;
       });
     }
-
-    // Model varsa ve isCancelled true ise, modeli sahneden kaldır
-    if (modelRef.current && isCancelled) {
-      scene.remove(modelRef.current);
-      modelRef.current = null;
-    }
-  }, [scene, position, isCancelled]);
-
-  useEffect(() => {
-    // Modelin pozisyonunu güncelle
-    if (modelRef.current && position) {
-      modelRef.current.position.copy(position);
-    }
-  }, [position]);
+  }, [scene, isCancelled]);
 
   useEffect(() => {
     // Klavye event listener'ı ekle
@@ -57,7 +74,11 @@ export const AddPanel = ({ position, isPlaced, isCancelled }) => {
       }
       // `-` tuşuna basıldığında dönüş açısını azalt
       else if (event.key === "-" || event.key === "NumpadSubtract") {
-        setRotation((prevRotation) => prevRotation - 0.1);
+        setRotation((prevRotation) => prevRotation - 0.1); // Açıyı azalt
+      } else if (event.key === "ArrowUp") {
+        setRotationX((prevRotation) => prevRotation + 0.1); // Increase X rotation
+      } else if (event.key === "ArrowDown") {
+        setRotationX((prevRotation) => prevRotation - 0.1); // Decrease X rotation
       }
     };
 
@@ -72,8 +93,9 @@ export const AddPanel = ({ position, isPlaced, isCancelled }) => {
     // Panelin dönüşünü güncelle
     if (modelRef.current) {
       modelRef.current.rotation.y = rotation;
+      modelRef.current.rotation.x = rotationX; // Y ekseninde dönüşü güncelle
     }
-  }, [rotation]);
+  }, [rotation, rotationX]);
 
   // Panelin UI'dan kaldırılması
   return null;

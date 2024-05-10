@@ -3,19 +3,19 @@ import * as THREE from "three";
 import { useThree, useFrame } from "@react-three/fiber";
 import { TextureLoader } from "three";
 import { PlaneGeometry, MeshBasicMaterial, Mesh } from "three";
-
+import { AddPanel } from "../components/AddPanel";
 function createHatchTexture() {
-  const canvas = document.createElement('canvas');
+  const canvas = document.createElement("canvas");
   const size = 128; // Doku boyutu
   canvas.width = size;
   canvas.height = size;
-  
-  const context = canvas.getContext('2d');
-  
+
+  const context = canvas.getContext("2d");
+
   // Arka planı saydam olarak bırak (yani hiçbir şey yapma)
-  
+
   // Çizgileri çiz
-  context.strokeStyle = 'rgba(0, 0, 0, 2)'; // Siyah çizgi rengi, yarı saydam
+  context.strokeStyle = "rgba(0, 0, 0, 2)"; // Siyah çizgi rengi, yarı saydam
   context.lineWidth = 1; // Çizgi kalınlığı daha ince
   const step = 10; // Çizgiler arası mesafe
   for (let i = 0; i < size; i += step) {
@@ -23,13 +23,13 @@ function createHatchTexture() {
     context.moveTo(i, 0);
     context.lineTo(i, size);
     context.stroke();
-    
+
     // Diagonal çizgiler ekleyerek taralı görünümü zenginleştirebiliriz
     context.moveTo(0, i);
     context.lineTo(size, i);
     context.stroke();
   }
-  
+
   // Canvas'tan bir doku oluştur
   return new THREE.CanvasTexture(canvas);
 }
@@ -47,12 +47,14 @@ export const Experience = ({
   selectionEnd,
   setSelectionStart,
   setSelectionEnd,
+  batchAddPanelMode,
+  gridPositions,
 }) => {
   const [roofTexture, setRoofTexture] = useState(null);
   const planeRef = useRef();
   const selectionMeshRef = useRef();
   const { camera, gl, scene } = useThree();
-  
+
   const isDragging = useRef(false);
   const selectionBorderRef = useRef(); // Seçim sınırı için referans
   const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
@@ -83,13 +85,53 @@ export const Experience = ({
       window.removeEventListener("mousemove", handleMouseMove);
     };
   }, [addPanelMode, camera, setPanelPosition, gl.domElement]);
-
+  const image = "/216o.png";
+  const masked = "/216.png";
   useEffect(() => {
     const loader = new THREE.TextureLoader();
-    loader.load(roofImage, (texture) => {
-      setRoofTexture(texture);
+    loader.load(image, (texture) => {
+      loader.load(masked, (maskTexture) => {
+        const processImage = () => {
+          const maskCanvas = document.createElement('canvas');
+          maskCanvas.width = maskTexture.image.width;
+          maskCanvas.height = maskTexture.image.height;
+          const maskCtx = maskCanvas.getContext('2d');
+          maskCtx.drawImage(maskTexture.image, 0, 0);
+          const maskData = maskCtx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+          const canvas = document.createElement('canvas');
+          canvas.width = texture.image.width;
+          canvas.height = texture.image.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(texture.image, 0, 0);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          const maskDataPixels = maskData.data;
+  
+          for (let i = 0; i < data.length; i += 4) {
+            // RGB değerlerinin her birinin 8'den düşük olup olmadığını kontrol et
+            if (maskDataPixels[i] < 8 && maskDataPixels[i + 1] < 8 && maskDataPixels[i + 2] < 8) {
+              // Eğer doğru ise, orijinal resimdeki bu pikseli kırmızı yap
+              data[i] = 255;     // Kırmızı
+              data[i + 1] = 0;   // Yeşil
+              data[i + 2] = 0;   // Mavi
+            }
+          }
+  
+          ctx.putImageData(imageData, 0, 0);
+          const finalTexture = new THREE.CanvasTexture(canvas);
+          setRoofTexture(finalTexture);
+        };
+  
+        if (maskTexture.image.complete) {
+          processImage();
+        } else {
+          maskTexture.image.onload = processImage;
+        }
+      });
     });
-  }, [roofImage]);
+  }, []);
+  
+  
 
   useEffect(() => {
     const handleClick = (event) => {
@@ -136,7 +178,6 @@ export const Experience = ({
     };
 
     const handleMouseUp = (event) => {
-
       isDragging.current = false;
 
       if (!isSelecting || !selectionStart) return;
@@ -199,6 +240,18 @@ export const Experience = ({
     mesh.scale.y = Math.abs(selectionEnd.y - selectionStart.y);
   });
 
+  const renderPanelPreviews = () => {
+    if (!batchAddPanelMode || gridPositions.length === 0) return null;
+
+    // return gridPositions.map((position, index) => (
+    //   <AddPanel
+    //     key={index}
+    //     position={position}
+    //     isVisible={true} /* other props */
+    //   />
+    // ));
+  };
+
   useEffect(() => {
     if (!roofSelectionActive) return;
 
@@ -245,11 +298,10 @@ export const Experience = ({
 
   return (
     <>
+      {renderPanelPreviews()}
       {roofTexture && (
-        <mesh ref={planeRef} position={[0, 0, 0]}>
-          <planeGeometry
-            args={[window.innerWidth / 1.5, window.innerHeight, 1, 1]}
-          />
+         <mesh ref={planeRef} position={[0, 0, 0]}>
+          <planeGeometry args={[window.innerWidth / 2, window.innerHeight, 1, 1]} />
           <meshBasicMaterial map={roofTexture} />
         </mesh>
       )}
@@ -278,3 +330,5 @@ export const Experience = ({
     </>
   );
 };
+
+
