@@ -99,35 +99,37 @@ export const AddPanelArea = ({
       mouseDownRef.current = false;
       removeSelectionBox();
 
-      
       if (panelPlaced.length !== 0 && points !== null) {
         let updatedPanels = [...panelPlaced];
-    
-        panelPlaced.forEach(panel => {
+
+        panelPlaced.forEach((panel) => {
           const panelPosition = new THREE.Vector3(
-            panel.position.x, 
-            panel.position.y, 
+            panel.position.x,
+            panel.position.y,
             panel.position.z
           );
-    
+
           if (pointInPolygon(panelPosition, points)) {
             console.log("Removing panel:", panel.uuid);
-            scene.remove(panel);  // Ensure panel is removed from the scene
-            updatedPanels = updatedPanels.filter(p => p !== panel); // Update local array
+            scene.remove(panel); // Ensure panel is removed from the scene
+            updatedPanels = updatedPanels.filter((p) => p !== panel); // Update local array
           }
         });
-    
+
         // Log what's left to re-add to the scene
-        console.log("Panels to re-add:", updatedPanels.map(p => p.uuid));
-    
+        console.log(
+          "Panels to re-add:",
+          updatedPanels.map((p) => p.uuid)
+        );
+
         // Clear and rebuild the modelGroupRef with remaining panels
         scene.remove(modelGroupRef.current);
         modelGroupRef.current = new THREE.Group();
-        updatedPanels.forEach(panel => {
+        updatedPanels.forEach((panel) => {
           modelGroupRef.current.add(panel);
         });
         scene.add(modelGroupRef.current); // Add updated group back to scene
-    
+
         // Update React state
         setPanelPlaced(updatedPanels);
       }
@@ -155,92 +157,70 @@ export const AddPanelArea = ({
   });
 
   const updatePanelLayout = (startPos, currentPos, orientationAngle) => {
-    if (!startPos || !currentPos) return; // Güvenlik kontrolü
-    const gap = 15; // Model arası boşluk
-    const baseModelWidth = 15; // Temel Model genişliği
-    const baseModelHeight = 2; // Temel Model yüksekliği
-
-    // Modelin ölçeklendirilmiş boyutlarını hesapla
-    const scaleX = 2.7; // Yatay ölçeklendirme
-    const scaleY = 8.5; // Dikey ölçeklendirme
+    if (!startPos || !currentPos) return; // Safety check
+  
+    const gap = 3; // Gap between panels
+    const baseModelWidth = 8; // Base model width
+    const baseModelHeight = 6.5; // Base model height
+  
+    // Adjust the model size based on the scale
+    const scaleX = 2; // Horizontal scaling
+    const scaleY = 4; // Vertical scaling
     const modelWidth = baseModelWidth * scaleX;
     const modelHeight = baseModelHeight * scaleY;
-
-    // Model döndürüldüğünde boyutların yönünü değiştir
-    const effectiveModelWidth = Math.PI / 2 ? modelHeight : modelWidth;
-    const effectiveModelHeight = Math.PI / 2 ? modelWidth : modelHeight;
-
-    const paddedModelWidth = effectiveModelWidth + gap;
-    const paddedModelHeight = effectiveModelHeight + gap;
-
+  
+    const paddedModelWidth = modelWidth + gap;
+    const paddedModelHeight = modelHeight + gap;
+  
     const xDistance = Math.abs(currentPos.x - startPos.x);
     const yDistance = Math.abs(currentPos.y - startPos.y);
-
+  
     const numX = Math.floor(xDistance / paddedModelWidth);
     const numY = Math.floor(yDistance / paddedModelHeight);
-
-    const minX = Math.min(startPos.x, currentPos.x);
-    const minY = Math.min(startPos.y, currentPos.y);
-
+  
+    // Determine the center of the selection box
+    const centerX = (startPos.x + currentPos.x) / 2;
+    const centerY = (startPos.y + currentPos.y) / 2;
+    const selectionCenter = new THREE.Vector3(centerX, centerY, 0);
+  
     scene.remove(modelGroupRef.current);
     modelGroupRef.current = new THREE.Group();
     loadOriginalModel((originalModel) => {
       const placedPanels = [];
       const rotationMatrix = new THREE.Matrix4().makeRotationZ(rotationAngle);
-
+  
       for (let i = 0; i < numX; i++) {
         for (let j = 0; j < numY; j++) {
+          const offsetX = (i - numX / 2) * paddedModelWidth;
+          const offsetY = (j - numY / 2) * paddedModelHeight;
+          const panelPosition = new THREE.Vector3(offsetX, offsetY, 12).applyMatrix4(rotationMatrix).add(selectionCenter);
+  
           const modelClone = originalModel.clone();
-          modelClone.scale.set(scaleX, scaleY, 4); // Model ölçeklendirme uygula
-          modelClone.rotation.x = orientationAngle; // Modeli yatay çevir
-          modelClone.rotation.y = rotationAngle; // Selection box'ın açısına göre döndür
-
-          if (orientationAngle == null) {
-            modelClone.rotation.x = Math.PI / 2;
-          }
-
-          const positionX = minX + i * paddedModelWidth;
-          const positionY = minY + j * paddedModelHeight;
-
+          modelClone.scale.set(scaleX, scaleY, 2);
+          modelClone.rotation.x = orientationAngle ?? Math.PI / 2; // Ensure correct orientation
+          modelClone.rotation.y = rotationAngle;
+          // Calculate panel corners relative to the rotated center
           const corners = [
-            new THREE.Vector3(positionX, positionY, 0),
-            new THREE.Vector3(positionX + effectiveModelWidth, positionY, 0),
-            new THREE.Vector3(positionX, positionY + effectiveModelHeight, 0),
-            new THREE.Vector3(
-              positionX + effectiveModelWidth,
-              positionY + effectiveModelHeight,
-              0
-            ),
-          ];
-
-          // const panelPosition = new THREE.Vector3(positionX + effectiveModelWidth / 2, positionY + effectiveModelHeight / 2, 0);
-          // // Check if the panel is within any obstacle area
-          // if (
-          //   points &&
-          //   points.some((point) => !pointInPolygon(panelPosition, point))
-          // ) {
-          //   continue; // Skip adding this panel if it's within an obstacle
-          // }
-
-          const allCornersInside = corners.every((corner) =>
-            pointInPolygon(corner, selectedRoofPoints)
-          );
-          if (allCornersInside) {
-            modelClone.position.set(
-              positionX + effectiveModelWidth / 2,
-              positionY + effectiveModelHeight / 2,
-              0
-            );
+            new THREE.Vector3(-modelWidth / 2, -modelHeight / 2, 0),
+            new THREE.Vector3(modelWidth / 2, -modelHeight / 2, 0),
+            new THREE.Vector3(modelWidth / 2, modelHeight / 2, 0),
+            new THREE.Vector3(-modelWidth / 2, modelHeight / 2, 0)
+          ].map((corner) => corner.applyMatrix4(rotationMatrix).add(panelPosition));
+  
+          // Check if all corners remain within the selected roof points
+          if (corners.every((corner) => pointInPolygon(corner, selectedRoofPoints))) {
+            modelClone.position.copy(panelPosition);
             placedPanels.push(modelClone);
           }
         }
       }
+  
       setPanelPlaced(placedPanels);
-
       placedPanels.forEach((panel) => modelGroupRef.current.add(panel));
       scene.add(modelGroupRef.current);
     });
   };
+  
 
   const updateSelectionBox = (startPos, currentPos) => {
     if (!selectionBoxRef.current) {
@@ -256,20 +236,28 @@ export const AddPanelArea = ({
     const maxX = Math.max(startPos.x, currentPos.x);
     const minY = Math.min(startPos.y, currentPos.y);
     const maxY = Math.max(startPos.y, currentPos.y);
-    const vertices = [
-      minX,
-      minY,
-      0, // Vertex 1
-      maxX,
-      minY,
-      0, // Vertex 2
-      maxX,
-      maxY,
-      0, // Vertex 3
-      minX,
-      maxY,
-      0, // Vertex 4
-    ];
+
+    // Calculate center point of the selection box
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+
+    // Apply rotation around the center point
+    const rotatedVertices = [
+      new THREE.Vector3(minX, minY, 0),
+      new THREE.Vector3(maxX, minY, 0),
+      new THREE.Vector3(maxX, maxY, 0),
+      new THREE.Vector3(minX, maxY, 0),
+    ].map((vertex) => {
+      const vec = vertex.clone().sub(new THREE.Vector3(centerX, centerY, 0));
+      vec.applyAxisAngle(new THREE.Vector3(0, 0, 1), rotationAngle); // Rotate around Z-axis
+      return vec.add(new THREE.Vector3(centerX, centerY, 0));
+    });
+
+    const vertices = [];
+    rotatedVertices.forEach((vertex) => {
+      vertices.push(vertex.x, vertex.y, vertex.z);
+    });
+
     positions.array.set(vertices);
     positions.needsUpdate = true;
   };

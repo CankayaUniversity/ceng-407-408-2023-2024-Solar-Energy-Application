@@ -16,7 +16,7 @@ function CameraControlled() {
   useEffect(() => {
     const initialDistance = 500;
     const maxDistance = 1000;
-    const minDistance = 400;
+    const minDistance = 200;
 
     const updateCameraPosition = () => {
       if (camera.position.z > maxDistance) {
