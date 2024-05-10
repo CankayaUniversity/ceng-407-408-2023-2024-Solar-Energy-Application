@@ -7,13 +7,16 @@ import roofImage from "../../assets/images/roof.jpg";
 import { Vector3 } from "three";
 import * as THREE from "three";
 import { Button, Stack, Box } from "@mui/material";
+import { useMemo } from "react";
+import { AddPanelArea } from "../../components/AddPanelArea";
+import { loadOriginalModel } from "../../components/LoadOriginalModel";
 
 function CameraControlled() {
   const { camera } = useThree();
   useEffect(() => {
     const initialDistance = 500;
     const maxDistance = 1000;
-    const minDistance = 650;
+    const minDistance = 400;
 
     const updateCameraPosition = () => {
       if (camera.position.z > maxDistance) {
@@ -40,7 +43,7 @@ function CameraControlled() {
   return null;
 }
 
-function pointInPolygon(point, polygon) {
+export function pointInPolygon(point, polygon) {
   // Bu fonksiyon, verilen bir noktanın (point) verilen bir poligon (polygon) içerisinde olup olmadığını kontrol eder.
   // Burada basit bir algoritma kullanılmıştır, daha karmaşık geometriler için daha gelişmiş yöntemler gerekebilir.
 
@@ -59,6 +62,13 @@ function pointInPolygon(point, polygon) {
   return isInside;
 }
 
+/**
+ * Represents the SimulationTest component.
+ *
+ * @param {Object} props - The component props.
+ * @param {string} props.screenshot - The screenshot to be displayed.
+ * @returns {JSX.Element} The SimulationTest component.
+ */
 function SimulationTest({ screenshot }) {
   const [isSelecting, setIsSelecting] = useState(false);
   const [showModelPreview, setShowModelPreview] = useState(false);
@@ -70,9 +80,26 @@ function SimulationTest({ screenshot }) {
   const [selectedRoofPoints, setSelectedRoofPoints] = useState([]);
   const [selectionStart, setSelectionStart] = useState(null);
   const [selectionEnd, setSelectionEnd] = useState(null);
+  const [isPanelPlaced, setIsPanelPlaced] = useState(false); // New state variable
+  const [batchAddPanelMode, setBatchAddPanelMode] = useState(false);
+  const [orientationMode, setOrientationMode] = useState(false);
+  const [orientationAngle, setOrientationAngle] = useState(90);
+  const [obstaclesPoints, setObstaclesPoints] = useState(null);
 
+  const handleOrientationToggle = () => {
+    setOrientationMode(!orientationMode);
+  };
+  const handleOrientationChange = (event) => {
+    setOrientationAngle(Number(event.target.value)); // Derece cinsinden değeri doğrudan güncelle
+  };
   // Güneş paneli ekleme modunu ve önizlemeyi kontrol edecek fonksiyonlar
   const toggleAddPanelMode = () => setAddPanelMode(!addPanelMode);
+
+  useEffect(() => {
+    loadOriginalModel((originalModel) => {
+      const modelClone = originalModel.clone();
+    });
+  }, []);
 
   const toggleRoofSelection = () =>
     setRoofSelectionActive(!roofSelectionActive);
@@ -83,9 +110,41 @@ function SimulationTest({ screenshot }) {
   };
 
   const handleAddPanelClick = () => {
-    setIsCancelled(false);
+    setIsCancelled(!isCancelled);
+    console.log("burada da olabilirim");
     setShowModelPreview(!showModelPreview);
-    setAddPanelMode(!addPanelMode); // Panel ekleme modunu değiştir
+    setAddPanelMode(!addPanelMode);
+    setIsPanelPlaced(!isPanelPlaced); // Set to false when entering add panel mode
+  };
+
+  // Assuming each panel is 1x1 in size for demonstration purposes
+  const panelSize = { width: 1, height: 1 }; // Update this with actual panel size
+
+  const calculateGridPositions = (selectedRoofPoints, panelSize) => {
+    // Calculate the bounding box of the selected roof area
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+    selectedRoofPoints.forEach((point) => {
+      if (point.x < minX) minX = point.x;
+      if (point.y < minY) minY = point.y;
+      if (point.x > maxX) maxX = point.x;
+      if (point.y > maxY) maxY = point.y;
+    });
+
+    // Calculate positions in a grid within the bounding box
+    const positions = [];
+    for (let x = minX; x <= maxX; x += panelSize.width) {
+      for (let y = minY; y <= maxY; y += panelSize.height) {
+        positions.push(new THREE.Vector3(x, y, 0)); // Z-coordinate can be adjusted as needed
+      }
+    }
+
+    // Filter positions that are actually within the selected area
+    return positions.filter((position) =>
+      pointInPolygon(position, selectedRoofPoints)
+    );
   };
 
   // const placePanel = (position) => {
@@ -98,15 +157,43 @@ function SimulationTest({ screenshot }) {
   //   setAddPanelMode(false); // Panel yerleştirildikten sonra modu kapat
   // };
 
+  // Calculate positions whenever the selection changes or when batch mode is toggled
+  const gridPositions = useMemo(() => {
+    if (batchAddPanelMode) {
+      return calculateGridPositions(selectedRoofPoints, panelSize);
+    }
+    return [];
+  }, [batchAddPanelMode, selectedRoofPoints]);
+
+  const obstacleCalculate = () => {
+    if (selectionStart != null && selectionEnd != null) {
+      let topRight = { x: selectionEnd.x, y: selectionStart.y, z: 0 };
+      let bottomLeft = { x: selectionStart.x, y: selectionEnd.y, z: 0 };
+      let points = [selectionStart, topRight, selectionEnd, bottomLeft];
+      setObstaclesPoints(points);
+      console.log("poinyssssss", points)
+    }
+    console.log("obstaclepoint", obstaclesPoints)
+  }
+
   const placePanel = (position) => {
     if (selectionStart != null && selectionEnd != null) {
       let topRight = { x: selectionEnd.x, y: selectionStart.y, z: 0 };
       let bottomLeft = { x: selectionStart.x, y: selectionEnd.y, z: 0 };
       let points = [selectionStart, topRight, selectionEnd, bottomLeft];
+      setObstaclesPoints(points);
+      console.log("points", obstaclesPoints)
       if (pointInPolygon(position, points)) {
         console.warn("Panel can not placed on obstacles.");
         return; // Seçilen alanın dışındaysa, işlemi durdur
       }
+      if (!isCancelled) {
+        setPanels([...panels, position]);
+        setIsCancelled(false);
+        console.log("yada buradayım");
+        setIsPanelPlaced(true); // Set to true after placing the panel
+      }
+      setAddPanelMode(false);
     }
 
     if (!pointInPolygon(position, selectedRoofPoints)) {
@@ -114,13 +201,40 @@ function SimulationTest({ screenshot }) {
       return; // Seçilen alanın dışındaysa, işlemi durdur
     }
 
-    if (!isCancelled) {
-      setPanels([...panels, position]);
-      setIsCancelled(false);
+    if (batchAddPanelMode) {
+      console.log("batchaddpanelmoddayım bro");
+      // Use the calculateGridPositions function to get all the positions where panels should be placed
+      const gridPositions = calculateGridPositions(
+        selectedRoofPoints,
+        panelSize
+      );
+      setPanels([...panels, ...gridPositions]);
+      setBatchAddPanelMode(false);
+    } else {
+      console.log("addpanel placedeyim");
+      if (!isCancelled) {
+        setPanels([...panels, position]);
+        setIsCancelled(false);
+        console.log("buradayım");
+      }
+      setAddPanelMode(false); // Panel yerleştirildikten sonra modu kapat
     }
-    setAddPanelMode(false); // Panel yerleştirildikten sonra modu kapat
   };
 
+  useEffect(() => {
+    if (selectionStart != null && selectionEnd != null) {
+      let topRight = { x: selectionEnd.x, y: selectionStart.y, z: 0 };
+      let bottomLeft = { x: selectionStart.x, y: selectionEnd.y, z: 0 };
+      let points = [selectionStart, topRight, selectionEnd, bottomLeft];
+      setObstaclesPoints(points);
+      console.log("poinyssssss", points)
+      console.log("obstaclepoints: ", obstaclesPoints)
+    }
+  }, [selectionStart, selectionEnd])
+
+  useEffect(() => {
+    console.log("güncellendi", isCancelled);
+  }, [isCancelled]);
   const handleCancel = () => {
     if (addPanelMode) {
       setIsCancelled(true); // İptal işlemi gerçekleşti
@@ -132,7 +246,14 @@ function SimulationTest({ screenshot }) {
 
   return (
     <>
-      <Box sx={{  overflowX: 'hidden' ,position: "relative", width: "100vw", height: "100vh" }} >
+      <Box
+        sx={{
+          overflowX: "hidden",
+          position: "relative",
+          width: "100vw",
+          height: "100vh",
+        }}
+      >
         <Stack
           direction="row"
           spacing={2}
@@ -154,7 +275,7 @@ function SimulationTest({ screenshot }) {
             onClick={handleAddPanelClick}
             sx={{ alignSelf: "flex-end" }}
           >
-            Add Solar Panel
+            {addPanelMode && !isCancelled ? "Cancel" : "Add Solar Panel"}
           </Button>
           <Button
             variant="contained"
@@ -163,6 +284,31 @@ function SimulationTest({ screenshot }) {
           >
             Cancel
           </Button>
+          <Button
+            variant="contained"
+            onClick={() => setBatchAddPanelMode(!batchAddPanelMode)}
+          >
+            {batchAddPanelMode ? "Finish Batch Add" : "Batch Add Panels"}
+          </Button>
+          <Button variant="contained" onClick={handleOrientationToggle}>
+            {orientationMode ? "Set Orientation" : "Adjust Orientation"}
+          </Button>
+          {orientationMode && (
+            <input
+              type="number"
+              value={orientationAngle}
+              onChange={handleOrientationChange}
+              min="0" // Minimum değer
+              max="180" // Maksimum değer
+              step="1" // Her adımda değişim miktarı
+              style={{
+                position: "absolute",
+                zIndex: 100,
+                top: "50px",
+                left: "10px",
+              }}
+            />
+          )}
         </Stack>
 
         <Canvas
@@ -175,8 +321,7 @@ function SimulationTest({ screenshot }) {
             color: "red",
           }}
         >
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[0, 0, 1]} intensity={1} />
+          <ambientLight intensity={1} />
           <CameraControlled />
           <Experience
             roofImage={screenshot}
@@ -191,9 +336,19 @@ function SimulationTest({ screenshot }) {
             setSelectionStart={setSelectionStart}
             selectionEnd={selectionEnd}
             setSelectionEnd={setSelectionEnd}
+            batchAddPanelMode={batchAddPanelMode}
+            gridPositions={gridPositions} // Pass the calculated positions
           />
+          {batchAddPanelMode &&(
+            <AddPanelArea
+              selectedRoofPoints={selectedRoofPoints}
+              orientationAngle={(orientationAngle * Math.PI) / 180}
+              points={obstaclesPoints}
+            />
+          )}
           {addPanelMode && (
             <AddPanel
+              isCancelled={isCancelled}
               position={panelPosition}
               isVisible={addPanelMode} // Yeni isVisible prop'u
             />
