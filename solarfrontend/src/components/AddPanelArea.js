@@ -23,6 +23,7 @@ export const AddPanelArea = ({ selectedRoofPoints, orientationAngle }) => {
 
   useEffect(() => {
     if (startPosition && currentPosition) {
+      console.log("useeffect içi orientationAngle: ", orientationAngle);
       updatePanelLayout(startPosition, currentPosition, orientationAngle);
     }
   }, [rotationAngle, orientationAngle]); // Listen to orientationAngle changes
@@ -46,9 +47,10 @@ export const AddPanelArea = ({ selectedRoofPoints, orientationAngle }) => {
 
   useEffect(() => {
     if (startPosition && currentPosition) {
-      updatePanelLayout(startPosition, currentPosition);
+      console.log("ilk çalışmada orientationAngle: ", orientationAngle);
+      updatePanelLayout(startPosition, currentPosition, orientationAngle);
     }
-  }, [startPosition, currentPosition, rotationAngle]);
+  }, [startPosition, currentPosition, rotationAngle, orientationAngle]);
 
   const getWorldPosition = (event) => {
     const { offsetX, offsetY } = event;
@@ -153,6 +155,10 @@ export const AddPanelArea = ({ selectedRoofPoints, orientationAngle }) => {
           modelClone.scale.set(scaleX, scaleY, 4); // Model ölçeklendirme uygula
           modelClone.rotation.x = orientationAngle; // Modeli yatay çevir
           modelClone.rotation.y = rotationAngle; // Selection box'ın açısına göre döndür
+
+          if(orientationAngle == null){
+            modelClone.rotation.x =  Math.PI/2;
+          }
 
           const positionX = minX + i * paddedModelWidth;
           const positionY = minY + j * paddedModelHeight;
