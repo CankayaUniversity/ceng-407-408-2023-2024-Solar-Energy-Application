@@ -10,6 +10,7 @@ import Content from './pages/dashboard/Content';
 import AddCustomer from './pages/homepage/AddCustomer';
 import AddProject from './pages/dashboard/AddProject';
 import SimulationTest from "./pages/homepage/SimulationTest";
+import WelcomeScreen from './pages/welcome/WelcomeScreen';
 
 // Giriş yapılmış mı kontrol eden fonksiyon
 const isAuthenticated = () => {
@@ -30,7 +31,9 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Blog />} />
+        <Route path="/" element={<WelcomeScreen />} />
+        <Route path='/blog' element={<Blog />}/>
+        <Route path="/welcome" element={<WelcomeScreen />}/>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/sign-up" element={<RegisterPage />} />
         <Route path="/paperbase" element={
