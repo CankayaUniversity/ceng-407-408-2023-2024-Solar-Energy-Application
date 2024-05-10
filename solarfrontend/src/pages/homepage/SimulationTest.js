@@ -84,6 +84,7 @@ function SimulationTest({ screenshot }) {
   const [batchAddPanelMode, setBatchAddPanelMode] = useState(false);
   const [orientationMode, setOrientationMode] = useState(false);
   const [orientationAngle, setOrientationAngle] = useState(90);
+  const [obstaclesPoints, setObstaclesPoints] = useState(null);
 
   const handleOrientationToggle = () => {
     setOrientationMode(!orientationMode);
@@ -164,11 +165,24 @@ function SimulationTest({ screenshot }) {
     return [];
   }, [batchAddPanelMode, selectedRoofPoints]);
 
+  const obstacleCalculate = () => {
+    if (selectionStart != null && selectionEnd != null) {
+      let topRight = { x: selectionEnd.x, y: selectionStart.y, z: 0 };
+      let bottomLeft = { x: selectionStart.x, y: selectionEnd.y, z: 0 };
+      let points = [selectionStart, topRight, selectionEnd, bottomLeft];
+      setObstaclesPoints(points);
+      console.log("poinyssssss", points)
+    }
+    console.log("obstaclepoint", obstaclesPoints)
+  }
+
   const placePanel = (position) => {
     if (selectionStart != null && selectionEnd != null) {
       let topRight = { x: selectionEnd.x, y: selectionStart.y, z: 0 };
       let bottomLeft = { x: selectionStart.x, y: selectionEnd.y, z: 0 };
       let points = [selectionStart, topRight, selectionEnd, bottomLeft];
+      setObstaclesPoints(points);
+      console.log("points", obstaclesPoints)
       if (pointInPolygon(position, points)) {
         console.warn("Panel can not placed on obstacles.");
         return; // Seçilen alanın dışındaysa, işlemi durdur
@@ -206,6 +220,17 @@ function SimulationTest({ screenshot }) {
       setAddPanelMode(false); // Panel yerleştirildikten sonra modu kapat
     }
   };
+
+  useEffect(() => {
+    if (selectionStart != null && selectionEnd != null) {
+      let topRight = { x: selectionEnd.x, y: selectionStart.y, z: 0 };
+      let bottomLeft = { x: selectionStart.x, y: selectionEnd.y, z: 0 };
+      let points = [selectionStart, topRight, selectionEnd, bottomLeft];
+      setObstaclesPoints(points);
+      console.log("poinyssssss", points)
+      console.log("obstaclepoints: ", obstaclesPoints)
+    }
+  }, [selectionStart, selectionEnd])
 
   useEffect(() => {
     console.log("güncellendi", isCancelled);
@@ -314,10 +339,11 @@ function SimulationTest({ screenshot }) {
             batchAddPanelMode={batchAddPanelMode}
             gridPositions={gridPositions} // Pass the calculated positions
           />
-          {batchAddPanelMode && (
+          {batchAddPanelMode &&(
             <AddPanelArea
               selectedRoofPoints={selectedRoofPoints}
               orientationAngle={(orientationAngle * Math.PI) / 180}
+              points={obstaclesPoints}
             />
           )}
           {addPanelMode && (

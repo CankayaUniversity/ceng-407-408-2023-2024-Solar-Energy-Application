@@ -21,6 +21,7 @@ export const AddPanel = ({ position, isPlaced, isCancelled }) => {
   const { scene } = useThree();
   const [rotation, setRotation] = useState(0); // Başlangıç dönüş açısı 0 derece. Panelin dönmesi için gerekli
   const light = new THREE.AmbientLight(undefined, 0.5); // soft white light with 0.5 intensity
+  const [rotationX, setRotationX] = useState(0);
 
   useEffect(() => {}, [scene]);
 
@@ -74,6 +75,10 @@ export const AddPanel = ({ position, isPlaced, isCancelled }) => {
       // `-` tuşuna basıldığında dönüş açısını azalt
       else if (event.key === "-" || event.key === "NumpadSubtract") {
         setRotation((prevRotation) => prevRotation - 0.1); // Açıyı azalt
+      } else if (event.key === "ArrowUp") {
+        setRotationX((prevRotation) => prevRotation + 0.1); // Increase X rotation
+      } else if (event.key === "ArrowDown") {
+        setRotationX((prevRotation) => prevRotation - 0.1); // Decrease X rotation
       }
     };
 
@@ -86,9 +91,10 @@ export const AddPanel = ({ position, isPlaced, isCancelled }) => {
 
   useEffect(() => {
     if (modelRef.current) {
-      modelRef.current.rotation.y = rotation; // Y ekseninde dönüşü güncelle
+      modelRef.current.rotation.y = rotation;
+      modelRef.current.rotation.x = rotationX; // Y ekseninde dönüşü güncelle
     }
-  }, [rotation]);
+  }, [rotation, rotationX]);
 
   return null;
 };

@@ -4,7 +4,11 @@ import { loadOriginalModel } from "./LoadOriginalModel"; // Adjust path as neces
 import * as THREE from "three";
 import { pointInPolygon } from "../pages/homepage/SimulationTest";
 
-export const AddPanelArea = ({ selectedRoofPoints, orientationAngle }) => {
+export const AddPanelArea = ({
+  selectedRoofPoints,
+  orientationAngle,
+  points,
+}) => {
   const [startPosition, setStartPosition] = useState(null);
   const [currentPosition, setCurrentPosition] = useState(null);
   const { scene, camera, gl, size } = useThree();
@@ -12,6 +16,8 @@ export const AddPanelArea = ({ selectedRoofPoints, orientationAngle }) => {
   const mouseDownRef = useRef(false);
   const selectionBoxRef = useRef(null);
   const [rotationAngle, setRotationAngle] = useState(0); // Açıyı radian olarak saklayacağız.
+  const [panelPlaced, setPanelPlaced] = useState([]);
+  const panelsToRemove = [];
 
   const rotatePanelsRight = () => {
     setRotationAngle((prev) => prev + 0.01); // 90 derece sağa dön
@@ -23,7 +29,6 @@ export const AddPanelArea = ({ selectedRoofPoints, orientationAngle }) => {
 
   useEffect(() => {
     if (startPosition && currentPosition) {
-      console.log("useeffect içi orientationAngle: ", orientationAngle);
       updatePanelLayout(startPosition, currentPosition, orientationAngle);
     }
   }, [rotationAngle, orientationAngle]); // Listen to orientationAngle changes
@@ -47,7 +52,6 @@ export const AddPanelArea = ({ selectedRoofPoints, orientationAngle }) => {
 
   useEffect(() => {
     if (startPosition && currentPosition) {
-      console.log("ilk çalışmada orientationAngle: ", orientationAngle);
       updatePanelLayout(startPosition, currentPosition, orientationAngle);
     }
   }, [startPosition, currentPosition, rotationAngle, orientationAngle]);
@@ -90,10 +94,46 @@ export const AddPanelArea = ({ selectedRoofPoints, orientationAngle }) => {
     };
 
     const handleMouseUp = (event) => {
-      // Sadece canvas üzerinde başlatılan olaylar için işlem yap
+      // Only handle events that started on the canvas
       if (!event.target.closest("canvas")) return;
       mouseDownRef.current = false;
       removeSelectionBox();
+
+      
+      if (panelPlaced.length !== 0 && points !== null) {
+        let updatedPanels = [...panelPlaced];
+    
+        panelPlaced.forEach(panel => {
+          const panelPosition = new THREE.Vector3(
+            panel.position.x, 
+            panel.position.y, 
+            panel.position.z
+          );
+    
+          if (pointInPolygon(panelPosition, points)) {
+            console.log("Removing panel:", panel.uuid);
+            scene.remove(panel);  // Ensure panel is removed from the scene
+            updatedPanels = updatedPanels.filter(p => p !== panel); // Update local array
+          }
+        });
+    
+        // Log what's left to re-add to the scene
+        console.log("Panels to re-add:", updatedPanels.map(p => p.uuid));
+    
+        // Clear and rebuild the modelGroupRef with remaining panels
+        scene.remove(modelGroupRef.current);
+        modelGroupRef.current = new THREE.Group();
+        updatedPanels.forEach(panel => {
+          modelGroupRef.current.add(panel);
+        });
+        scene.add(modelGroupRef.current); // Add updated group back to scene
+    
+        // Update React state
+        setPanelPlaced(updatedPanels);
+      }
+
+      console.log("points addpanelarea", points);
+      // Check if any placed panels are outside the allowed polygon and remove them
     };
 
     window.addEventListener("mousedown", handleMouseDown);
@@ -105,7 +145,7 @@ export const AddPanelArea = ({ selectedRoofPoints, orientationAngle }) => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [camera, size, startPosition]);
+  }, [camera, size, startPosition, panelPlaced]);
 
   useFrame(() => {
     if (mouseDownRef.current && startPosition && currentPosition) {
@@ -116,9 +156,9 @@ export const AddPanelArea = ({ selectedRoofPoints, orientationAngle }) => {
 
   const updatePanelLayout = (startPos, currentPos, orientationAngle) => {
     if (!startPos || !currentPos) return; // Güvenlik kontrolü
-    const gap = 0.8; // Model arası boşluk
-    const baseModelWidth = 9; // Temel Model genişliği
-    const baseModelHeight = 7; // Temel Model yüksekliği
+    const gap = 15; // Model arası boşluk
+    const baseModelWidth = 15; // Temel Model genişliği
+    const baseModelHeight = 2; // Temel Model yüksekliği
 
     // Modelin ölçeklendirilmiş boyutlarını hesapla
     const scaleX = 2.7; // Yatay ölçeklendirme
@@ -144,7 +184,6 @@ export const AddPanelArea = ({ selectedRoofPoints, orientationAngle }) => {
 
     scene.remove(modelGroupRef.current);
     modelGroupRef.current = new THREE.Group();
-
     loadOriginalModel((originalModel) => {
       const placedPanels = [];
       const rotationMatrix = new THREE.Matrix4().makeRotationZ(rotationAngle);
@@ -156,8 +195,8 @@ export const AddPanelArea = ({ selectedRoofPoints, orientationAngle }) => {
           modelClone.rotation.x = orientationAngle; // Modeli yatay çevir
           modelClone.rotation.y = rotationAngle; // Selection box'ın açısına göre döndür
 
-          if(orientationAngle == null){
-            modelClone.rotation.x =  Math.PI/2;
+          if (orientationAngle == null) {
+            modelClone.rotation.x = Math.PI / 2;
           }
 
           const positionX = minX + i * paddedModelWidth;
@@ -174,10 +213,18 @@ export const AddPanelArea = ({ selectedRoofPoints, orientationAngle }) => {
             ),
           ];
 
+          // const panelPosition = new THREE.Vector3(positionX + effectiveModelWidth / 2, positionY + effectiveModelHeight / 2, 0);
+          // // Check if the panel is within any obstacle area
+          // if (
+          //   points &&
+          //   points.some((point) => !pointInPolygon(panelPosition, point))
+          // ) {
+          //   continue; // Skip adding this panel if it's within an obstacle
+          // }
+
           const allCornersInside = corners.every((corner) =>
             pointInPolygon(corner, selectedRoofPoints)
           );
-
           if (allCornersInside) {
             modelClone.position.set(
               positionX + effectiveModelWidth / 2,
@@ -188,6 +235,7 @@ export const AddPanelArea = ({ selectedRoofPoints, orientationAngle }) => {
           }
         }
       }
+      setPanelPlaced(placedPanels);
 
       placedPanels.forEach((panel) => modelGroupRef.current.add(panel));
       scene.add(modelGroupRef.current);
