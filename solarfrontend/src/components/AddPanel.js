@@ -21,7 +21,7 @@ export const AddPanel = ({ position, isPlaced, isCancelled }) => {
   const { scene } = useThree();
   const [rotation, setRotation] = useState(0); // Başlangıç dönüş açısı 0 derece. Panelin dönmesi için gerekli
   const light = new THREE.AmbientLight(undefined, 0.5); // soft white light with 0.5 intensity
-  const [rotationX, setRotationX] = useState(0);
+  const [rotationX, setRotationX] = useState(Math.PI / 2);
 
   useEffect(() => {}, [scene]);
 

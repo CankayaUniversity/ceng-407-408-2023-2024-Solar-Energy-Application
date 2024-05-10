@@ -16,7 +16,7 @@ function CameraControlled() {
   useEffect(() => {
     const initialDistance = 500;
     const maxDistance = 1000;
-    const minDistance = 200;
+    const minDistance = 400;
 
     const updateCameraPosition = () => {
       if (camera.position.z > maxDistance) {
@@ -299,7 +299,7 @@ function SimulationTest({ screenshot }) {
               value={orientationAngle}
               onChange={handleOrientationChange}
               min="0" // Minimum değer
-              max="360" // Maksimum değer
+              max="180" // Maksimum değer
               step="1" // Her adımda değişim miktarı
               style={{
                 position: "absolute",

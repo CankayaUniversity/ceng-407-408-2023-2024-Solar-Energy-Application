@@ -18,6 +18,7 @@ export const AddPanelArea = ({
   const [rotationAngle, setRotationAngle] = useState(0); // Açıyı radian olarak saklayacağız.
   const [panelPlaced, setPanelPlaced] = useState([]);
   const panelsToRemove = [];
+const [validPanels, setValidPanels] = useState([]); // Engellerden kaçınan geçerli paneller
 
   const rotatePanelsRight = () => {
     setRotationAngle((prev) => prev + 0.01); // 90 derece sağa dön
@@ -212,6 +213,7 @@ export const AddPanelArea = ({
             modelClone.position.copy(panelPosition);
             placedPanels.push(modelClone);
           }
+          
         }
       }
   
