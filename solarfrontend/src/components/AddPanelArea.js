@@ -165,8 +165,8 @@ const [validPanels, setValidPanels] = useState([]); // Engellerden kaçınan ge�
     const baseModelHeight = 6.5; // Base model height
   
     // Adjust the model size based on the scale
-    const scaleX = 2; // Horizontal scaling
-    const scaleY = 4; // Vertical scaling
+    const scaleX = 1.7; // Horizontal scaling
+    const scaleY = 3.4; // Vertical scaling
     const modelWidth = baseModelWidth * scaleX;
     const modelHeight = baseModelHeight * scaleY;
   
@@ -197,7 +197,7 @@ const [validPanels, setValidPanels] = useState([]); // Engellerden kaçınan ge�
           const panelPosition = new THREE.Vector3(offsetX, offsetY, 12).applyMatrix4(rotationMatrix).add(selectionCenter);
   
           const modelClone = originalModel.clone();
-          modelClone.scale.set(scaleX, scaleY, 2);
+          modelClone.scale.set(scaleX, scaleY, 1.7);
           modelClone.rotation.x = orientationAngle ?? Math.PI / 2; // Ensure correct orientation
           modelClone.rotation.y = rotationAngle;
           // Calculate panel corners relative to the rotated center
