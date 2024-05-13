@@ -14,6 +14,8 @@ import { loadOriginalModel } from "../../components/LoadOriginalModel";
 function CameraControlled() {
   const { camera } = useThree();
 
+  
+
   useEffect(() => {
     const initialDistance = 600;
     const maxDistance = 600;
@@ -381,14 +383,19 @@ function SimulationTest({ screenshot }) {
         </Grid>
         <Stack>
           <Canvas
-            style={{
-              width: "55vw",
-              height: "80vh",
-              border: "2px solid #000",
-            }}
-          >
-            <ambientLight intensity={1} />
-            <CameraControlled />
+          gl={{ antialias: true }}
+          shadows
+          dpr={[1, 2]}
+          camera={{ fov: 75 }}
+          style={{
+            width: "55vw",
+            height: "80vh",
+            border: "2px solid #000",
+          }}
+        >
+             <ambientLight intensity={1} />
+          <OrbitControls enableZoom={true} enablePan={true} enableRotate={false} />
+          <CameraControlled />
             <Experience
               roofImage={screenshot}
               isSelecting={isSelecting}

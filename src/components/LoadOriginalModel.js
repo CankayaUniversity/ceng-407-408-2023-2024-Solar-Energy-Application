@@ -1,7 +1,7 @@
 // models.js
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
-const modelPath = "z1.glb"; // Modelin yolu
+const modelPath = "s2.glb"; // Modelin yolu
 let originalModel = null; // Orijinal modeli saklamak için
 
 // Modeli yükleme fonksiyonu
