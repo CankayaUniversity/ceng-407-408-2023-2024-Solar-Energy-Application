@@ -44,6 +44,9 @@ export const CUSTOMERS = {
   patchCustomer: async (id, customerData) => {
     return handleRequest(() => api.patch(`/customers/${id}`, customerData));
   },
+  deleteCustomer: async (id) => {
+    return handleRequest(() => api.delete(`/customers/${id}`));
+  },  
 };
 
 export const ADDRESS = {
