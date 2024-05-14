@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
-import { loadOriginalModel } from "./LoadOriginalModel"; // Adjust path as necessary
+import { loadOriginalModel } from "./LoadOriginalModel";
 import * as THREE from "three";
 import { pointInPolygon } from "../pages/homepage/SimulationTest";
 
 export const AddPanelArea = ({
   selectedRoofPoints,
   orientationAngle,
-  rotationAngle, // Use the rotationAngle prop
+  rotationAngle,
   points,
+  occupiedPositions,
+  placedPanelPositionsRef,
 }) => {
   const [startPosition, setStartPosition] = useState(null);
   const [currentPosition, setCurrentPosition] = useState(null);
@@ -16,15 +18,13 @@ export const AddPanelArea = ({
   const modelGroupRef = useRef(new THREE.Group());
   const mouseDownRef = useRef(false);
   const selectionBoxRef = useRef(null);
-  const [panelPlaced, setPanelPlaced] = useState([]);
-  const panelsToRemove = [];
-  const [validPanels, setValidPanels] = useState([]); // Engellerden kaçınan geçerli paneller
+  const [panelPlaced, setPanelPlaced] = useState([]); // Define state
 
   useEffect(() => {
     if (startPosition && currentPosition) {
       updatePanelLayout(startPosition, currentPosition, orientationAngle);
     }
-  }, [rotationAngle, orientationAngle]); // Listen to orientationAngle and rotationAngle changes
+  }, [rotationAngle, orientationAngle]);
 
   useEffect(() => {
     if (startPosition && currentPosition) {
@@ -70,48 +70,9 @@ export const AddPanelArea = ({
     };
 
     const handleMouseUp = (event) => {
-      // Only handle events that started on the canvas
       if (!event.target.closest("canvas")) return;
       mouseDownRef.current = false;
       removeSelectionBox();
-
-      // if (panelPlaced.length !== 0 && points !== null) {
-      //   let updatedPanels = [...panelPlaced];
-
-      //   panelPlaced.forEach((panel) => {
-      //     const panelPosition = new THREE.Vector3(
-      //       panel.position.x,
-      //       panel.position.y,
-      //       panel.position.z
-      //     );
-
-      //     if (pointInPolygon(panelPosition, points)) {
-      //       console.log("Removing panel:", panel.uuid);
-      //       scene.remove(panel); // Ensure panel is removed from the scene
-      //       updatedPanels = updatedPanels.filter((p) => p !== panel); // Update local array
-      //     }
-      //   });
-
-      //   // Log what's left to re-add to the scene
-      //   console.log(
-      //     "Panels to re-add:",
-      //     updatedPanels.map((p) => p.uuid)
-      //   );
-
-      //   // Clear and rebuild the modelGroupRef with remaining panels
-      //   scene.remove(modelGroupRef.current);
-      //   modelGroupRef.current = new THREE.Group();
-      //   updatedPanels.forEach((panel) => {
-      //     modelGroupRef.current.add(panel);
-      //   });
-      //   scene.add(modelGroupRef.current); // Add updated group back to scene
-
-      //   // Update React state
-      //   setPanelPlaced(updatedPanels);
-      // }
-
-      console.log("points addpanelarea", points);
-      // Check if any placed panels are outside the allowed polygon and remove them
     };
 
     window.addEventListener("mousedown", handleMouseDown);
@@ -123,7 +84,7 @@ export const AddPanelArea = ({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [camera, size, startPosition, panelPlaced]);
+  }, [camera, size, startPosition]);
 
   useFrame(() => {
     if (mouseDownRef.current && startPosition && currentPosition) {
@@ -133,15 +94,14 @@ export const AddPanelArea = ({
   });
 
   const updatePanelLayout = (startPos, currentPos, orientationAngle) => {
-    if (!startPos || !currentPos) return; // Safety check
+    if (!startPos || !currentPos) return;
 
-    const gap = 3; // Gap between panels
-    const baseModelWidth = 8; // Base model width
-    const baseModelHeight = 6.5; // Base model height
+    const gap = 3;
+    const baseModelWidth = 8;
+    const baseModelHeight = 6.5;
 
-    // Adjust the model size based on the scale
-    const scaleX = 1.7; // Horizontal scaling
-    const scaleY = 3.4; // Vertical scaling
+    const scaleX = 1.7;
+    const scaleY = 3.4;
     const modelWidth = baseModelWidth * scaleX;
     const modelHeight = baseModelHeight * scaleY;
 
@@ -154,7 +114,6 @@ export const AddPanelArea = ({
     const numX = Math.floor(xDistance / paddedModelWidth);
     const numY = Math.floor(yDistance / paddedModelHeight);
 
-    // Determine the center of the selection box
     const centerX = (startPos.x + currentPos.x) / 2;
     const centerY = (startPos.y + currentPos.y) / 2;
     const selectionCenter = new THREE.Vector3(centerX, centerY, 0);
@@ -175,9 +134,9 @@ export const AddPanelArea = ({
 
           const modelClone = originalModel.clone();
           modelClone.scale.set(scaleX, scaleY, 1.7);
-          modelClone.rotation.x = orientationAngle ?? Math.PI / 2; // Ensure correct orientation
+          modelClone.rotation.x = orientationAngle ?? Math.PI / 2;
           modelClone.rotation.y = rotationAngle;
-          // Calculate panel corners relative to the rotated center
+
           const corners = [
             new THREE.Vector3(-modelWidth / 2, -modelHeight / 2, 0),
             new THREE.Vector3(modelWidth / 2, -modelHeight / 2, 0),
@@ -187,18 +146,30 @@ export const AddPanelArea = ({
             corner.applyMatrix4(rotationMatrix).add(panelPosition)
           );
 
-          // Check if all corners remain within the selected roof points
           if (
             corners.every((corner) =>
               pointInPolygon(corner, selectedRoofPoints)
             )
           ) {
             if (points !== null) {
-              if (corners.every((corner) => !pointInPolygon(corner, points))) {
+              if (
+                corners.every((corner) => !pointInPolygon(corner, points)) &&
+                !occupiedPositions.some(
+                  (occupiedPosition) =>
+                    Math.abs(occupiedPosition.x - panelPosition.x) < 12 &&
+                    Math.abs(occupiedPosition.y - panelPosition.y) < 15
+                )
+              ) {
                 modelClone.position.copy(panelPosition);
                 placedPanels.push(modelClone);
               }
-            } else {
+            } else if (
+              !occupiedPositions.some(
+                (occupiedPosition) =>
+                  Math.abs(occupiedPosition.x - panelPosition.x) < 12 &&
+                  Math.abs(occupiedPosition.y - panelPosition.y) < 15
+              )
+            ) {
               modelClone.position.copy(panelPosition);
               placedPanels.push(modelClone);
             }
@@ -207,6 +178,9 @@ export const AddPanelArea = ({
       }
 
       setPanelPlaced(placedPanels);
+      placedPanelPositionsRef.current = placedPanels.map(
+        (panel) => panel.position
+      );
       placedPanels.forEach((panel) => modelGroupRef.current.add(panel));
       scene.add(modelGroupRef.current);
     });
@@ -227,11 +201,9 @@ export const AddPanelArea = ({
     const minY = Math.min(startPos.y, currentPos.y);
     const maxY = Math.max(startPos.y, currentPos.y);
 
-    // Calculate center point of the selection box
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
 
-    // Apply rotation around the center point
     const rotatedVertices = [
       new THREE.Vector3(minX, minY, 0),
       new THREE.Vector3(maxX, minY, 0),
@@ -239,7 +211,7 @@ export const AddPanelArea = ({
       new THREE.Vector3(minX, maxY, 0),
     ].map((vertex) => {
       const vec = vertex.clone().sub(new THREE.Vector3(centerX, centerY, 0));
-      vec.applyAxisAngle(new THREE.Vector3(0, 0, 1), rotationAngle); // Rotate around Z-axis
+      vec.applyAxisAngle(new THREE.Vector3(0, 0, 1), rotationAngle);
       return vec.add(new THREE.Vector3(centerX, centerY, 0));
     });
 
