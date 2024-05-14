@@ -30,7 +30,7 @@ function CameraControlled() {
   useEffect(() => {
     const initialDistance = 600;
     const maxDistance = 600;
-    const minDistance = 600;
+    const minDistance = 400;
 
     camera.position.z = initialDistance;
 
@@ -248,7 +248,10 @@ function SimulationTest({ screenshot }) {
       );
       setPanels((prev) => [...prev, ...newPanels]);
       setOccupiedPositions((prev) => [...prev, ...newPanels]);
-      placedPanelPositionsRef.current = [...placedPanelPositionsRef.current, ...newPanels]; // Update ref
+      placedPanelPositionsRef.current = [
+        ...placedPanelPositionsRef.current,
+        ...newPanels,
+      ]; // Update ref
       setBatchAddPanelMode(false);
     } else {
       console.log("addpanel placedeyim");
@@ -439,8 +442,18 @@ function SimulationTest({ screenshot }) {
               height: "80vh",
               border: "2px solid #000",
             }}
+            gl={{ antialias: true }}
+            shadows
+            dpr={[1, 2]}
+            camera={{ fov: 75 }}
+           
           >
             <ambientLight intensity={1} />
+            <OrbitControls
+              enableZoom={true}
+              enablePan={true}
+              enableRotate={false}
+            />
             <CameraControlled />
             <Experience
               roofImage={screenshot}
