@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-const Map = ({ address, onCenterChange }) => {
+const Map = ({ address, onCenterChange, onZoomChange }) => {
   const [center, setCenter] = useState(null);
+  const [zoom, setZoom] = useState(20); 
   const mapRef = useRef(null);
   const mapContainerRef = useRef(null);
 
@@ -18,13 +19,20 @@ const Map = ({ address, onCenterChange }) => {
               zoom: 20,
               mapTypeId: window.google.maps.MapTypeId.SATELLITE
             });
-  
+
             onCenterChange({ lat: initialCenter.lat(), lng: initialCenter.lng() });
-  
+            onZoomChange(20); 
+
             mapRef.current.addListener('dragend', () => {
               const newCenter = mapRef.current.getCenter();
               setCenter(newCenter);
               onCenterChange({ lat: newCenter.lat(), lng: newCenter.lng() });
+            });
+
+            mapRef.current.addListener('zoom_changed', () => {
+              const newZoom = mapRef.current.getZoom();
+              setZoom(newZoom);
+              onZoomChange(newZoom);
             });
           }
         } else {
@@ -32,7 +40,7 @@ const Map = ({ address, onCenterChange }) => {
         }
       });
     };
-  
+
     if (window.google && window.google.maps) {
       initMap();
     } else {
@@ -43,8 +51,7 @@ const Map = ({ address, onCenterChange }) => {
       document.head.appendChild(script);
       window.initMap = initMap;
     }
-  }, [address, onCenterChange]);
-  
+  }, [address, onCenterChange, onZoomChange]);
 
   return <div ref={mapContainerRef} style={{ height: "100%", width: "100%" }}></div>;
 };

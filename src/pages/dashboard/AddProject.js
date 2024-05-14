@@ -41,31 +41,16 @@ export default function AddProject() {
   const [value, setValue] = React.useState("1");
   const [mapAddress, setMapAddress] = useState("");
   const [screenshot, setScreenshot] = useState(null);
-  const [selectedLocation, setSelectedLocation] = useState(null);
   const [currentCenter, setCurrentCenter] = useState(null);
-  // const [edgeLengths, setEdgeLengths] = useState([]);
-
-  // const handleLocationSelect = (location) => {
-  //   if (location && location.lat && location.lng) {
-  //     setSelectedLocation(location);
-  //     const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${location.lat},${location.lng}&zoom=20&size=1200x1200&maptype=satellite&key=AIzaSyCbE_AjQyCkjKY8KYNyGJbz2Jy9uEhO9us`;
-  //     setScreenshot(staticMapURL);
-  //   } else {
-  //     console.error("Geçerli bir konum sağlanmadı");
-  //   }
-  // };
+  const [currentZoom, setCurrentZoom] = useState(20);
 
   const onCenterChange = (center) => {
     setCurrentCenter(center);
   };
 
-  // const takeStaticMapScreenshot = () => {
-  //   const addressForAPI = `${projectData.address.suburb},${projectData.address.street},${projectData.address.house_number}, ${projectData.address.postcode},${projectData.address.town}, ${projectData.address.city}`;
-  //   const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(
-  //     addressForAPI
-  //   )}&zoom=20&size=1200x1200&maptype=satellite&key=AIzaSyCbE_AjQyCkjKY8KYNyGJbz2Jy9uEhO9us`;
-  //   setScreenshot(staticMapURL);
-  // };
+  const onZoomChange = (zoom) => {
+    setCurrentZoom(zoom);
+  };
 
   const [projectData, setProjectData] = useState({
     consumption: "",
@@ -153,10 +138,6 @@ export default function AddProject() {
     fetchCustomerDetails();
   }, [selectedCustomerId]);
 
-  // useEffect(() => {
-  //   console.log("Güncel Kenar Uzunlukları:", edgeLengths);
-  // }, [edgeLengths]);
-
   const handleCustomerChange = async (event) => {
     const newSelectedCustomerId = event.target.value;
     setSelectedCustomerId(newSelectedCustomerId);
@@ -190,7 +171,7 @@ export default function AddProject() {
 
   const handleNext = () => {
     if (value === "3" && currentCenter) {
-      const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${currentCenter.lat},${currentCenter.lng}&zoom=20&size=1200x1200&maptype=satellite&key=AIzaSyCbE_AjQyCkjKY8KYNyGJbz2Jy9uEhO9us`;
+      const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${currentCenter.lat},${currentCenter.lng}&zoom=${currentZoom}&size=1200x1200&maptype=satellite&key=AIzaSyCbE_AjQyCkjKY8KYNyGJbz2Jy9uEhO9us`;
       setScreenshot(staticMapURL);
     }
     if (value < 4) {
@@ -550,6 +531,7 @@ export default function AddProject() {
             <Map
               address={mapAddress}
               onCenterChange={onCenterChange}
+              onZoomChange={onZoomChange} 
               // onEdgesUpdate={setEdgeLengths}
             />
           </div>
