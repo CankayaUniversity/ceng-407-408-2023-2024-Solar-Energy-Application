@@ -286,6 +286,15 @@ function SimulationTest({ screenshot }) {
     setSelectedRoofPoints([]);
   };
 
+  const handleResetOrientation = () => {
+    setRoofSelectionActive(false);
+    setSelectedRoofPoints([]);
+  };
+
+  const handleResetRotation = () => {
+    setRotationAngle(90);
+  };
+
   useEffect(() => {
     if (selectionStart != null && selectionEnd != null) {
       let topRight = { x: selectionEnd.x, y: selectionStart.y, z: 0 };
@@ -358,30 +367,6 @@ function SimulationTest({ screenshot }) {
               onClick={() => setAddPanelMode(!addPanelMode)}
             >
               {addPanelMode ? "Cancel" : "Add Solar Panels"}
-            </Button>
-          </Grid>
-          <Grid item>
-            <Button
-              variant="contained"
-              onClick={() => {
-                setIsCancelled(true);
-                setAddPanelMode(false);
-                setShowModelPreview(false);
-                setPanelPosition(new THREE.Vector3());
-                if (panels.length > 0) {
-                  setPanels(panels.slice(0, -1));
-                }
-              }}
-            >
-              Cancel
-            </Button>
-          </Grid>
-          <Grid item>
-            <Button
-              variant="contained"
-              onClick={() => setBatchAddPanelMode(!batchAddPanelMode)}
-            >
-              {batchAddPanelMode ? "Finish Batch Add" : "Batch Add Panels"}
             </Button>
           </Grid>
           <Grid item>
