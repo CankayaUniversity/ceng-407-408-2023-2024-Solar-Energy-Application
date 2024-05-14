@@ -7,6 +7,7 @@ import { pointInPolygon } from "../pages/homepage/SimulationTest";
 export const AddPanelArea = ({
   selectedRoofPoints,
   orientationAngle,
+  rotationAngle, // Use the rotationAngle prop
   points,
 }) => {
   const [startPosition, setStartPosition] = useState(null);
@@ -15,41 +16,15 @@ export const AddPanelArea = ({
   const modelGroupRef = useRef(new THREE.Group());
   const mouseDownRef = useRef(false);
   const selectionBoxRef = useRef(null);
-  const [rotationAngle, setRotationAngle] = useState(0); // Açıyı radian olarak saklayacağız.
   const [panelPlaced, setPanelPlaced] = useState([]);
   const panelsToRemove = [];
-const [validPanels, setValidPanels] = useState([]); // Engellerden kaçınan geçerli paneller
-
-  const rotatePanelsRight = () => {
-    setRotationAngle((prev) => prev + 0.01); // 90 derece sağa dön
-  };
-
-  const rotatePanelsLeft = () => {
-    setRotationAngle((prev) => prev - 0.01); // 90 derece sola dön
-  };
+  const [validPanels, setValidPanels] = useState([]); // Engellerden kaçınan geçerli paneller
 
   useEffect(() => {
     if (startPosition && currentPosition) {
       updatePanelLayout(startPosition, currentPosition, orientationAngle);
     }
-  }, [rotationAngle, orientationAngle]); // Listen to orientationAngle changes
-
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key === "+" || event.key === "=") {
-        // Bazı klavyelerde + tuşu = ile birlikte
-        rotatePanelsRight();
-      } else if (event.key === "-") {
-        rotatePanelsLeft();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
+  }, [rotationAngle, orientationAngle]); // Listen to orientationAngle and rotationAngle changes
 
   useEffect(() => {
     if (startPosition && currentPosition) {

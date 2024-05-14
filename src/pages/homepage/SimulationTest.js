@@ -6,15 +6,26 @@ import { AddPanel } from "../../components/AddPanel";
 import roofImage from "../../assets/images/roof.jpg";
 import { Vector3 } from "three";
 import * as THREE from "three";
-import { Button, Stack, Box, Grid, Alert, Snackbar } from "@mui/material";
+import {
+  Button,
+  Stack,
+  Box,
+  Grid,
+  Alert,
+  Snackbar,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { useMemo } from "react";
 import { AddPanelArea } from "../../components/AddPanelArea";
 import { loadOriginalModel } from "../../components/LoadOriginalModel";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 function CameraControlled() {
   const { camera } = useThree();
-
-  
 
   useEffect(() => {
     const initialDistance = 600;
@@ -92,6 +103,7 @@ function SimulationTest({ screenshot }) {
   const [batchAddPanelMode, setBatchAddPanelMode] = useState(false);
   const [orientationMode, setOrientationMode] = useState(false);
   const [orientationAngle, setOrientationAngle] = useState(90);
+  const [rotationAngle, setRotationAngle] = useState(0); // New state for rotation angle
   const [obstaclesPoints, setObstaclesPoints] = useState(null);
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
@@ -99,9 +111,33 @@ function SimulationTest({ screenshot }) {
   const handleOrientationToggle = () => {
     setOrientationMode(!orientationMode);
   };
+
   const handleOrientationChange = (event) => {
     setOrientationAngle(Number(event.target.value)); // Derece cinsinden değeri doğrudan güncelle
   };
+
+  const handleRotationChange = (event) => {
+    setRotationAngle(Number(event.target.value)); // Update the rotation angle
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "+" || event.key === "=") {
+        // Increase rotation angle
+        setRotationAngle((prev) => Math.min(prev + 1, 360));
+      } else if (event.key === "-") {
+        // Decrease rotation angle
+        setRotationAngle((prev) => Math.max(prev - 1, 0));
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   // Güneş paneli ekleme modunu ve önizlemeyi kontrol edecek fonksiyonlar
   const toggleAddPanelMode = () => setAddPanelMode(!addPanelMode);
 
@@ -168,17 +204,6 @@ function SimulationTest({ screenshot }) {
     }
     return [];
   }, [batchAddPanelMode, selectedRoofPoints]);
-
-  const obstacleCalculate = () => {
-    if (selectionStart != null && selectionEnd != null) {
-      let topRight = { x: selectionEnd.x, y: selectionStart.y, z: 0 };
-      let bottomLeft = { x: selectionStart.x, y: selectionEnd.y, z: 0 };
-      let points = [selectionStart, topRight, selectionEnd, bottomLeft];
-      setObstaclesPoints(points);
-      console.log("poinyssssss", points);
-    }
-    console.log("obstaclepoint", obstaclesPoints);
-  };
 
   const handlePanelPlacement = (position) => {
     // Check if panel is placed over another panel
@@ -360,42 +385,85 @@ function SimulationTest({ screenshot }) {
             </Button>
           </Grid>
           <Grid item>
-            <Button variant="contained" onClick={handleOrientationToggle}>
-              {orientationMode ? "Set Orientation" : "Adjust Orientation"}
+            <Button
+              variant="contained"
+              onClick={() => {
+                setIsCancelled(true);
+                setAddPanelMode(false);
+                setShowModelPreview(false);
+                setPanelPosition(new THREE.Vector3());
+                if (panels.length > 0) {
+                  setPanels(panels.slice(0, -1));
+                }
+              }}
+            >
+              Cancel
             </Button>
-            {orientationMode && (
-              <input
-                type="number"
-                value={orientationAngle}
-                onChange={handleOrientationChange}
-                min="0" // Minimum değer
-                max="180" // Maksimum değer
-                step="1" // Her adımda değişim miktarı
-                style={{
-                  position: "absolute",
-                  zIndex: 100,
-                  top: "50px",
-                  left: "10px",
+          </Grid>
+          <Grid item>
+            <Button
+              variant="contained"
+              onClick={() => setBatchAddPanelMode(!batchAddPanelMode)}
+            >
+              {batchAddPanelMode ? "Finish Batch Add" : "Batch Add Panels"}
+            </Button>
+          </Grid>
+          <Grid item>
+            <Accordion
+              sx={{ width: "fit-content", boxShadow: "none", border: "none" }}
+            >
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                aria-controls="panel1a-content"
+                id="panel1a-header"
+                sx={{
+                  backgroundColor: "#1976d2",
+                  color: "#fff",
+                  borderRadius: 1,
+                  minHeight: "36.5px",
+                  "& .MuiAccordionSummary-content": {
+                    margin: 0,
+                  },
+                  "&:hover": {
+                    backgroundColor: "#1565c0",
+                  },
                 }}
-              />
-            )}
+              >
+                <Typography>Adjust Orientation</Typography>
+              </AccordionSummary>
+              <AccordionDetails sx={{ backgroundColor: "#f1f1f1" }}>
+                <TextField
+                  margin="dense"
+                  label="Orientation Angle"
+                  type="number"
+                  fullWidth
+                  value={orientationAngle}
+                  onChange={handleOrientationChange}
+                  inputProps={{ min: 0, max: 180 }}
+                />
+                <TextField
+                  margin="dense"
+                  label="Rotation Angle"
+                  type="number"
+                  fullWidth
+                  value={rotationAngle}
+                  onChange={handleRotationChange}
+                  inputProps={{ min: 0, max: 360 }}
+                />
+              </AccordionDetails>
+            </Accordion>
           </Grid>
         </Grid>
         <Stack>
           <Canvas
-          gl={{ antialias: true }}
-          shadows
-          dpr={[1, 2]}
-          camera={{ fov: 75 }}
-          style={{
-            width: "55vw",
-            height: "80vh",
-            border: "2px solid #000",
-          }}
-        >
-             <ambientLight intensity={1} />
-          <OrbitControls enableZoom={true} enablePan={true} enableRotate={false} />
-          <CameraControlled />
+            style={{
+              width: "55vw",
+              height: "80vh",
+              border: "2px solid #000",
+            }}
+          >
+            <ambientLight intensity={1} />
+            <CameraControlled />
             <Experience
               roofImage={screenshot}
               isSelecting={isSelecting}
@@ -416,6 +484,7 @@ function SimulationTest({ screenshot }) {
               <AddPanelArea
                 selectedRoofPoints={selectedRoofPoints}
                 orientationAngle={(orientationAngle * Math.PI) / 180}
+                rotationAngle={(rotationAngle * Math.PI) / 180} // Pass the rotation angle
                 points={obstaclesPoints}
               />
             )}
