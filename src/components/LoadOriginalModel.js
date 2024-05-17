@@ -1,23 +1,23 @@
-// models.js
+// LoadOriginalModel.js
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
-const modelPath = "s2.glb"; // Modelin yolu
 let originalModel = null; // Orijinal modeli saklamak için
 
-// Modeli yükleme fonksiyonu
-export const loadOriginalModel = async (onLoad) => {
-  if (originalModel) {
+export const loadOriginalModel = async (modelPath, onLoad) => {
+  if (originalModel && originalModel.path !== modelPath) {
     onLoad(originalModel);
+    console.log('scenesiz')
     return;
   }
 
-  console.log("modeli load ediyorum");
+  console.log("modeli load ediyorum", modelPath);
   const loader = new GLTFLoader();
   loader.load(
     modelPath,
     (gltf) => {
-      originalModel = gltf.scene;
-      onLoad(originalModel);
+      originalModel = { scene: gltf.scene, path: modelPath };
+      console.log('Scenesli')
+      onLoad(originalModel.scene);
     },
     undefined,
     (error) => {
@@ -25,6 +25,36 @@ export const loadOriginalModel = async (onLoad) => {
     }
   );
 };
+
+
+// import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+
+// // Orijinal modeli saklamak için bir obje kullanarak model yollarını dinamik olarak yönetelim
+// const loadedModels = {};
+
+// export const loadOriginalModel = async (modelPath, onLoad) => {
+//   if (loadedModels[modelPath]) {
+//     onLoad(loadedModels[modelPath]);
+//     return;
+//   }
+
+//   console.log("Modeli load ediyorum: ", modelPath);
+//   const loader = new GLTFLoader();
+//   loader.load(
+//     modelPath,
+//     (gltf) => {
+//       loadedModels[modelPath] = gltf.scene;
+//       onLoad(loadedModels[modelPath]);
+//     },
+//     undefined,
+//     (error) => {
+//       console.error(error);
+//     }
+//   );
+// };
+
+
+
 
 // import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 // import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader";

@@ -30,6 +30,10 @@ import TabPanel from "@mui/lab/TabPanel";
 import { CUSTOMERS, PROJECT } from "./../../api/api";
 import SimulationTest from "../homepage/SimulationTest";
 
+const MAP_WIDTH = 600;
+const MAP_HEIGHT = 400;
+const MAP_ZOOM = 20;
+
 export default function AddProject() {
   const [customers, setCustomers] = useState([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
@@ -43,6 +47,7 @@ export default function AddProject() {
   const [screenshot, setScreenshot] = useState(null);
   const [currentCenter, setCurrentCenter] = useState(null);
   const [currentZoom, setCurrentZoom] = useState(20);
+  const [clickedLatLng, setClickedLatLng] = useState(null);
 
   const onCenterChange = (center) => {
     setCurrentCenter(center);
@@ -50,6 +55,10 @@ export default function AddProject() {
 
   const onZoomChange = (zoom) => {
     setCurrentZoom(zoom);
+  };
+
+  const onMapClick = (latLng) => {
+    setClickedLatLng(latLng);
   };
 
   const [projectData, setProjectData] = useState({
@@ -171,7 +180,7 @@ export default function AddProject() {
 
   const handleNext = () => {
     if (value === "3" && currentCenter) {
-      const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${currentCenter.lat},${currentCenter.lng}&zoom=${currentZoom}&size=1200x1200&maptype=satellite&key=AIzaSyCbE_AjQyCkjKY8KYNyGJbz2Jy9uEhO9us`;
+      const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${currentCenter.lat},${currentCenter.lng}&zoom=${currentZoom}&size=600x400&maptype=satellite&key=AIzaSyCbE_AjQyCkjKY8KYNyGJbz2Jy9uEhO9us`;
       setScreenshot(staticMapURL);
     }
     if (value < 4) {
@@ -212,6 +221,38 @@ export default function AddProject() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+  const latLngToPoint = (lat, lng, mapWidth, mapHeight, mapZoom) => {
+    const siny = Math.sin(lat * Math.PI / 180);
+    const y = 0.5 - (Math.log((1 + siny) / (1 - siny)) / (4 * Math.PI));
+    const x = (lng + 180) / 360;
+    const scale = 1 << mapZoom;
+
+    return [
+      Math.floor(mapWidth * x * scale) % mapWidth,
+      Math.floor(mapHeight * y * scale) % mapHeight
+    ];
+  };
+
+  const pointToLatLng = (x, y, mapWidth, mapHeight, mapCenterLat, mapCenterLng, mapZoom) => {
+    const centerX = latLngToPoint(mapCenterLat, mapCenterLng, mapWidth, mapHeight, mapZoom);
+    const scale = 1 << mapZoom;
+    const worldX = (mapCenterLat + x / scale) / mapWidth;
+    const worldY = (mapCenterLng + y / scale) / mapHeight;
+
+    const lng = worldX * 360 - 180;
+    const n = Math.PI - 2 * Math.PI * worldY;
+    const lat = 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+    console.log(mapWidth, " ", mapHeight, " ", mapCenterLat, " ", mapCenterLng, " ", mapZoom)
+    console.log("lan mk bebesi", lat, " ", lng)
+    
+    return [lat, lng];
+  };
+
+  const handleMapClick = (event) => {
+    const { offsetX, offsetY } = event.nativeEvent;
+    const [lat, lng] = pointToLatLng(offsetX, offsetY, MAP_WIDTH, MAP_HEIGHT, currentCenter.lat, currentCenter.lng, MAP_ZOOM);
+    setClickedLatLng({ lat, lng });
   };
 
   return (
@@ -532,21 +573,38 @@ export default function AddProject() {
               address={mapAddress}
               onCenterChange={onCenterChange}
               onZoomChange={onZoomChange} 
-              // onEdgesUpdate={setEdgeLengths}
+              onMapClick={onMapClick}
             />
           </div>
+          {clickedLatLng && (
+            <div>
+              <p>Clicked Coordinates:</p>
+              <p>Latitude: {clickedLatLng.lat}</p>
+              <p>Longitude: {clickedLatLng.lng}</p>
+            </div>
+          )}
         </TabPanel>
 
         <TabPanel value="4">
           <SimulationTest screenshot={screenshot} />
           {screenshot && (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleSavePhoto}
-            >
-              Save Photo
-            </Button>
+            <div>
+              <img src={screenshot} alt="Static Map" width={MAP_WIDTH} height={MAP_HEIGHT} onClick={handleMapClick} />
+              {clickedLatLng && (
+                <div>
+                  <p>Clicked Coordinates:</p>
+                  <p>Latitude: {clickedLatLng.lat}</p>
+                  <p>Longitude: {clickedLatLng.lng}</p>
+                </div>
+              )}
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleSavePhoto}
+              >
+                Save Photo
+              </Button>
+            </div>
           )}
         </TabPanel>
       </TabContext>
