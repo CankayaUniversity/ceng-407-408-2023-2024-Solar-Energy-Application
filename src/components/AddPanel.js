@@ -28,7 +28,9 @@ export const AddPanel = ({ position, isPlaced, isCancelled,modelPath }) => {
   useEffect(() => {
     // 'position' prop'u her değiştiğinde modelin konumunu güncelle
     if (modelRef.current && position) {
-      modelRef.current.position.copy(position);
+      const newPosition = position.clone();
+      newPosition.z = 12;
+      modelRef.current.position.copy(newPosition);
     }
   }, [position]);
 
@@ -44,7 +46,7 @@ export const AddPanel = ({ position, isPlaced, isCancelled,modelPath }) => {
       loadOriginalModel(modelPath, (originalModel) => {
         const modelClone = originalModel.scene.clone();
         modelClone.rotation.y = Math.PI / 2;
-        modelClone.scale.set(2, 4, 2); // Boyutları iki katına çıkarır
+        modelClone.scale.set(1.7, 3.4, 1.7); // Boyutları iki katına çıkarır
         modelClone.rotation.x = Math.PI / 2;
         modelClone.position.copy(position);
         scene.add(modelClone);
