@@ -195,7 +195,7 @@ export const AddPanelArea = ({
           const offsetY = (j - numY / 2) * paddedModelHeight;
           const panelPosition = new THREE.Vector3(offsetX, offsetY, 12).applyMatrix4(rotationMatrix).add(selectionCenter);
           
-          const modelClone = originalModel.clone();
+          const modelClone = originalModel.scene.clone();
           modelClone.scale.set(scaleX, scaleY, 1.7);
           modelClone.rotation.x = orientationAngle ?? Math.PI / 2;
           modelClone.rotation.y = rotationAngle;

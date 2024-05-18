@@ -117,7 +117,6 @@ function SimulationTest({ screenshot,currentCenter,currentZoom }) {
     console.log("Model path in useEffect:", modelPath);
     loadOriginalModel(modelPath, (originalModel) => {
       console.log('original',originalModel);
-      const modelClone = originalModel.clone();
       
      
       // Model ile ilgili işlemleriniz
