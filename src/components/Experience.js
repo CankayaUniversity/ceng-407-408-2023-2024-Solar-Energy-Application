@@ -34,6 +34,24 @@ function createHatchTexture() {
   return new THREE.CanvasTexture(canvas);
 }
 
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const toRadians = (degree) => degree * (Math.PI / 180);
+
+  const R = 6371e3; // Radius of the Earth in meters
+  const φ1 = toRadians(lat1);
+  const φ2 = toRadians(lat2);
+  const Δφ = toRadians(lat2 - lat1);
+  const Δλ = toRadians(lon2 - lon1);
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  const distance = R * c; // in meters
+  return distance;
+}
+
 export const Experience = ({
   roofImage,
   isSelecting,
@@ -66,6 +84,22 @@ export const Experience = ({
   const MAP_WIDTH = 512;
   const MAP_HEIGHT = 512;
   const mapSize = [MAP_WIDTH, MAP_HEIGHT];
+  const [clickPositions, setClickPositions] = useState([]);
+
+  useEffect(() => {
+    if (clickPositions.length < 2) return;
+
+    const [firstClick, secondClick] = clickPositions;
+    const distance = calculateDistance(
+        firstClick.lat,
+        firstClick.lng,
+        secondClick.lat,
+        secondClick.lng
+    );
+
+    console.log("Mesafe:", distance.toFixed(2), "metre");
+}, [clickPositions]);
+
 
   useEffect(() => {
     const handleMouseMove = (event) => {
@@ -254,9 +288,13 @@ export const Experience = ({
     const y = event.clientY - rect.top; // y position within the element.
 
     const latLng = pixelToLatLng(x, y, currentCenter, currentZoom, mapSize);
-    console.log("latLng", latLng)
+    console.log("latLng", latLng);
     setClickedLatLng({ lat: latLng[0], lng: latLng[1] });
-  };
+    setClickPositions(prevPositions => {
+        const newPositions = [...prevPositions, { lat: latLng[0], lng: latLng[1] }];
+        return newPositions.length > 2 ? newPositions.slice(-2) : newPositions;
+    });
+};
 
   useEffect(() => {
     const handleClick = (event) => {
