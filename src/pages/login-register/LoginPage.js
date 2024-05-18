@@ -105,6 +105,7 @@ export default function SignInSide() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [snackbar, setSnackbar] = useState({ open: false, message: "" });
+    const navigate = useNavigate();
 
     const handleEmailChange = (event) => {
       setEmail(event.target.value);
@@ -114,42 +115,34 @@ export default function SignInSide() {
       setPassword(event.target.value);
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
       event.preventDefault();
-      console.log({
-        email: email,
-        password: password,
-      });
+      await signin();
     };
-
-    const navigate = useNavigate();
 
     useEffect(() => {
       const accestoken = localStorage.getItem("accessToken");
       if (accestoken) {
         console.log("Token alındı:", accestoken); // Konsolda token'ı log'la
-        navigate("/paperbase"); // Giriş başarılıysa, kullanıcıyı paperbase sayfasına yönlendir
+        setSnackbar({ open: true, message: "Giriş başarılı!", severity: "success" });
+        setTimeout(() => navigate("/paperbase"), 1000);
       }
-    }, []);
+    }, [navigate]);
 
     const signin = async () => {
-      const token = await auth.login(email, password);
-
       const userprofile = localStorage.getItem("userProfile");
       const userProfile = JSON.parse(userprofile);
-
       try {
-        const accestoken = localStorage.getItem("accessToken");
-        if (accestoken) {
-          console.log("Token alındı:", accestoken); // Konsolda token'ı log'la
-          navigate("/paperbase"); // Giriş başarılıysa, kullanıcıyı paperbase sayfasına yönlendir
+        const token = await auth.login(email, password);
+        if (token) {
+          console.log("Token alındı:", token);
+          setSnackbar({ open: true, message: "Giriş başarılı!", severity: "success" });
+          setTimeout(() => navigate("/paperbase"), 1000);
         } else {
-          // Giriş başarısızsa, bir hata mesajı gösterebilirsiniz
-          alert("Giriş başarısız");
+          setSnackbar({ open: true, message: "Giriş başarısız", severity: "error" });
         }
       } catch (error) {
-        // Hata yakalama
-        setSnackbar({ open: true, message: "Yanlış şifre veya e-mail." });
+        setSnackbar({ open: true, message: "Yanlış şifre veya e-mail.", severity: "error" });
       }
     };
 
@@ -191,7 +184,7 @@ export default function SignInSide() {
             <Typography component="h1" variant="h5">
               Sign in
             </Typography>
-            <Box component="form" sx={{ mt: 1 }}>
+            <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
               <TextField
                 margin="normal"
                 required
@@ -224,8 +217,8 @@ export default function SignInSide() {
                 fullWidth
                 variant="contained"
                 sx={{ mt: 3, mb: 2 }}
-                component={RouterLink}
-                onClick={signin}
+                // component={RouterLink}
+                // onClick={signin}
               >
                 Sign In
               </Button>
@@ -249,11 +242,13 @@ export default function SignInSide() {
           open={snackbar.open}
           autoHideDuration={6000}
           onClose={() => setSnackbar({ ...snackbar, open: false })}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          sx={{ '& .MuiSnackbarContent-root': { fontSize: '1.2rem', width: '100%' } }}
         >
           <Alert
             onClose={() => setSnackbar({ ...snackbar, open: false })}
-            severity="error"
-            sx={{ width: "100%" }}
+            severity={snackbar.severity}
+            sx={{ width: '100%' }}
           >
             {snackbar.message}
           </Alert>
