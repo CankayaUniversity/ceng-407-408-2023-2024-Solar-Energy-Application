@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import * as THREE from "three";
 import { useThree, useFrame } from "@react-three/fiber";
-import { TextureLoader } from "three";
 import { PlaneGeometry, MeshBasicMaterial, Mesh } from "three";
 import { AddPanel } from "../components/AddPanel";
+
 function createHatchTexture() {
   const canvas = document.createElement("canvas");
   const size = 128; // Doku boyutu
@@ -49,6 +49,8 @@ export const Experience = ({
   setSelectionEnd,
   batchAddPanelMode,
   gridPositions,
+  currentCenter,
+  currentZoom,
 }) => {
   const [roofTexture, setRoofTexture] = useState(null);
   const planeRef = useRef();
@@ -60,6 +62,10 @@ export const Experience = ({
   const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
   const pointsGeometry = new THREE.BufferGeometry();
   const hatchTexture = createHatchTexture();
+  const [clickedLatLng, setClickedLatLng] = useState(null);
+  const MAP_WIDTH = 512;
+  const MAP_HEIGHT = 512;
+  const mapSize = [MAP_WIDTH, MAP_HEIGHT];
 
   useEffect(() => {
     const handleMouseMove = (event) => {
@@ -85,66 +91,13 @@ export const Experience = ({
       window.removeEventListener("mousemove", handleMouseMove);
     };
   }, [addPanelMode, camera, setPanelPosition, gl.domElement]);
+
   useEffect(() => {
     const loader = new THREE.TextureLoader();
     loader.load(roofImage, (texture) => {
       setRoofTexture(texture);
     });
   }, [roofImage]);
-  // const image = "/216o.png";
-  // const masked = "/216.png";
-  // useEffect(() => {
-  //   const loader = new THREE.TextureLoader();
-  //   loader.load(image, (texture) => {
-  //     loader.load(masked, (maskTexture) => {
-  //       const processImage = () => {
-  //         const maskCanvas = document.createElement("canvas");
-  //         maskCanvas.width = maskTexture.image.width;
-  //         maskCanvas.height = maskTexture.image.height;
-  //         const maskCtx = maskCanvas.getContext("2d");
-  //         maskCtx.drawImage(maskTexture.image, 0, 0);
-  //         const maskData = maskCtx.getImageData(
-  //           0,
-  //           0,
-  //           maskCanvas.width,
-  //           maskCanvas.height
-  //         );
-  //         const canvas = document.createElement("canvas");
-  //         canvas.width = texture.image.width;
-  //         canvas.height = texture.image.height;
-  //         const ctx = canvas.getContext("2d");
-  //         ctx.drawImage(texture.image, 0, 0);
-  //         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  //         const data = imageData.data;
-  //         const maskDataPixels = maskData.data;
-
-  //         for (let i = 0; i < data.length; i += 4) {
-  //           // RGB değerlerinin her birinin 8'den düşük olup olmadığını kontrol et
-  //           if (
-  //             maskDataPixels[i] < 8 &&
-  //             maskDataPixels[i + 1] < 8 &&
-  //             maskDataPixels[i + 2] < 8
-  //           ) {
-  //             // Eğer doğru ise, orijinal resimdeki bu pikseli kırmızı yap
-  //             data[i] = 255; // Kırmızı
-  //             data[i + 1] = 0; // Yeşil
-  //             data[i + 2] = 0; // Mavi
-  //           }
-  //         }
-
-  //         ctx.putImageData(imageData, 0, 0);
-  //         const finalTexture = new THREE.CanvasTexture(canvas);
-  //         setRoofTexture(finalTexture);
-  //       };
-
-  //       if (maskTexture.image.complete) {
-  //         processImage();
-  //       } else {
-  //         maskTexture.image.onload = processImage;
-  //       }
-  //     });
-  //   });
-  // }, []);
 
   useEffect(() => {
     const handleClick = (event) => {
@@ -264,6 +217,55 @@ export const Experience = ({
     //   />
     // ));
   };
+
+  const latLngToPoint = (lat, lng, mapWidth, mapHeight, mapZoom) => {
+    const siny = Math.sin((lat * Math.PI) / 180);
+    const y = 0.5 - (Math.log((1 + siny) / (1 - siny)) / (4 * Math.PI));
+    const x = (lng + 180) / 360;
+    const scale = 1 << mapZoom;
+
+    return [
+      Math.floor(mapWidth * x * scale),
+      Math.floor(mapHeight * y * scale),
+    ];
+  };
+
+  const pixelToLatLng = (x, y, mapCenter, zoom, mapSize) => {
+    const scale = 1 << zoom; // 2 üzeri zoom
+    console.log("x", x, "y", y, "mapCenter", mapCenter[1], "zoom", zoom, "mapSize", mapSize[1])
+    console.log("scale", scale)
+    // Longitude calculation
+    const lng = mapCenter.lng + ((x - mapSize[0] / 2) / (256 * scale)) * 360;
+    console.log(mapCenter.lng + ((x - mapSize[0] / 2) / (256 * scale)) * 360)
+    // Latitude calculation
+    const adjustedY = y - mapSize[1] / 2 + latLngToPoint(mapCenter.lat, mapCenter.lng, mapSize[0], mapSize[1], zoom)[1];
+    const worldY = adjustedY / (scale * mapSize[1]);
+    const n = Math.PI - 2 * Math.PI * worldY;
+    const lat = (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+    console.log("lat", lat, "lng", lng)
+    return [parseFloat(lat.toFixed(8)), parseFloat(lng.toFixed(8))];
+  };
+
+  // Your latLngToPoint function adapted for React
+
+  const handleMapClick = (event) => {
+    const rect = gl.domElement.getBoundingClientRect();
+    const x = event.clientX - rect.left; // x position within the element.
+    const y = event.clientY - rect.top; // y position within the element.
+
+    const latLng = pixelToLatLng(x, y, currentCenter, currentZoom, mapSize);
+    console.log("latLng", latLng)
+    setClickedLatLng({ lat: latLng[0], lng: latLng[1] });
+  };
+
+  useEffect(() => {
+    const handleClick = (event) => {
+      handleMapClick(event);
+    };
+
+    gl.domElement.addEventListener("click", handleClick);
+    return () => gl.domElement.removeEventListener("click", handleClick);
+  }, [currentCenter, currentZoom, mapSize]);
 
   useEffect(() => {
     if (!roofSelectionActive) return;

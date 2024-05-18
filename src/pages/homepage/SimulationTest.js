@@ -6,7 +6,7 @@ import { AddPanel } from "../../components/AddPanel";
 import roofImage from "../../assets/images/roof.jpg";
 import { Vector3 } from "three";
 import * as THREE from "three";
-import { Button, Stack, Box, Grid, Alert, Snackbar } from "@mui/material";
+import { Button, Stack, Box, Grid, Alert, Snackbar, Select, MenuItem } from "@mui/material";
 import { useMemo } from "react";
 import { AddPanelArea } from "../../components/AddPanelArea";
 import { loadOriginalModel } from "../../components/LoadOriginalModel";
@@ -77,7 +77,7 @@ export function pointInPolygon(point, polygon) {
  * @param {string} props.screenshot - The screenshot to be displayed.
  * @returns {JSX.Element} The SimulationTest component.
  */
-function SimulationTest({ screenshot }) {
+function SimulationTest({ screenshot,currentCenter,currentZoom }) {
   const [isSelecting, setIsSelecting] = useState(false);
   const [showModelPreview, setShowModelPreview] = useState(false);
   const [addPanelMode, setAddPanelMode] = useState(false); // Güneş paneli ekleme modunu takip etmek için
@@ -95,6 +95,12 @@ function SimulationTest({ screenshot }) {
   const [obstaclesPoints, setObstaclesPoints] = useState(null);
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
+  const [modelPath, setModelPath] = useState('s2.glb'); 
+
+  const handleModelChange = (event) => {
+    console.log("Model path changed to:", event.target.value);
+    setModelPath(event.target.value);
+  };
 
   const handleOrientationToggle = () => {
     setOrientationMode(!orientationMode);
@@ -108,10 +114,15 @@ function SimulationTest({ screenshot }) {
   const canvasRef = useRef();
 
   useEffect(() => {
-    loadOriginalModel((originalModel) => {
+    console.log("Model path in useEffect:", modelPath);
+    loadOriginalModel(modelPath, (originalModel) => {
+      console.log('original',originalModel);
       const modelClone = originalModel.clone();
+      
+     
+      // Model ile ilgili işlemleriniz
     });
-  }, []);
+  }, [modelPath]);
 
   const toggleRoofSelection = () =>
     setRoofSelectionActive(!roofSelectionActive);
@@ -380,6 +391,17 @@ function SimulationTest({ screenshot }) {
               />
             )}
           </Grid>
+          <Grid item>
+            <Select
+              value={modelPath}
+              onChange={handleModelChange}
+              displayEmpty
+              inputProps={{ 'aria-label': 'Without label' }}
+            >
+              <MenuItem value="s1.glb">Model S1</MenuItem>
+              <MenuItem value="s2.glb">Model S2</MenuItem>
+            </Select>
+          </Grid>
         </Grid>
         <Stack>
           <Canvas
@@ -411,12 +433,15 @@ function SimulationTest({ screenshot }) {
               setSelectionEnd={setSelectionEnd}
               batchAddPanelMode={batchAddPanelMode}
               gridPositions={gridPositions} // Pass the calculated positions
+              currentCenter={currentCenter}
+              currentZoom={currentZoom}
             />
-            {batchAddPanelMode && (
+            {batchAddPanelMode && modelPath && (
               <AddPanelArea
                 selectedRoofPoints={selectedRoofPoints}
                 orientationAngle={(orientationAngle * Math.PI) / 180}
                 points={obstaclesPoints}
+                modelPath={modelPath}
               />
             )}
             {addPanelMode && (

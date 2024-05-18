@@ -8,6 +8,7 @@ export const AddPanelArea = ({
   selectedRoofPoints,
   orientationAngle,
   points,
+  modelPath,
 }) => {
   const [startPosition, setStartPosition] = useState(null);
   const [currentPosition, setCurrentPosition] = useState(null);
@@ -18,8 +19,7 @@ export const AddPanelArea = ({
   const [rotationAngle, setRotationAngle] = useState(0); // Açıyı radian olarak saklayacağız.
   const [panelPlaced, setPanelPlaced] = useState([]);
   const panelsToRemove = [];
-const [validPanels, setValidPanels] = useState([]); // Engellerden kaçınan geçerli paneller
-
+  const [validPanels, setValidPanels] = useState([]); // Engellerden kaçınan geçerli paneller
   const rotatePanelsRight = () => {
     setRotationAngle((prev) => prev + 0.01); // 90 derece sağa dön
   };
@@ -100,40 +100,40 @@ const [validPanels, setValidPanels] = useState([]); // Engellerden kaçınan ge�
       mouseDownRef.current = false;
       removeSelectionBox();
 
-      if (panelPlaced.length !== 0 && points !== null) {
-        let updatedPanels = [...panelPlaced];
+      // if (panelPlaced.length !== 0 && points !== null) {
+      //   let updatedPanels = [...panelPlaced];
 
-        panelPlaced.forEach((panel) => {
-          const panelPosition = new THREE.Vector3(
-            panel.position.x,
-            panel.position.y,
-            panel.position.z
-          );
+      //   panelPlaced.forEach((panel) => {
+      //     const panelPosition = new THREE.Vector3(
+      //       panel.position.x,
+      //       panel.position.y,
+      //       panel.position.z
+      //     );
 
-          if (pointInPolygon(panelPosition, points)) {
-            console.log("Removing panel:", panel.uuid);
-            scene.remove(panel); // Ensure panel is removed from the scene
-            updatedPanels = updatedPanels.filter((p) => p !== panel); // Update local array
-          }
-        });
+      //     if (pointInPolygon(panelPosition, points)) {
+      //       console.log("Removing panel:", panel.uuid);
+      //       scene.remove(panel); // Ensure panel is removed from the scene
+      //       updatedPanels = updatedPanels.filter((p) => p !== panel); // Update local array
+      //     }
+      //   });
 
-        // Log what's left to re-add to the scene
-        console.log(
-          "Panels to re-add:",
-          updatedPanels.map((p) => p.uuid)
-        );
+      //   // Log what's left to re-add to the scene
+      //   console.log(
+      //     "Panels to re-add:",
+      //     updatedPanels.map((p) => p.uuid)
+      //   );
 
-        // Clear and rebuild the modelGroupRef with remaining panels
-        scene.remove(modelGroupRef.current);
-        modelGroupRef.current = new THREE.Group();
-        updatedPanels.forEach((panel) => {
-          modelGroupRef.current.add(panel);
-        });
-        scene.add(modelGroupRef.current); // Add updated group back to scene
+      //   // Clear and rebuild the modelGroupRef with remaining panels
+      //   scene.remove(modelGroupRef.current);
+      //   modelGroupRef.current = new THREE.Group();
+      //   updatedPanels.forEach((panel) => {
+      //     modelGroupRef.current.add(panel);
+      //   });
+      //   scene.add(modelGroupRef.current); // Add updated group back to scene
 
-        // Update React state
-        setPanelPlaced(updatedPanels);
-      }
+      //   // Update React state
+      //   setPanelPlaced(updatedPanels);
+      // }
 
       console.log("points addpanelarea", points);
       // Check if any placed panels are outside the allowed polygon and remove them
@@ -158,13 +158,12 @@ const [validPanels, setValidPanels] = useState([]); // Engellerden kaçınan ge�
   });
 
   const updatePanelLayout = (startPos, currentPos, orientationAngle) => {
-    if (!startPos || !currentPos) return; // Safety check
+    if (!startPos || !currentPos) return;
   
     const gap = 3; // Gap between panels
     const baseModelWidth = 8; // Base model width
     const baseModelHeight = 6.5; // Base model height
   
-    // Adjust the model size based on the scale
     const scaleX = 1.7; // Horizontal scaling
     const scaleY = 3.4; // Vertical scaling
     const modelWidth = baseModelWidth * scaleX;
@@ -179,14 +178,14 @@ const [validPanels, setValidPanels] = useState([]); // Engellerden kaçınan ge�
     const numX = Math.floor(xDistance / paddedModelWidth);
     const numY = Math.floor(yDistance / paddedModelHeight);
   
-    // Determine the center of the selection box
     const centerX = (startPos.x + currentPos.x) / 2;
     const centerY = (startPos.y + currentPos.y) / 2;
     const selectionCenter = new THREE.Vector3(centerX, centerY, 0);
-  
+    console.log('son modal',modelPath);
     scene.remove(modelGroupRef.current);
     modelGroupRef.current = new THREE.Group();
-    loadOriginalModel((originalModel) => {
+    loadOriginalModel(modelPath, (originalModel) => {
+      
       const placedPanels = [];
       const rotationMatrix = new THREE.Matrix4().makeRotationZ(rotationAngle);
   
@@ -195,12 +194,12 @@ const [validPanels, setValidPanels] = useState([]); // Engellerden kaçınan ge�
           const offsetX = (i - numX / 2) * paddedModelWidth;
           const offsetY = (j - numY / 2) * paddedModelHeight;
           const panelPosition = new THREE.Vector3(offsetX, offsetY, 12).applyMatrix4(rotationMatrix).add(selectionCenter);
-  
+          
           const modelClone = originalModel.clone();
           modelClone.scale.set(scaleX, scaleY, 1.7);
-          modelClone.rotation.x = orientationAngle ?? Math.PI / 2; // Ensure correct orientation
+          modelClone.rotation.x = orientationAngle ?? Math.PI / 2;
           modelClone.rotation.y = rotationAngle;
-          // Calculate panel corners relative to the rotated center
+  
           const corners = [
             new THREE.Vector3(-modelWidth / 2, -modelHeight / 2, 0),
             new THREE.Vector3(modelWidth / 2, -modelHeight / 2, 0),
@@ -208,12 +207,10 @@ const [validPanels, setValidPanels] = useState([]); // Engellerden kaçınan ge�
             new THREE.Vector3(-modelWidth / 2, modelHeight / 2, 0)
           ].map((corner) => corner.applyMatrix4(rotationMatrix).add(panelPosition));
   
-          // Check if all corners remain within the selected roof points
           if (corners.every((corner) => pointInPolygon(corner, selectedRoofPoints))) {
             modelClone.position.copy(panelPosition);
             placedPanels.push(modelClone);
           }
-          
         }
       }
   
@@ -223,6 +220,7 @@ const [validPanels, setValidPanels] = useState([]); // Engellerden kaçınan ge�
     });
   };
   
+
 
   const updateSelectionBox = (startPos, currentPos) => {
     if (!selectionBoxRef.current) {

@@ -30,6 +30,11 @@ import TabPanel from "@mui/lab/TabPanel";
 import { CUSTOMERS, PROJECT } from "./../../api/api";
 import SimulationTest from "../homepage/SimulationTest";
 
+const MAP_WIDTH = 512;
+const MAP_HEIGHT = 512;
+const mapSize = [MAP_WIDTH, MAP_HEIGHT];
+
+
 export default function AddProject() {
   const [customers, setCustomers] = useState([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
@@ -43,6 +48,8 @@ export default function AddProject() {
   const [screenshot, setScreenshot] = useState(null);
   const [currentCenter, setCurrentCenter] = useState(null);
   const [currentZoom, setCurrentZoom] = useState(20);
+  const [clickedLatLng, setClickedLatLng] = useState(null);
+  
 
   const onCenterChange = (center) => {
     setCurrentCenter(center);
@@ -50,6 +57,10 @@ export default function AddProject() {
 
   const onZoomChange = (zoom) => {
     setCurrentZoom(zoom);
+  };
+
+  const onMapClick = (latLng) => {
+    setClickedLatLng(latLng);
   };
 
   const [projectData, setProjectData] = useState({
@@ -76,6 +87,8 @@ export default function AddProject() {
       town: "",
     },
   });
+
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -171,7 +184,7 @@ export default function AddProject() {
 
   const handleNext = () => {
     if (value === "3" && currentCenter) {
-      const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${currentCenter.lat},${currentCenter.lng}&zoom=${currentZoom}&size=1200x1200&maptype=satellite&key=AIzaSyCbE_AjQyCkjKY8KYNyGJbz2Jy9uEhO9us`;
+      const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${currentCenter.lat},${currentCenter.lng}&zoom=${currentZoom}&size=${mapSize[0]}x${mapSize[1]}&maptype=satellite&key=AIzaSyCbE_AjQyCkjKY8KYNyGJbz2Jy9uEhO9us`;
       setScreenshot(staticMapURL);
     }
     if (value < 4) {
@@ -213,6 +226,46 @@ export default function AddProject() {
     link.click();
     document.body.removeChild(link);
   };
+  const latLngToPoint = (lat, lng, mapWidth, mapHeight, mapZoom) => {
+    const siny = Math.sin((lat * Math.PI) / 180);
+    const y = 0.5 - (Math.log((1 + siny) / (1 - siny)) / (4 * Math.PI));
+    const x = (lng + 180) / 360;
+    const scale = 1 << mapZoom;
+
+    return [
+      Math.floor(mapWidth * x * scale),
+      Math.floor(mapHeight * y * scale),
+    ];
+  };
+  const pixelToLatLng = (x, y, mapCenter, zoom, mapSize) => {
+    const scale = 1 << zoom; // 2 üzeri zoom
+    console.log("x", x, "y", y, "mapCenter", mapCenter[1], "zoom", zoom, "mapSize", mapSize[1])
+    console.log("scale", scale)
+    // Longitude calculation
+    const lng = mapCenter.lng + ((x - mapSize[0] / 2) / (256 * scale)) * 360;
+    console.log(mapCenter.lng + ((x - mapSize[0] / 2) / (256 * scale)) * 360)
+    // Latitude calculation
+    const adjustedY = y - mapSize[1] / 2 + latLngToPoint(mapCenter.lat, mapCenter.lng, mapSize[0], mapSize[1], zoom)[1];
+    const worldY = adjustedY / (scale * mapSize[1]);
+    const n = Math.PI - 2 * Math.PI * worldY;
+    const lat = (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+    console.log("lat", lat, "lng", lng)
+    return [parseFloat(lat.toFixed(8)), parseFloat(lng.toFixed(8))];
+  };
+
+  // Your latLngToPoint function adapted for React
+ 
+
+  const handleMapClick = (event) => {
+    const rect = event.target.getBoundingClientRect();
+    const x = event.clientX - rect.left; // x position within the element.
+    const y = event.clientY - rect.top; // y position within the element.
+
+    const latLng = pixelToLatLng(x, y, currentCenter, currentZoom, mapSize);
+    console.log("latLng", latLng)
+    setClickedLatLng({ lat: latLng[0], lng: latLng[1] });
+  };
+
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -532,21 +585,42 @@ export default function AddProject() {
               address={mapAddress}
               onCenterChange={onCenterChange}
               onZoomChange={onZoomChange} 
-              // onEdgesUpdate={setEdgeLengths}
+              onMapClick={onMapClick}
             />
           </div>
+          {clickedLatLng && (
+            <div>
+              <p>Clicked Coordinates:</p>
+              <p>Latitude: {clickedLatLng.lat}</p>
+              <p>Longitude: {clickedLatLng.lng}</p>
+            </div>
+          )}
         </TabPanel>
 
         <TabPanel value="4">
-          <SimulationTest screenshot={screenshot} />
+          <SimulationTest 
+          screenshot={screenshot} 
+          currentCenter={currentCenter}
+          currentZoom={currentZoom}
+          />
           {screenshot && (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleSavePhoto}
-            >
-              Save Photo
-            </Button>
+            <div>
+              <img src={screenshot} alt="Static Map" width={MAP_WIDTH} height={MAP_HEIGHT} onClick={handleMapClick} />
+              {clickedLatLng && (
+                <div>
+                  <p>Clicked Coordinates:</p>
+                  <p>Latitude: {clickedLatLng.lat}</p>
+                  <p>Longitude: {clickedLatLng.lng}</p>
+                </div>
+              )}
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleSavePhoto}
+              >
+                Save Photo
+              </Button>
+            </div>
           )}
         </TabPanel>
       </TabContext>

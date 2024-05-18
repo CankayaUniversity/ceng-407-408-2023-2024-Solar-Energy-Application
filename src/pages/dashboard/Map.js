@@ -1,10 +1,35 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-const Map = ({ address, onCenterChange, onZoomChange }) => {
+const Map = ({ address, onCenterChange, onZoomChange, onMapClick }) => {
   const [center, setCenter] = useState(null);
   const [zoom, setZoom] = useState(20); 
   const mapRef = useRef(null);
   const mapContainerRef = useRef(null);
+
+  const latLngToPoint = (lat, lng, mapWidth, mapHeight, mapCenterLat, mapCenterLng, mapZoom) => {
+    const siny = Math.sin(lat * Math.PI / 180);
+    const y = 0.5 - (Math.log((1 + siny) / (1 - siny)) / (4 * Math.PI));
+    const x = (lng + 180) / 360;
+    const scale = 1 << mapZoom;
+
+    return [
+      Math.floor(mapWidth * x * scale) % mapWidth,
+      Math.floor(mapHeight * y * scale) % mapHeight
+    ];
+  };
+
+  const pointToLatLng = (x, y, mapWidth, mapHeight, mapCenterLat, mapCenterLng, mapZoom) => {
+    const centerX = latLngToPoint(mapCenterLat, mapCenterLng, mapWidth, mapHeight, mapZoom);
+    const scale = 1 << mapZoom;
+    const worldX = (centerX[0] + x / scale) / mapWidth;
+    const worldY = (centerX[1] + y / scale) / mapHeight;
+
+    const lng = worldX * 360 - 180;
+    const n = Math.PI - 2 * Math.PI * worldY;
+    const lat = 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+
+    return [lat, lng];
+  };
 
   useEffect(() => {
     const initMap = () => {
@@ -34,6 +59,15 @@ const Map = ({ address, onCenterChange, onZoomChange }) => {
               setZoom(newZoom);
               onZoomChange(newZoom);
             });
+
+            mapRef.current.addListener('click', (event) => {
+              const { latLng } = event;
+              const clickedLatLng = {
+                lat: latLng.lat(),
+                lng: latLng.lng()
+              };
+              onMapClick(clickedLatLng);
+            });
           }
         } else {
           console.error("Geocode başarısız oldu: " + status);
@@ -51,12 +85,14 @@ const Map = ({ address, onCenterChange, onZoomChange }) => {
       document.head.appendChild(script);
       window.initMap = initMap;
     }
-  }, [address, onCenterChange, onZoomChange]);
+  }, [address, onCenterChange, onZoomChange, onMapClick]);
 
   return <div ref={mapContainerRef} style={{ height: "100%", width: "100%" }}></div>;
 };
 
 export default Map;
+
+
 
 // import React, { useEffect, useRef, useState } from "react";
 
