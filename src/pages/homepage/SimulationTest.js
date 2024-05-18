@@ -77,7 +77,7 @@ export function pointInPolygon(point, polygon) {
  * @param {string} props.screenshot - The screenshot to be displayed.
  * @returns {JSX.Element} The SimulationTest component.
  */
-function SimulationTest({ screenshot }) {
+function SimulationTest({ screenshot,currentCenter,currentZoom }) {
   const [isSelecting, setIsSelecting] = useState(false);
   const [showModelPreview, setShowModelPreview] = useState(false);
   const [addPanelMode, setAddPanelMode] = useState(false); // Güneş paneli ekleme modunu takip etmek için
@@ -433,6 +433,8 @@ function SimulationTest({ screenshot }) {
               setSelectionEnd={setSelectionEnd}
               batchAddPanelMode={batchAddPanelMode}
               gridPositions={gridPositions} // Pass the calculated positions
+              currentCenter={currentCenter}
+              currentZoom={currentZoom}
             />
             {batchAddPanelMode && modelPath && (
               <AddPanelArea

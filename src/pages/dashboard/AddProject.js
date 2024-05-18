@@ -49,6 +49,7 @@ export default function AddProject() {
   const [currentCenter, setCurrentCenter] = useState(null);
   const [currentZoom, setCurrentZoom] = useState(20);
   const [clickedLatLng, setClickedLatLng] = useState(null);
+  
 
   const onCenterChange = (center) => {
     setCurrentCenter(center);
@@ -86,6 +87,8 @@ export default function AddProject() {
       town: "",
     },
   });
+
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -595,7 +598,11 @@ export default function AddProject() {
         </TabPanel>
 
         <TabPanel value="4">
-          <SimulationTest screenshot={screenshot} />
+          <SimulationTest 
+          screenshot={screenshot} 
+          currentCenter={currentCenter}
+          currentZoom={currentZoom}
+          />
           {screenshot && (
             <div>
               <img src={screenshot} alt="Static Map" width={MAP_WIDTH} height={MAP_HEIGHT} onClick={handleMapClick} />
