@@ -6,7 +6,7 @@ import { AddPanel } from "../../components/AddPanel";
 import roofImage from "../../assets/images/roof.jpg";
 import { Vector3 } from "three";
 import * as THREE from "three";
-import { Button, Stack, Box, Grid, Alert, Snackbar, Select, MenuItem } from "@mui/material";
+import { Button, Stack, Box, Grid, Alert, Snackbar, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
 import { useMemo } from "react";
 import { AddPanelArea } from "../../components/AddPanelArea";
 import { loadOriginalModel } from "../../components/LoadOriginalModel";
@@ -391,15 +391,47 @@ function SimulationTest({ screenshot,currentCenter,currentZoom }) {
             )}
           </Grid>
           <Grid item>
-            <Select
-              value={modelPath}
-              onChange={handleModelChange}
-              displayEmpty
-              inputProps={{ 'aria-label': 'Without label' }}
-            >
-              <MenuItem value="s1.glb">Model S1</MenuItem>
-              <MenuItem value="s2.glb">Model S2</MenuItem>
-            </Select>
+            <FormControl variant="outlined" sx={{ minWidth: "200px" }}>
+              <InputLabel id="model-select-label" sx={{ color: "#1976d2" }}>Model</InputLabel>
+              <Select
+                labelId="model-select-label"
+                value={modelPath}
+                onChange={handleModelChange}
+                label="Model"
+                MenuProps={{
+                  anchorOrigin: {
+                    vertical: "bottom",
+                    horizontal: "left",
+                  },
+                  transformOrigin: {
+                    vertical: "top",
+                    horizontal: "left",
+                  },
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    backgroundColor: "#1976d2", // Arka plan rengini mavi yapıyoruz
+                    color: "white", // Yazı rengini beyaz yapıyoruz
+                    height: "40px", // Yüksekliği daha ince yapıyoruz
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#1976d2", // Kenar rengini mavi yapıyoruz
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#1976d2", // Hover durumunda kenar rengi
+                    },
+                  },
+                  "& .MuiSvgIcon-root": {
+                    color: "white", // İkon rengini beyaz yapıyoruz
+                  },
+                  "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#1976d2", // Odaklandığında kenar rengini mavi yapıyoruz
+                  },
+                }}
+              >
+                <MenuItem value="s1.glb">Model S1</MenuItem>
+                <MenuItem value="s2.glb">Model S2</MenuItem>
+              </Select>
+            </FormControl>
           </Grid>
         </Grid>
         <Stack>
