@@ -14,7 +14,7 @@ const loadGLTFModel = async (path, onLoad) => {
   );
 };
 
-export const AddPanel = ({ position, isPlaced, isCancelled }) => {
+export const AddPanel = ({ position, isPlaced, isCancelled,modelPath }) => {
   const [model, setModel] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const modelRef = useRef();
@@ -41,8 +41,8 @@ export const AddPanel = ({ position, isPlaced, isCancelled }) => {
     }
 
     if (!modelRef.current) {
-      loadOriginalModel((originalModel) => {
-        const modelClone = originalModel.clone();
+      loadOriginalModel(modelPath, (originalModel) => {
+        const modelClone = originalModel.scene.clone();
         modelClone.rotation.y = Math.PI / 2;
         modelClone.scale.set(2, 4, 2); // Boyutları iki katına çıkarır
         modelClone.rotation.x = Math.PI / 2;

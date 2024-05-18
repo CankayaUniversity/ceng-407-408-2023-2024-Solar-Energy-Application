@@ -448,6 +448,7 @@ function SimulationTest({ screenshot,currentCenter,currentZoom }) {
                 isCancelled={isCancelled}
                 position={panelPosition}
                 isVisible={addPanelMode}
+                modelPath={modelPath}
               />
             )}
           </Canvas>
