@@ -1,10 +1,9 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { Experience } from "../../components/Experience";
 import { AddPanel } from "../../components/AddPanel";
 import roofImage from "../../assets/images/roof.jpg";
-import { Vector3 } from "three";
 import * as THREE from "three";
 import {
   Button,
@@ -19,18 +18,36 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useMemo } from "react";
 import { AddPanelArea } from "../../components/AddPanelArea";
 import { loadOriginalModel } from "../../components/LoadOriginalModel";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+
+//editpanelsde hep sonuncuyu ed,tlemeye çalışıyor ondan aşağıdaki paneller yukarı fırtıyor
+//sadece seçilen batch indexli panel için edit yapmalı
+
+export function pointInPolygon(point, polygon) {
+  let isInside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    if (
+      polygon[i].y > point.y !== polygon[j].y > point.y &&
+      point.x <
+        ((polygon[j].x - polygon[i].x) * (point.y - polygon[i].y)) /
+          (polygon[j].y - polygon[i].y) +
+          polygon[i].x
+    ) {
+      isInside = !isInside;
+    }
+  }
+  return isInside;
+}
 
 function CameraControlled() {
   const { camera } = useThree();
 
   useEffect(() => {
     const initialDistance = 600;
-    const maxDistance = 600;
-    const minDistance = 400;
+    const maxDistance = 1000;
+    const minDistance = 200;
 
     camera.position.z = initialDistance;
 
@@ -62,20 +79,81 @@ function CameraControlled() {
   return null;
 }
 
-export function pointInPolygon(point, polygon) {
-  let isInside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    if (
-      polygon[i].y > point.y !== polygon[j].y > point.y &&
-      point.x <
-        ((polygon[j].x - polygon[i].x) * (point.y - polygon[i].y)) /
-          (polygon[j].y - polygon[i].y) +
-          polygon[i].x
-    ) {
-      isInside = !isInside;
-    }
-  }
-  return isInside;
+function RaycasterComponent({
+  handlePanelClick,
+  setSelectedBatch,
+  batchGroups,
+  setAddPanelStart,
+  setAddPanelEnd,
+  setBatchEditing,
+}) {
+  const { scene, camera, gl } = useThree();
+  const mouse = useRef(new THREE.Vector2());
+  const raycaster = useRef(new THREE.Raycaster());
+
+  useEffect(() => {
+    const onMouseClick = (event) => {
+      const canvasElement = document.getElementById("simulation-canvas");
+      if (!canvasElement.contains(event.target)) return;
+      const rect = gl.domElement.getBoundingClientRect();
+      mouse.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.current.setFromCamera(mouse.current, camera);
+      const intersects = raycaster.current.intersectObjects(
+        scene.children,
+        true
+      );
+      console.log("intersects:", intersects);
+
+      if (intersects.length > 0) {
+        let intersectedObject;
+        for (let i = 0; i < intersects.length; i++) {
+          let obj = intersects[i].object;
+          console.log("intersectedObject userData:", obj.userData);
+          while (
+            obj &&
+            (!obj.userData || !obj.userData.isPanel) &&
+            obj.parent
+          ) {
+            obj = obj.parent;
+          }
+          if (obj && obj.userData && obj.userData.isPanel) {
+            intersectedObject = obj;
+            break;
+          }
+        }
+        console.log("intersectedObject:", intersectedObject);
+        if (intersectedObject) {
+          setBatchEditing(true);
+          handlePanelClick(intersectedObject);
+          const batchIndex = intersectedObject.userData.batchIndex;
+          setAddPanelStart(intersectedObject.userData.startPosition);
+          setAddPanelEnd(intersectedObject.userData.currentPosition);
+          console.log("batchIndex:", batchIndex);
+          console.log("batchGroups:", batchGroups);
+          const batchPanels = batchGroups[batchIndex];
+          if (batchPanels) {
+            setSelectedBatch(batchPanels);
+          } else {
+            console.error(`Batch group not found for index: ${batchIndex}`);
+          }
+        } else {
+          setBatchEditing(false);
+        }
+      } else {
+        setSelectedBatch([]);
+      }
+    };
+
+    window.addEventListener("click", onMouseClick);
+
+    return () => {
+      window.removeEventListener("click", onMouseClick);
+    };
+  }, [scene, camera, handlePanelClick, setSelectedBatch, batchGroups]);
+
+  return null;
 }
 
 function SimulationTest({ screenshot }) {
@@ -98,7 +176,16 @@ function SimulationTest({ screenshot }) {
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [occupiedPositions, setOccupiedPositions] = useState([]);
-  const placedPanelPositionsRef = useRef([]); // Added
+  const placedPanelPositionsRef = useRef([]);
+  const modelGroupRef = useRef(new THREE.Group()); // Add this line
+  const [batchGroups, setBatchGroups] = useState([]);
+  const [currentBatch, setCurrentBatch] = useState([]);
+  const [selectedBatch, setSelectedBatch] = useState([]);
+  const [batchEditing, setBatchEditing] = useState(false); // Batch editing state
+  const [currentBatchIndex, setCurrentBatchIndex] = useState(0); // Current batch index
+  const [addPanelStart, setAddPanelStart] = useState(null);
+  const [addPanelEnd, setAddPanelEnd] = useState(null);
+  const [editPanel, setEditPanel] = useState(false);
 
   const handleOrientationToggle = () => {
     setOrientationMode(!orientationMode);
@@ -209,7 +296,6 @@ function SimulationTest({ screenshot }) {
       let bottomLeft = { x: selectionStart.x, y: selectionEnd.y, z: 0 };
       let points = [selectionStart, topRight, selectionEnd, bottomLeft];
       setObstaclesPoints(points);
-      console.log("points", obstaclesPoints);
       if (pointInPolygon(position, points)) {
         console.warn("Panel can not placed on obstacles.");
         return;
@@ -221,7 +307,6 @@ function SimulationTest({ screenshot }) {
       if (!isCancelled) {
         setPanels([...panels, position]);
         setIsCancelled(false);
-        console.log("yada buradayım");
         setIsPanelPlaced(true);
       }
       setAddPanelMode(false);
@@ -233,7 +318,6 @@ function SimulationTest({ screenshot }) {
     }
 
     if (batchAddPanelMode) {
-      console.log("batchaddpanelmoddayım bro");
       const gridPositions = calculateGridPositions(
         selectedRoofPoints,
         panelSize
@@ -248,18 +332,18 @@ function SimulationTest({ screenshot }) {
       );
       setPanels((prev) => [...prev, ...newPanels]);
       setOccupiedPositions((prev) => [...prev, ...newPanels]);
+      setCurrentBatch((prev) => [...prev, ...newPanels]);
       placedPanelPositionsRef.current = [
         ...placedPanelPositionsRef.current,
         ...newPanels,
-      ]; // Update ref
+      ];
       setBatchAddPanelMode(false);
     } else {
-      console.log("addpanel placedeyim");
       if (!isCancelled) {
         setPanels([...panels, position]);
         setOccupiedPositions((prev) => [...prev, position]);
+        setCurrentBatch((prev) => [...prev, position]);
         setIsCancelled(false);
-        console.log("buradayım");
       }
       setAddPanelMode(false);
     }
@@ -270,19 +354,58 @@ function SimulationTest({ screenshot }) {
     setSelectedRoofPoints([]);
   };
 
-  const handleResetOrientation = () => {
-    setRoofSelectionActive(false);
-    setSelectedRoofPoints([]);
-  };
-
-  const handleResetRotation = () => {
-    setRotationAngle(90);
-  };
+  useEffect(() => {
+    if (batchGroups.length > 0) {
+      setCurrentBatchIndex(batchGroups.length - 1); // Update current batch index after batchGroups update
+    }
+  }, [batchGroups]);
 
   const handleBatchAddFinish = (newPanels) => {
-    setPanels((prev) => [...prev, ...newPanels]);
-    setOccupiedPositions((prev) => [...prev, ...newPanels]);
+    // İlk olarak `currentBatch`'i `batchGroups`'a ekleyelim
+    setBatchGroups((prev) => [...prev, currentBatch]);
+
+    // `currentBatchIndex`'i güncelle
+    setCurrentBatchIndex((prevIndex) => prevIndex + 1);
+
+    // Sonra diğer işlemleri yapalım
+    setPanels((prev) => [...prev, ...newPanels.current]);
+    setOccupiedPositions((prev) => [...prev, ...newPanels.current]);
+
+    // `currentBatch`'i sıfırla
+    setCurrentBatch([]);
     setBatchAddPanelMode(false);
+
+    // Yeni batch'in `occupiedPositions`'ını ekleyin
+    const newOccupiedPositions = newPanels.current.map(
+      (panel) => panel.position
+    );
+    setOccupiedPositions((prev) => [...prev, ...newOccupiedPositions]);
+  };
+
+  const handlePanelClick = (panel) => {
+    const batchIndex = panel.userData.batchIndex;
+    console.log("handlepanelclickdeyim ve batchgroup:", batchGroups);
+    const batchPanels = batchGroups[batchIndex];
+    if (batchPanels) {
+      setSelectedBatch(batchPanels);
+      setBatchEditing(true); // Enable batch editing
+      modelGroupRef.current.clear(); // Clear existing panels in modelGroupRef
+      batchPanels.forEach((panel) => modelGroupRef.current.add(panel)); // Add selected batch panels to modelGroupRef
+
+      // Edit moduna girildiğinde occupiedPositions'dan bu batch'in pozisyonlarını çıkarın
+      const updatedOccupiedPositions = occupiedPositions.filter(
+        (pos) =>
+          pos && // Check if pos is not undefined
+          !batchPanels.some(
+            (panel) =>
+              Math.abs(panel.position.x - pos.x) < 1 &&
+              Math.abs(panel.position.y - pos.y) < 1
+          )
+      );
+      setOccupiedPositions(updatedOccupiedPositions);
+    } else {
+      console.error(`Batch group not found for index: ${batchIndex}`);
+    }
   };
 
   useEffect(() => {
@@ -297,16 +420,17 @@ function SimulationTest({ screenshot }) {
   }, [selectionStart, selectionEnd]);
 
   useEffect(() => {
-    console.log("güncellendi", isCancelled);
-  }, [isCancelled]);
-
-  const handleCancel = () => {
-    if (addPanelMode) {
-      setIsCancelled(true);
-      setAddPanelMode(false);
-      setShowModelPreview(false);
-      setPanelPosition(new THREE.Vector3());
+    if (selectedBatch.length > 0) {
+      selectedBatch.forEach((panel) => {
+        panel.rotation.x = (orientationAngle * Math.PI) / 180;
+        panel.rotation.y = (rotationAngle * Math.PI) / 180;
+        panel.updateMatrix();
+      });
     }
+  }, [orientationAngle, rotationAngle, selectedBatch]);
+
+  const savePanels = (newPanels) => {
+    setPanels((prevPanels) => [...prevPanels, ...newPanels]);
   };
 
   return (
@@ -381,7 +505,7 @@ function SimulationTest({ screenshot }) {
               variant="contained"
               onClick={() => {
                 if (batchAddPanelMode) {
-                  handleBatchAddFinish(placedPanelPositionsRef.current);
+                  handleBatchAddFinish(placedPanelPositionsRef);
                 }
                 setBatchAddPanelMode(!batchAddPanelMode);
               }}
@@ -434,9 +558,24 @@ function SimulationTest({ screenshot }) {
               </AccordionDetails>
             </Accordion>
           </Grid>
+          <Grid item>
+            <Button
+              variant="contained"
+              onClick={() => {
+                if (!batchEditing) {
+                  setEditPanel(!editPanel);
+                } else {
+                  setBatchEditing(false);
+                }
+              }}
+            >
+              {editPanel ? "Finish Edit Panels" : "Edit Panels"}
+            </Button>
+          </Grid>
         </Grid>
         <Stack>
           <Canvas
+            ref={canvasRef}
             style={{
               width: "55vw",
               height: "80vh",
@@ -446,7 +585,7 @@ function SimulationTest({ screenshot }) {
             shadows
             dpr={[1, 2]}
             camera={{ fov: 75 }}
-           
+            id="simulation-canvas"
           >
             <ambientLight intensity={1} />
             <OrbitControls
@@ -455,6 +594,16 @@ function SimulationTest({ screenshot }) {
               enableRotate={false}
             />
             <CameraControlled />
+            {editPanel && (
+              <RaycasterComponent
+                handlePanelClick={handlePanelClick}
+                setSelectedBatch={setSelectedBatch}
+                batchGroups={batchGroups}
+                setAddPanelStart={setAddPanelStart}
+                setAddPanelEnd={setAddPanelEnd}
+                setBatchEditing={setBatchEditing}
+              />
+            )}
             <Experience
               roofImage={screenshot}
               isSelecting={isSelecting}
@@ -470,16 +619,24 @@ function SimulationTest({ screenshot }) {
               setSelectionEnd={setSelectionEnd}
               batchAddPanelMode={batchAddPanelMode}
               gridPositions={gridPositions}
+              handlePanelClick={handlePanelClick} // Pass handlePanelClick to Experience
             />
-            {batchAddPanelMode && (
+            {(batchAddPanelMode || batchEditing) && (
               <AddPanelArea
                 selectedRoofPoints={selectedRoofPoints}
                 orientationAngle={(orientationAngle * Math.PI) / 180}
                 rotationAngle={(rotationAngle * Math.PI) / 180}
                 points={obstaclesPoints}
                 occupiedPositions={occupiedPositions}
-                setBatchAddPanelMode={setBatchAddPanelMode}
-                placedPanelPositionsRef={placedPanelPositionsRef} // Pass ref
+                placedPanelPositionsRef={placedPanelPositionsRef}
+                handlePanelClick={handlePanelClick} // Pass panel click handler
+                batchGroups={selectedBatch} // Pass batchGroups
+                currentBatchIndex={currentBatchIndex} // Pass currentBatchIndex
+                addPanelStart={addPanelStart}
+                addPanelEnd={addPanelEnd}
+                savePanels={savePanels} // Pass savePanels function
+                modelGroupRef={modelGroupRef} // Pass modelGroupRef
+                batchAddPanelMode={batchAddPanelMode}
               />
             )}
             {addPanelMode && (
