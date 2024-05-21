@@ -28,14 +28,20 @@ export const AddPanelArea = ({
 
   useEffect(() => {
     if(batchAddPanelMode){
-      console.log("batch index", currentBatchIndex)
+      console.log("batch indexxxxxx", currentBatchIndex)
+      console.log("modelGroupRef", modelGroupRef)
+
       modelGroupRef.current = new THREE.Group();
+      console.log("modelGroupRef after", modelGroupRef)
+      console.log("modelGroupRef curr", modelGroupRef.current)
+    }
+    else{
+      console.log("modelGroupRef curr", modelGroupRef.current)
     }
   }, []);
 
   useEffect(() => {
     if (startPosition && currentPosition) {
-      console.log("batch index", currentBatchIndex)
 
       updatePanelLayout(startPosition, currentPosition, orientationAngle);
     }
@@ -43,8 +49,6 @@ export const AddPanelArea = ({
 
   useEffect(() => {
     if (startPosition && currentPosition) {
-      console.log("batch index", currentBatchIndex)
-
       updatePanelLayout(startPosition, currentPosition);
     }
   }, [startPosition, currentPosition]);
@@ -53,11 +57,11 @@ export const AddPanelArea = ({
     if (batchGroups.length > 0) {
       const currentBatchPanels = batchGroups[currentBatchIndex];
       if (currentBatchPanels) {
-        currentBatchPanels.forEach((panel) => {
-          panel.rotation.x = orientationAngle;
-          panel.rotation.y = rotationAngle;
-          panel.updateMatrix();
-        });
+        // currentBatchPanels.forEach((panel) => {
+        //   panel.rotation.x = orientationAngle;
+        //   panel.rotation.y = rotationAngle;
+        //   panel.updateMatrix();
+        // });
       }
     }
   }, [batchGroups, currentBatchIndex, orientationAngle, rotationAngle]);
@@ -222,7 +226,7 @@ export const AddPanelArea = ({
       }
   
       placedPanelPositionsRef.current = placedPanels.map(
-        (panel) => panel.position
+        (panel) => panel
       );
       placedPanels.forEach((panel) => modelGroupRef.current.add(panel));
       scene.add(modelGroupRef.current);
@@ -284,15 +288,3 @@ export const AddPanelArea = ({
 };
 
 
-
-
-
-
-
-
-
-
-
-
-// scene.remove(modelGroupRef.current);
-//     modelGroupRef.current = new THREE.Group();

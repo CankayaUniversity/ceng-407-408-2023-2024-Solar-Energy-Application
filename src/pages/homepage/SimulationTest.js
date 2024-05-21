@@ -25,6 +25,8 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 //editpanelsde hep sonuncuyu ed,tlemeye çalışıyor ondan aşağıdaki paneller yukarı fırtıyor
 //sadece seçilen batch indexli panel için edit yapmalı
 
+//en sonuncu batch'in modelgroupref olarak gidiyor hep seçilen batch'i mdoelgroupref olarak yollarsak tamamdır
+
 export function pointInPolygon(point, polygon) {
   let isInside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -186,7 +188,6 @@ function SimulationTest({ screenshot }) {
   const [addPanelStart, setAddPanelStart] = useState(null);
   const [addPanelEnd, setAddPanelEnd] = useState(null);
   const [editPanel, setEditPanel] = useState(false);
-
   const handleOrientationToggle = () => {
     setOrientationMode(!orientationMode);
   };
@@ -361,15 +362,18 @@ function SimulationTest({ screenshot }) {
   }, [batchGroups]);
 
   const handleBatchAddFinish = (newPanels) => {
+
+    const positions = newPanels.current.map(panel => panel.position);;
     // İlk olarak `currentBatch`'i `batchGroups`'a ekleyelim
-    setBatchGroups((prev) => [...prev, currentBatch]);
+    console.log("newpanels",newPanels)
+    setBatchGroups((prev) => [...prev, newPanels.current]);
 
     // `currentBatchIndex`'i güncelle
     setCurrentBatchIndex((prevIndex) => prevIndex + 1);
 
     // Sonra diğer işlemleri yapalım
-    setPanels((prev) => [...prev, ...newPanels.current]);
-    setOccupiedPositions((prev) => [...prev, ...newPanels.current]);
+    setPanels((prev) => [...prev, ...positions]);
+    setOccupiedPositions((prev) => [...prev, ...positions]);
 
     // `currentBatch`'i sıfırla
     setCurrentBatch([]);
@@ -385,24 +389,16 @@ function SimulationTest({ screenshot }) {
   const handlePanelClick = (panel) => {
     const batchIndex = panel.userData.batchIndex;
     console.log("handlepanelclickdeyim ve batchgroup:", batchGroups);
+    console.log("handlepanelclickdeyim ve batchindex:", batchIndex);
+
     const batchPanels = batchGroups[batchIndex];
     if (batchPanels) {
       setSelectedBatch(batchPanels);
       setBatchEditing(true); // Enable batch editing
       modelGroupRef.current.clear(); // Clear existing panels in modelGroupRef
+      console.log("önemli modelgroupref", modelGroupRef.current)
       batchPanels.forEach((panel) => modelGroupRef.current.add(panel)); // Add selected batch panels to modelGroupRef
-
-      // Edit moduna girildiğinde occupiedPositions'dan bu batch'in pozisyonlarını çıkarın
-      const updatedOccupiedPositions = occupiedPositions.filter(
-        (pos) =>
-          pos && // Check if pos is not undefined
-          !batchPanels.some(
-            (panel) =>
-              Math.abs(panel.position.x - pos.x) < 1 &&
-              Math.abs(panel.position.y - pos.y) < 1
-          )
-      );
-      setOccupiedPositions(updatedOccupiedPositions);
+      console.log("önemli modelgroupsssss", modelGroupRef.current)
     } else {
       console.error(`Batch group not found for index: ${batchIndex}`);
     }
@@ -419,15 +415,15 @@ function SimulationTest({ screenshot }) {
     }
   }, [selectionStart, selectionEnd]);
 
-  useEffect(() => {
-    if (selectedBatch.length > 0) {
-      selectedBatch.forEach((panel) => {
-        panel.rotation.x = (orientationAngle * Math.PI) / 180;
-        panel.rotation.y = (rotationAngle * Math.PI) / 180;
-        panel.updateMatrix();
-      });
-    }
-  }, [orientationAngle, rotationAngle, selectedBatch]);
+  // useEffect(() => {
+  //   if (selectedBatch.length > 0) {
+  //     selectedBatch.forEach((panel) => {
+  //       panel.rotation.x = (orientationAngle * Math.PI) / 180;
+  //       panel.rotation.y = (rotationAngle * Math.PI) / 180;
+  //       panel.updateMatrix();
+  //     });
+  //   }
+  // }, [orientationAngle, rotationAngle, selectedBatch]);
 
   const savePanels = (newPanels) => {
     setPanels((prevPanels) => [...prevPanels, ...newPanels]);
@@ -630,7 +626,7 @@ function SimulationTest({ screenshot }) {
                 occupiedPositions={occupiedPositions}
                 placedPanelPositionsRef={placedPanelPositionsRef}
                 handlePanelClick={handlePanelClick} // Pass panel click handler
-                batchGroups={selectedBatch} // Pass batchGroups
+                batchGroups={batchGroups} // Pass batchGroups
                 currentBatchIndex={currentBatchIndex} // Pass currentBatchIndex
                 addPanelStart={addPanelStart}
                 addPanelEnd={addPanelEnd}
