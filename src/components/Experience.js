@@ -3,6 +3,24 @@ import * as THREE from "three";
 import { useThree, useFrame } from "@react-three/fiber";
 import { PlaneGeometry, MeshBasicMaterial, Mesh } from "three";
 import { AddPanel } from "../components/AddPanel";
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
+
+function Text({ text, position, size, color }) {
+  const font = new FontLoader().parse(require('../fonts/helvetiker_regular.typeface.json')); // Replace with your font file
+  const textGeometry = new TextGeometry(text, {
+    font: font,
+    size: size,
+    height: 0.1, // Adjust as needed
+    curveSegments: 12,
+    bevelEnabled: false,
+  });
+  const textMaterial = new THREE.MeshBasicMaterial({ color: color });
+  const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+  textMesh.position.copy(position);
+
+  return <primitive object={textMesh} />;
+}
 
 function createHatchTexture() {
   const canvas = document.createElement("canvas");
@@ -85,11 +103,12 @@ export const Experience = ({
   const MAP_HEIGHT = 512;
   const mapSize = [MAP_WIDTH, MAP_HEIGHT];
   const [clickPositions, setClickPositions] = useState([]);
+  const [textPositions, setTextPositions] = useState([]);
 
   useEffect(() => {
     if (clickPositions.length < 2) return;
 
-    const [firstClick, secondClick] = clickPositions;
+    const [firstClick, secondClick] = clickPositions.slice(-2);
     const distance = calculateDistance(
         firstClick.lat,
         firstClick.lng,
@@ -98,8 +117,21 @@ export const Experience = ({
     );
 
     console.log("Mesafe:", distance.toFixed(2), "metre");
-}, [clickPositions]);
 
+    // Calculate the midpoint
+    const midPoint = new THREE.Vector3(
+      (firstClick.x + secondClick.x) / 2,
+      (firstClick.y + secondClick.y) / 2 - 1, // Adjust the y position to place it slightly below the line
+      (firstClick.z + secondClick.z) / 2
+    );
+
+    // Add the distance text to the text positions array
+    setTextPositions(prevTextPositions => [
+      ...prevTextPositions,
+      { position: midPoint, text: `${distance.toFixed(2)} metre` },
+    ]);
+
+  }, [clickPositions]);
 
   useEffect(() => {
     const handleMouseMove = (event) => {
@@ -290,11 +322,25 @@ export const Experience = ({
     const latLng = pixelToLatLng(x, y, currentCenter, currentZoom, mapSize);
     console.log("latLng", latLng);
     setClickedLatLng({ lat: latLng[0], lng: latLng[1] });
-    setClickPositions(prevPositions => {
-        const newPositions = [...prevPositions, { lat: latLng[0], lng: latLng[1] }];
+
+    // Convert clicked pixel position to 3D world position
+    const mouse = new THREE.Vector2();
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(planeRef.current);
+
+    if (intersects.length > 0) {
+      const intersect = intersects[0].point;
+
+      setClickPositions(prevPositions => {
+        const newPositions = [...prevPositions, { lat: latLng[0], lng: latLng[1], ...intersect }];
         return newPositions.length > 2 ? newPositions.slice(-2) : newPositions;
-    });
-};
+      });
+    }
+  };
 
   useEffect(() => {
     const handleClick = (event) => {
@@ -382,6 +428,16 @@ export const Experience = ({
           />
         </mesh>
       )}
+      
+      {textPositions.map((textPos, index) => (
+        <Text 
+          key={index}
+          text={textPos.text}
+          position={textPos.position}
+          size={15}
+          color="black"
+        />
+      ))}
     </>
   );
 };
