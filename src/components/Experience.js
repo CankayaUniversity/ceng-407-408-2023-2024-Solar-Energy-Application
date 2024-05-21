@@ -4,6 +4,7 @@ import { useThree, useFrame } from "@react-three/fiber";
 import { TextureLoader } from "three";
 import { PlaneGeometry, MeshBasicMaterial, Mesh } from "three";
 import { AddPanel } from "../components/AddPanel";
+
 function createHatchTexture() {
   const canvas = document.createElement("canvas");
   const size = 128; // Doku boyutu
@@ -85,66 +86,47 @@ export const Experience = ({
       window.removeEventListener("mousemove", handleMouseMove);
     };
   }, [addPanelMode, camera, setPanelPosition, gl.domElement]);
+
   useEffect(() => {
     const loader = new THREE.TextureLoader();
     loader.load(roofImage, (texture) => {
       setRoofTexture(texture);
     });
   }, [roofImage]);
-  // const image = "/216o.png";
-  // const masked = "/216.png";
-  // useEffect(() => {
-  //   const loader = new THREE.TextureLoader();
-  //   loader.load(image, (texture) => {
-  //     loader.load(masked, (maskTexture) => {
-  //       const processImage = () => {
-  //         const maskCanvas = document.createElement("canvas");
-  //         maskCanvas.width = maskTexture.image.width;
-  //         maskCanvas.height = maskTexture.image.height;
-  //         const maskCtx = maskCanvas.getContext("2d");
-  //         maskCtx.drawImage(maskTexture.image, 0, 0);
-  //         const maskData = maskCtx.getImageData(
-  //           0,
-  //           0,
-  //           maskCanvas.width,
-  //           maskCanvas.height
-  //         );
-  //         const canvas = document.createElement("canvas");
-  //         canvas.width = texture.image.width;
-  //         canvas.height = texture.image.height;
-  //         const ctx = canvas.getContext("2d");
-  //         ctx.drawImage(texture.image, 0, 0);
-  //         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  //         const data = imageData.data;
-  //         const maskDataPixels = maskData.data;
 
-  //         for (let i = 0; i < data.length; i += 4) {
-  //           // RGB değerlerinin her birinin 8'den düşük olup olmadığını kontrol et
-  //           if (
-  //             maskDataPixels[i] < 8 &&
-  //             maskDataPixels[i + 1] < 8 &&
-  //             maskDataPixels[i + 2] < 8
-  //           ) {
-  //             // Eğer doğru ise, orijinal resimdeki bu pikseli kırmızı yap
-  //             data[i] = 255; // Kırmızı
-  //             data[i + 1] = 0; // Yeşil
-  //             data[i + 2] = 0; // Mavi
-  //           }
-  //         }
+  const [newSelectedPoints, setNewSelectedPoints] = useState([]);
+  const [allLines, setAllLines] = useState([]);
 
-  //         ctx.putImageData(imageData, 0, 0);
-  //         const finalTexture = new THREE.CanvasTexture(canvas);
-  //         setRoofTexture(finalTexture);
-  //       };
+  useEffect(() => {
+    if (!roofSelectionActive) {
+      if (newSelectedPoints.length > 0) {
+        setAllLines((prevLines) => [...prevLines, [...newSelectedPoints]]);
+        setNewSelectedPoints([]);
+      }
+      return;
+    }
 
-  //       if (maskTexture.image.complete) {
-  //         processImage();
-  //       } else {
-  //         maskTexture.image.onload = processImage;
-  //       }
-  //     });
-  //   });
-  // }, []);
+    const handleClick = (event) => {
+      const rect = gl.domElement.getBoundingClientRect();
+      const mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      const mouseY = (-(event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera({ x: mouseX, y: mouseY }, camera);
+      const intersects = raycaster.intersectObject(planeRef.current);
+
+      if (intersects.length > 0) {
+        const intersect = intersects[0];
+        const point = intersect.point;
+        setNewSelectedPoints((prevPoints) => [...prevPoints, point]);
+        setSelectedRoofPoints((prevPoints) => [...prevPoints, point]);
+        onPanelPlace(intersect.point);
+      }
+    };
+
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, [roofSelectionActive, camera, gl.domElement, onPanelPlace, setSelectedRoofPoints, newSelectedPoints]);
 
   useEffect(() => {
     const handleClick = (event) => {
@@ -265,49 +247,23 @@ export const Experience = ({
     // ));
   };
 
-  useEffect(() => {
-    if (!roofSelectionActive) return;
-
-    const handleClick = (event) => {
-      // Tıklama pozisyonunu hesapla
-      const rect = gl.domElement.getBoundingClientRect();
-      const mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      const mouseY = (-(event.clientY - rect.top) / rect.height) * 2 + 1;
-
-      // Raycaster ile çatı üzerindeki noktayı bul
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera({ x: mouseX, y: mouseY }, camera);
-      const intersects = raycaster.intersectObject(planeRef.current);
-
-      if (intersects.length > 0) {
-        const intersect = intersects[0];
-        const point = intersect.point;
-        // Seçilen noktaları güncelle
-        setSelectedRoofPoints((prevPoints) => [...prevPoints, point]);
-      }
-    };
-
-    window.addEventListener("click", handleClick);
-    return () => window.removeEventListener("click", handleClick);
-  }, [roofSelectionActive, setSelectedRoofPoints, camera, gl.domElement]);
-
   // Seçilen noktaları birleştiren çizgiyi oluştur
   useEffect(() => {
-    // Eğer seçilen nokta yoksa veya sadece bir nokta varsa çizgi çizme
-    if (selectedRoofPoints.length < 2) return;
+    const linesToDraw = [...allLines, newSelectedPoints];
+    linesToDraw.forEach(points => {
+      if (points.length < 2) return;
 
-    // Seçilen noktaları birleştiren çizgiyi oluştur
-    pointsGeometry.setFromPoints(selectedRoofPoints);
-    const line = new THREE.Line(pointsGeometry, lineMaterial);
+      const pointsGeometry = new THREE.BufferGeometry().setFromPoints(points);
+      const line = new THREE.Line(pointsGeometry, lineMaterial);
+      scene.add(line);
 
-    scene.add(line);
-
-    // Cleanup function: Component unmount olduğunda çizgiyi sahneden kaldır
-    return () => {
-      scene.remove(line);
-      pointsGeometry.dispose();
-    };
-  }, [selectedRoofPoints, scene]);
+      // Cleanup function: Component unmount olduğunda çizgiyi sahneden kaldır
+      return () => {
+        scene.remove(line);
+        pointsGeometry.dispose();
+      };
+    });
+  }, [newSelectedPoints, allLines, scene]);
 
   return (
     <>
