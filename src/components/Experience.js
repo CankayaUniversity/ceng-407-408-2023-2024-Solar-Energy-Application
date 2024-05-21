@@ -107,8 +107,8 @@ export const Experience = ({
 
   useEffect(() => {
     if (clickPositions.length < 2) return;
-
-    const [firstClick, secondClick] = clickPositions.slice(-2);
+    if(roofSelectionActive){
+      const [firstClick, secondClick] = clickPositions.slice(-2);
     const distance = calculateDistance(
         firstClick.lat,
         firstClick.lng,
@@ -116,21 +116,24 @@ export const Experience = ({
         secondClick.lng
     );
 
-    console.log("Mesafe:", distance.toFixed(2), "metre");
+    console.log("Mesafe:", distance.toFixed(2), "m");
 
     // Calculate the midpoint
     const midPoint = new THREE.Vector3(
-      (firstClick.x + secondClick.x) / 2,
+      (firstClick.x + secondClick.x) / 2 ,
       (firstClick.y + secondClick.y) / 2 - 1, // Adjust the y position to place it slightly below the line
       (firstClick.z + secondClick.z) / 2
     );
 
+    // Adjust the midPoint position slightly for better visibility
+    midPoint.y += 0.5; // Bu değeri ihtiyacınıza göre ayarlayabilirsiniz
+    midPoint.x += 0.5; 
     // Add the distance text to the text positions array
     setTextPositions(prevTextPositions => [
       ...prevTextPositions,
-      { position: midPoint, text: `${distance.toFixed(2)} metre` },
+      { position: midPoint, text: `${distance.toFixed(2)} m` },
     ]);
-
+    }
   }, [clickPositions]);
 
   useEffect(() => {
