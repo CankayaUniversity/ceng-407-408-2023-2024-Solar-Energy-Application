@@ -411,7 +411,11 @@ function SimulationTest({ screenshot }) {
     const positions = newPanels.current.map((panel) => panel.position);
     const index = newPanels.current[0].userData.batchIndex;
     console.log("newpanels", newPanels);
-    setBatchGroups((prev) => [...prev, newPanels.current]);
+    setBatchGroups((prev) => {
+      const updatedBatchGroups = [...prev];
+      updatedBatchGroups[index] = newPanels.current;
+      return updatedBatchGroups;
+    });
 
     // `currentBatchIndex`'i güncelle
     setCurrentBatchIndex((prevIndex) => prevIndex + 1);
