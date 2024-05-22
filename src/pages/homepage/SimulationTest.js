@@ -188,6 +188,7 @@ function SimulationTest({ screenshot }) {
   const [addPanelStart, setAddPanelStart] = useState(null);
   const [addPanelEnd, setAddPanelEnd] = useState(null);
   const [editPanel, setEditPanel] = useState(false);
+  
   const handleOrientationToggle = () => {
     setOrientationMode(!orientationMode);
   };
@@ -355,17 +356,17 @@ function SimulationTest({ screenshot }) {
     setSelectedRoofPoints([]);
   };
 
-  useEffect(() => {
-    if (batchGroups.length > 0) {
-      setCurrentBatchIndex(batchGroups.length - 1); // Update current batch index after batchGroups update
-    }
-  }, [batchGroups]);
+  // useEffect(() => {
+  //   if (batchGroups.length > 0) {
+  //     console.log("batchindex değişti")
+  //     setCurrentBatchIndex(batchGroups.length - 1); // Update current batch index after batchGroups update
+  //   }
+  // }, [batchGroups]);
 
   const handleBatchAddFinish = (newPanels) => {
-
-    const positions = newPanels.current.map(panel => panel.position);;
+    const positions = newPanels.current.map((panel) => panel.position);
     // İlk olarak `currentBatch`'i `batchGroups`'a ekleyelim
-    console.log("newpanels",newPanels)
+    console.log("newpanels", newPanels);
     setBatchGroups((prev) => [...prev, newPanels.current]);
 
     // `currentBatchIndex`'i güncelle
@@ -380,10 +381,10 @@ function SimulationTest({ screenshot }) {
     setBatchAddPanelMode(false);
 
     // Yeni batch'in `occupiedPositions`'ını ekleyin
-    const newOccupiedPositions = newPanels.current.map(
-      (panel) => panel.position
-    );
-    setOccupiedPositions((prev) => [...prev, ...newOccupiedPositions]);
+    // const newOccupiedPositions = newPanels.current.map(
+    //   (panel) => panel.position
+    // );
+    // setOccupiedPositions((prev) => [...prev, ...newOccupiedPositions]);
   };
 
   const handlePanelClick = (panel) => {
@@ -392,16 +393,41 @@ function SimulationTest({ screenshot }) {
     console.log("handlepanelclickdeyim ve batchindex:", batchIndex);
 
     const batchPanels = batchGroups[batchIndex];
+    modelGroupRef.current.clear(); // Clear existing panels in modelGroupRef
+
     if (batchPanels) {
       setSelectedBatch(batchPanels);
       setBatchEditing(true); // Enable batch editing
       modelGroupRef.current.clear(); // Clear existing panels in modelGroupRef
-      console.log("önemli modelgroupref", modelGroupRef.current)
+      console.log("önemli modelgroupref", modelGroupRef.current);
       batchPanels.forEach((panel) => modelGroupRef.current.add(panel)); // Add selected batch panels to modelGroupRef
-      console.log("önemli modelgroupsssss", modelGroupRef.current)
+      console.log("önemli modelgroupsssss", modelGroupRef.current);
     } else {
       console.error(`Batch group not found for index: ${batchIndex}`);
     }
+  };
+
+  const handleBatchEditingFinish = (newPanels) => {
+    const positions = newPanels.current.map((panel) => panel.position);
+    const index = newPanels.current[0].userData.batchIndex;
+    console.log("newpanels", newPanels);
+    setBatchGroups((prev) => [...prev, newPanels.current]);
+
+    // `currentBatchIndex`'i güncelle
+    setCurrentBatchIndex((prevIndex) => prevIndex + 1);
+
+    // Sonra diğer işlemleri yapalım
+    setPanels((prev) => {
+      const updatedPanels = [...prev];
+      updatedPanels[index] = positions;
+      return updatedPanels;
+    });    
+    
+    setOccupiedPositions((prev) => [...prev, ...positions]);
+
+    // `currentBatch`'i sıfırla
+    setCurrentBatch([]);
+
   };
 
   useEffect(() => {
@@ -415,15 +441,6 @@ function SimulationTest({ screenshot }) {
     }
   }, [selectionStart, selectionEnd]);
 
-  // useEffect(() => {
-  //   if (selectedBatch.length > 0) {
-  //     selectedBatch.forEach((panel) => {
-  //       panel.rotation.x = (orientationAngle * Math.PI) / 180;
-  //       panel.rotation.y = (rotationAngle * Math.PI) / 180;
-  //       panel.updateMatrix();
-  //     });
-  //   }
-  // }, [orientationAngle, rotationAngle, selectedBatch]);
 
   const savePanels = (newPanels) => {
     setPanels((prevPanels) => [...prevPanels, ...newPanels]);
@@ -560,6 +577,7 @@ function SimulationTest({ screenshot }) {
               onClick={() => {
                 if (!batchEditing) {
                   setEditPanel(!editPanel);
+                  handleBatchEditingFinish(placedPanelPositionsRef)
                 } else {
                   setBatchEditing(false);
                 }
