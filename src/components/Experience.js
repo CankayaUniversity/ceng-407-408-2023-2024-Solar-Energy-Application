@@ -5,6 +5,7 @@ import { PlaneGeometry, MeshBasicMaterial, Mesh } from "three";
 import { AddPanel } from "../components/AddPanel";
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
+import axios from 'axios';
 
 function Text({ text, position, size, color }) {
   const font = new FontLoader().parse(require('../fonts/helvetiker_regular.typeface.json')); // Replace with your font file
@@ -161,12 +162,44 @@ export const Experience = ({
     };
   }, [addPanelMode, camera, setPanelPosition, gl.domElement]);
 
+  const [isLoading, setIsLoading] = useState(true);
+
+
+  const processRoofImage = async (url) => {
+    try {
+      const response = await axios.post('http://localhost:5000/process_image', { url }, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const processedImage = `data:image/png;base64,${response.data.processed_image}`;
+      return processedImage;
+    } catch (error) {
+      console.error('Error processing image:', error);
+      return null;
+    }
+  };
+  
+  
+
   useEffect(() => {
-    const loader = new THREE.TextureLoader();
-    loader.load(roofImage, (texture) => {
-      setRoofTexture(texture);
-    });
+    const loadAndProcessImage = async () => {
+      if (roofImage) {
+        const processedImageUrl = await processRoofImage(roofImage);
+        if (processedImageUrl) {
+          const loader = new THREE.TextureLoader();
+          loader.load(processedImageUrl, (texture) => {
+            setRoofTexture(texture);
+            setIsLoading(false);
+          });
+        }
+      } else {
+        setIsLoading(false);
+      }
+    };
+    loadAndProcessImage();
   }, [roofImage]);
+
 
   useEffect(() => {
     const handleClick = (event) => {
@@ -400,8 +433,12 @@ export const Experience = ({
 
   return (
     <>
-      {renderPanelPreviews()}
-      {roofTexture && (
+      {isLoading && (
+        <mesh position={[0, 0, 0]}>
+          <Text text="Loading..." position={[0, 0, 0]} size={1} color="black" />
+        </mesh>
+      )}
+      {!isLoading && roofTexture && (
         <mesh ref={planeRef} position={[0, 0, 0]}>
           <planeGeometry
             args={[window.innerWidth / 2, window.innerHeight, 1, 1]}
@@ -431,7 +468,6 @@ export const Experience = ({
           />
         </mesh>
       )}
-      
       {textPositions.map((textPos, index) => (
         <Text 
           key={index}
@@ -443,4 +479,5 @@ export const Experience = ({
       ))}
     </>
   );
+  
 };
