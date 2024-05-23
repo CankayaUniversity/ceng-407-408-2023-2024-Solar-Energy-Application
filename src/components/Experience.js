@@ -168,6 +168,40 @@ export const Experience = ({
     });
   }, [roofImage]);
 
+  const [newSelectedPoints, setNewSelectedPoints] = useState([]);
+  const [allLines, setAllLines] = useState([]);
+
+  useEffect(() => {
+    if (!roofSelectionActive) {
+      if (newSelectedPoints.length > 0) {
+        setAllLines((prevLines) => [...prevLines, [...newSelectedPoints]]);
+        setNewSelectedPoints([]);
+      }
+      return;
+    }
+
+    const handleClick = (event) => {
+      const rect = gl.domElement.getBoundingClientRect();
+      const mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      const mouseY = (-(event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera({ x: mouseX, y: mouseY }, camera);
+      const intersects = raycaster.intersectObject(planeRef.current);
+
+      if (intersects.length > 0) {
+        const intersect = intersects[0];
+        const point = intersect.point;
+        setNewSelectedPoints((prevPoints) => [...prevPoints, point]);
+        setSelectedRoofPoints((prevPoints) => [...prevPoints, point]);
+        onPanelPlace(intersect.point);
+      }
+    };
+
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, [roofSelectionActive, camera, gl.domElement, onPanelPlace, setSelectedRoofPoints, newSelectedPoints]);
+
   useEffect(() => {
     const handleClick = (event) => {
       if (!addPanelMode) return; // Sadece panel ekleme modu aktifken işlem yap
@@ -382,21 +416,21 @@ export const Experience = ({
 
   // Seçilen noktaları birleştiren çizgiyi oluştur
   useEffect(() => {
-    // Eğer seçilen nokta yoksa veya sadece bir nokta varsa çizgi çizme
-    if (selectedRoofPoints.length < 2) return;
+    const linesToDraw = [...allLines, newSelectedPoints];
+    linesToDraw.forEach(points => {
+      if (points.length < 2) return;
 
-    // Seçilen noktaları birleştiren çizgiyi oluştur
-    pointsGeometry.setFromPoints(selectedRoofPoints);
-    const line = new THREE.Line(pointsGeometry, lineMaterial);
+      const pointsGeometry = new THREE.BufferGeometry().setFromPoints(points);
+      const line = new THREE.Line(pointsGeometry, lineMaterial);
+      scene.add(line);
 
-    scene.add(line);
-
-    // Cleanup function: Component unmount olduğunda çizgiyi sahneden kaldır
-    return () => {
-      scene.remove(line);
-      pointsGeometry.dispose();
-    };
-  }, [selectedRoofPoints, scene]);
+      // Cleanup function: Component unmount olduğunda çizgiyi sahneden kaldır
+      return () => {
+        scene.remove(line);
+        pointsGeometry.dispose();
+      };
+    });
+  }, [newSelectedPoints, allLines, scene]);
 
   return (
     <>
