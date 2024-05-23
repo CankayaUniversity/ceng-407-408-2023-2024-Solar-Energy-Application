@@ -292,11 +292,6 @@ export default function AddProject() {
     setClickedLatLng({ lat: latLng[0], lng: latLng[1] });
   };
 
-
-  const onCenterChange = (center) => {
-    setCurrentCenter(center);
-  };
-
   
 
   const validateAddressForm = () => {
