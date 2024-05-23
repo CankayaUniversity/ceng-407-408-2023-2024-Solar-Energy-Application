@@ -30,6 +30,11 @@ import TabPanel from "@mui/lab/TabPanel";
 import { CUSTOMERS, PROJECT } from "./../../api/api";
 import SimulationTest from "../homepage/SimulationTest";
 
+const MAP_WIDTH = 512;
+const MAP_HEIGHT = 512;
+const mapSize = [MAP_WIDTH, MAP_HEIGHT];
+
+
 export default function AddProject() {
   const [customers, setCustomers] = useState([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
@@ -37,36 +42,28 @@ export default function AddProject() {
     name: "",
     email: "",
   });
-  const [expanded, setExpanded] = React.useState(false);
-  const [value, setValue] = React.useState("1");
+  const [expanded, setExpanded] = useState(false);
+  const [value, setValue] = useState("1");
   const [mapAddress, setMapAddress] = useState("");
   const [screenshot, setScreenshot] = useState(null);
-  const [selectedLocation, setSelectedLocation] = useState(null);
   const [currentCenter, setCurrentCenter] = useState(null);
-  // const [edgeLengths, setEdgeLengths] = useState([]);
-
-  // const handleLocationSelect = (location) => {
-  //   if (location && location.lat && location.lng) {
-  //     setSelectedLocation(location);
-  //     const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${location.lat},${location.lng}&zoom=20&size=1200x1200&maptype=satellite&key=AIzaSyCbE_AjQyCkjKY8KYNyGJbz2Jy9uEhO9us`;
-  //     setScreenshot(staticMapURL);
-  //   } else {
-  //     console.error("Geçerli bir konum sağlanmadı");
-  //   }
-  // };
+  const [currentZoom, setCurrentZoom] = useState(20);
+  const [clickedLatLng, setClickedLatLng] = useState(null);
+  
 
   const onCenterChange = (center) => {
     setCurrentCenter(center);
   };
 
-  // const takeStaticMapScreenshot = () => {
-  //   const addressForAPI = `${projectData.address.suburb},${projectData.address.street},${projectData.address.house_number}, ${projectData.address.postcode},${projectData.address.town}, ${projectData.address.city}`;
-  //   const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(
-  //     addressForAPI
-  //   )}&zoom=20&size=1200x1200&maptype=satellite&key=AIzaSyCbE_AjQyCkjKY8KYNyGJbz2Jy9uEhO9us`;
-  //   setScreenshot(staticMapURL);
-  // };
+  const onZoomChange = (zoom) => {
+    setCurrentZoom(zoom);
+  };
 
+  const onMapClick = (latLng) => {
+    setClickedLatLng(latLng);
+  };
+
+  const [addressExpanded, setAddressExpanded] = useState(true);
   const [projectData, setProjectData] = useState({
     consumption: "",
     consumption_period: "",
@@ -91,6 +88,9 @@ export default function AddProject() {
       town: "",
     },
   });
+  const [formErrors, setFormErrors] = useState({});
+
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -116,7 +116,13 @@ export default function AddProject() {
   };
 
   const handleAccordionChange = (panel) => (event, isExpanded) => {
-    setExpanded(isExpanded ? panel : false);
+    if (panel === "address") {
+      if (isExpanded || validateAddressForm()) {
+        setAddressExpanded(isExpanded);
+      }
+    } else {
+      setExpanded(isExpanded ? panel : false);
+    }
   };
 
   useEffect(() => {
@@ -153,10 +159,6 @@ export default function AddProject() {
     fetchCustomerDetails();
   }, [selectedCustomerId]);
 
-  // useEffect(() => {
-  //   console.log("Güncel Kenar Uzunlukları:", edgeLengths);
-  // }, [edgeLengths]);
-
   const handleCustomerChange = async (event) => {
     const newSelectedCustomerId = event.target.value;
     setSelectedCustomerId(newSelectedCustomerId);
@@ -188,15 +190,33 @@ export default function AddProject() {
     }
   };
 
+  const validateForm = () => {
+    const errors = {};
+    if (!projectData.consumption) errors.consumption = "Fill this area";
+    if (!projectData.consumption_period) errors.consumption_period = "Fill this area";
+    if (!projectData.projectscol) errors.projectscol = "Fill this area";
+    if (!projectData.cosine_factor) errors.cosine_factor = "Fill this area";
+    if (!projectData.export_limit) errors.export_limit = "Fill this area";
+    if (!projectData.notes) errors.notes = "Fill this area";
+    if (!projectData.consumption_profile.device_name) errors.device_name = "Fill this area";
+    if (!projectData.consumption_profile.energy_consumed) errors.energy_consumed = "Fill this area";
+    if (!projectData.consumption_profile.date) errors.date = "Fill this area";
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleNext = () => {
-    if (value === "3" && currentCenter) {
-      const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${currentCenter.lat},${currentCenter.lng}&zoom=20&size=1200x1200&maptype=satellite&key=AIzaSyCbE_AjQyCkjKY8KYNyGJbz2Jy9uEhO9us`;
+    if (value === "1") {
+      if (validateForm()) {
+        setValue("2");
+      }
+    } else if (value === "3" && currentCenter) {
+      const staticMapURL = `https://maps.googleapis.com/maps/api/staticmap?center=${currentCenter.lat},${currentCenter.lng}&zoom=${currentZoom}&size=${mapSize[0]}x${mapSize[1]}&maptype=satellite&key=AIzaSyCbE_AjQyCkjKY8KYNyGJbz2Jy9uEhO9us`;
       setScreenshot(staticMapURL);
-    }
-    if (value < 4) {
-      setValue((prevValue) => String(Number(prevValue) + 1));
+      setValue("4");
     } else {
-      console.log("Son tab'dayız, bu kısım çalışmamalı.");
+      setValue((prevValue) => String(Number(prevValue) + 1));
     }
   };
 
@@ -226,11 +246,66 @@ export default function AddProject() {
 
   const handleSavePhoto = () => {
     const link = document.createElement("a");
-    link.href = screenshot; // Screenshot'ın URL'si
-    link.download = "MapScreenshot.png"; // Kaydedilecek dosya adı
+    link.href = screenshot;
+    link.download = "MapScreenshot.png";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+  const latLngToPoint = (lat, lng, mapWidth, mapHeight, mapZoom) => {
+    const siny = Math.sin((lat * Math.PI) / 180);
+    const y = 0.5 - (Math.log((1 + siny) / (1 - siny)) / (4 * Math.PI));
+    const x = (lng + 180) / 360;
+    const scale = 1 << mapZoom;
+
+    return [
+      Math.floor(mapWidth * x * scale),
+      Math.floor(mapHeight * y * scale),
+    ];
+  };
+  const pixelToLatLng = (x, y, mapCenter, zoom, mapSize) => {
+    const scale = 1 << zoom; // 2 üzeri zoom
+    console.log("x", x, "y", y, "mapCenter", mapCenter[1], "zoom", zoom, "mapSize", mapSize[1])
+    console.log("scale", scale)
+    // Longitude calculation
+    const lng = mapCenter.lng + ((x - mapSize[0] / 2) / (256 * scale)) * 360;
+    console.log(mapCenter.lng + ((x - mapSize[0] / 2) / (256 * scale)) * 360)
+    // Latitude calculation
+    const adjustedY = y - mapSize[1] / 2 + latLngToPoint(mapCenter.lat, mapCenter.lng, mapSize[0], mapSize[1], zoom)[1];
+    const worldY = adjustedY / (scale * mapSize[1]);
+    const n = Math.PI - 2 * Math.PI * worldY;
+    const lat = (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+    console.log("lat", lat, "lng", lng)
+    return [parseFloat(lat.toFixed(8)), parseFloat(lng.toFixed(8))];
+  };
+
+  // Your latLngToPoint function adapted for React
+ 
+
+  const handleMapClick = (event) => {
+    const rect = event.target.getBoundingClientRect();
+    const x = event.clientX - rect.left; // x position within the element.
+    const y = event.clientY - rect.top; // y position within the element.
+
+    const latLng = pixelToLatLng(x, y, currentCenter, currentZoom, mapSize);
+    console.log("latLng", latLng)
+    setClickedLatLng({ lat: latLng[0], lng: latLng[1] });
+  };
+
+  
+
+  const validateAddressForm = () => {
+    const errors = {};
+    if (!projectData.address.street) errors.street = "Fill this area";
+    if (!projectData.address.house_number) errors.house_number = "Fill this area";
+    if (!projectData.address.postcode) errors.postcode = "Fill this area";
+    if (!projectData.address.city) errors.city = "Fill this area";
+    if (!projectData.address.country) errors.country = "Fill this area";
+    if (!projectData.address.suburb) errors.suburb = "Fill this area";
+    if (!projectData.address.town) errors.town = "Fill this area";
+  
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   return (
@@ -256,10 +331,7 @@ export default function AddProject() {
 
       <TabContext value={value}>
         <TabPanel value="1">
-          <Accordion
-            expanded={expanded === "NETPARAMETERS"}
-            onChange={handleAccordionChange("NETPARAMETERS")}
-          >
+          <Accordion expanded={true} onChange={handleAccordionChange("NETPARAMETERS")}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography variant="h6">NET PARAMETERS</Typography>
             </AccordionSummary>
@@ -273,6 +345,8 @@ export default function AddProject() {
                     margin="normal"
                     value={projectData.consumption}
                     onChange={handleInputChange}
+                    error={!!formErrors.consumption}
+                    helperText={formErrors.consumption}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -283,6 +357,8 @@ export default function AddProject() {
                     margin="normal"
                     value={projectData.consumption_period}
                     onChange={handleInputChange}
+                    error={!!formErrors.consumption_period}
+                    helperText={formErrors.consumption_period}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -293,6 +369,8 @@ export default function AddProject() {
                     margin="normal"
                     value={projectData.projectscol}
                     onChange={handleInputChange}
+                    error={!!formErrors.projectscol}
+                    helperText={formErrors.projectscol}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -303,6 +381,8 @@ export default function AddProject() {
                     margin="normal"
                     value={projectData.cosine_factor}
                     onChange={handleInputChange}
+                    error={!!formErrors.cosine_factor}
+                    helperText={formErrors.cosine_factor}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -313,6 +393,8 @@ export default function AddProject() {
                     margin="normal"
                     value={projectData.export_limit}
                     onChange={handleInputChange}
+                    error={!!formErrors.export_limit}
+                    helperText={formErrors.export_limit}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -323,24 +405,15 @@ export default function AddProject() {
                     margin="normal"
                     value={projectData.notes}
                     onChange={handleInputChange}
+                    error={!!formErrors.notes}
+                    helperText={formErrors.notes}
                   />
                 </Grid>
-                {/* <Grid item xs={12} md={6}>
-                  <FormControl fullWidth margin="normal">
-                    <InputLabel>Electricity Net</InputLabel>
-                    <Select label="Electricity Net">
-                      <MenuItem value="230V">230V L-N</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid> */}
               </Grid>
               <FormControlLabel control={<Checkbox />} label="Export Limit" />
             </AccordionDetails>
           </Accordion>
-          <Accordion
-            expanded={expanded === "projectDetails"}
-            onChange={handleAccordionChange("projectDetails")}
-          >
+          <Accordion expanded={true} onChange={handleAccordionChange("projectDetails")}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography variant="h6">PROJECT DETAILS</Typography>
             </AccordionSummary>
@@ -354,6 +427,8 @@ export default function AddProject() {
                     margin="normal"
                     value={projectData.consumption_profile.device_name}
                     onChange={handleInputChange}
+                    error={!!formErrors.device_name}
+                    helperText={formErrors.device_name}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -364,6 +439,8 @@ export default function AddProject() {
                     margin="normal"
                     value={projectData.consumption_profile.energy_consumed}
                     onChange={handleInputChange}
+                    error={!!formErrors.energy_consumed}
+                    helperText={formErrors.energy_consumed}
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -378,6 +455,8 @@ export default function AddProject() {
                     InputLabelProps={{
                       shrink: true,
                     }}
+                    error={!!formErrors.date}
+                    helperText={formErrors.date}
                   />
                 </Grid>
               </Grid>
@@ -386,19 +465,14 @@ export default function AddProject() {
         </TabPanel>
 
         <TabPanel value="2">
-          <Accordion
-            expanded={expanded === "Customer"}
-            onChange={handleAccordionChange("Customer")}
-          >
+          <Accordion expanded={true} onChange={handleAccordionChange("Customer")}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography variant="h6">Customer</Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Box sx={{ minWidth: 120 }}>
                 <FormControl fullWidth>
-                  <InputLabel id="demo-simple-select-label">
-                    Customer
-                  </InputLabel>
+                  <InputLabel id="demo-simple-select-label">Customer</InputLabel>
                   <Select
                     labelId="demo-simple-select-label"
                     id="demo-simple-select"
@@ -439,132 +513,168 @@ export default function AddProject() {
             </AccordionDetails>
           </Accordion>
         </TabPanel>
+
         <TabPanel value="3" sx={{ p: 2 }}>
-          <Accordion
-            expanded={expanded === "address"}
-            onChange={handleAccordionChange("address")}
-          >
+          <Accordion expanded={addressExpanded} onChange={handleAccordionChange("address")}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
               <Typography variant="h6">Address</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    name="address.suburb"
-                    label="Suburb"
-                    margin="normal"
-                    value={projectData.address.suburb}
-                    onChange={handleInputChange}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    name="address.street"
-                    label="Street"
-                    margin="normal"
-                    value={projectData.address.street}
-                    onChange={handleInputChange}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    name="address.house_number"
-                    label="House Number"
-                    margin="normal"
-                    value={projectData.address.house_number}
-                    onChange={handleInputChange}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    name="address.town"
-                    label="Town"
-                    margin="normal"
-                    value={projectData.address.town}
-                    onChange={handleInputChange}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    name="address.city"
-                    label="City"
-                    margin="normal"
-                    value={projectData.address.city}
-                    onChange={handleInputChange}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    name="address.country"
-                    label="Country"
-                    margin="normal"
-                    value={projectData.address.country}
-                    onChange={handleInputChange}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    name="address.postcode"
-                    label="Postcode"
-                    margin="normal"
-                    value={projectData.address.postcode}
-                    onChange={handleInputChange}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    name="address.addition"
-                    label="Addition"
-                    margin="normal"
-                    value={projectData.address.addition}
-                    onChange={handleInputChange}
-                  />
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Button
-                    variant="contained"
-                    onClick={() => {
-                      const fullAddress = `${projectData.address.suburb},${projectData.address.street},${projectData.address.house_number}, ${projectData.address.postcode},${projectData.address.town}, ${projectData.address.city}`;
-                      setMapAddress(fullAddress);
-                    }}
-                  >
-                    Show Map
-                  </Button>
-                </Grid>
-              </Grid>
+            <Grid container spacing={2}>
+  <Grid item xs={12} md={6}>
+    <TextField
+      fullWidth
+      name="address.suburb"
+      label="Suburb"
+      margin="normal"
+      value={projectData.address.suburb}
+      onChange={handleInputChange}
+      error={!!formErrors.suburb}
+      helperText={formErrors.suburb}
+    />
+  </Grid>
+  <Grid item xs={12} md={6}>
+    <TextField
+      fullWidth
+      name="address.street"
+      label="Street"
+      margin="normal"
+      value={projectData.address.street}
+      onChange={handleInputChange}
+      error={!!formErrors.street}
+      helperText={formErrors.street}
+    />
+  </Grid>
+  <Grid item xs={12} md={6}>
+    <TextField
+      fullWidth
+      name="address.house_number"
+      label="House Number"
+      margin="normal"
+      value={projectData.address.house_number}
+      onChange={handleInputChange}
+      error={!!formErrors.house_number}
+      helperText={formErrors.house_number}
+    />
+  </Grid>
+  <Grid item xs={12} md={6}>
+    <TextField
+      fullWidth
+      name="address.town"
+      label="Town"
+      margin="normal"
+      value={projectData.address.town}
+      onChange={handleInputChange}
+      error={!!formErrors.town}
+      helperText={formErrors.town}
+    />
+  </Grid>
+  <Grid item xs={12} md={6}>
+    <TextField
+      fullWidth
+      name="address.city"
+      label="City"
+      margin="normal"
+      value={projectData.address.city}
+      onChange={handleInputChange}
+      error={!!formErrors.city}
+      helperText={formErrors.city}
+    />
+  </Grid>
+  <Grid item xs={12} md={6}>
+    <TextField
+      fullWidth
+      name="address.country"
+      label="Country"
+      margin="normal"
+      value={projectData.address.country}
+      onChange={handleInputChange}
+      error={!!formErrors.country}
+      helperText={formErrors.country}
+    />
+  </Grid>
+  <Grid item xs={12} md={6}>
+    <TextField
+      fullWidth
+      name="address.postcode"
+      label="Postcode"
+      margin="normal"
+      value={projectData.address.postcode}
+      onChange={handleInputChange}
+      error={!!formErrors.postcode}
+      helperText={formErrors.postcode}
+    />
+  </Grid>
+  <Grid item xs={12} md={6}>
+    <TextField
+      fullWidth
+      name="address.addition"
+      label="Addition"
+      margin="normal"
+      value={projectData.address.addition}
+      onChange={handleInputChange}
+      error={!!formErrors.addition}
+      helperText={formErrors.addition}
+    />
+  </Grid>
+  <Grid item xs={12}>
+    <Button
+      variant="contained"
+      onClick={() => {
+        if (validateAddressForm()) {
+          const fullAddress = `${projectData.address.suburb},${projectData.address.street},${projectData.address.house_number}, ${projectData.address.postcode},${projectData.address.town}, ${projectData.address.city}`;
+          setMapAddress(fullAddress);
+          setAddressExpanded(false);
+        }
+      }}
+    >
+      Show Map
+    </Button>
+  </Grid>
+</Grid>
             </AccordionDetails>
           </Accordion>
           <div style={{ width: "100%", height: "75vh" }}>
             <Map
               address={mapAddress}
               onCenterChange={onCenterChange}
-              // onEdgesUpdate={setEdgeLengths}
+              onZoomChange={onZoomChange} 
+              onMapClick={onMapClick}
             />
           </div>
+          {clickedLatLng && (
+            <div>
+              <p>Clicked Coordinates:</p>
+              <p>Latitude: {clickedLatLng.lat}</p>
+              <p>Longitude: {clickedLatLng.lng}</p>
+            </div>
+          )}
         </TabPanel>
 
         <TabPanel value="4">
-          <SimulationTest screenshot={screenshot} />
+          <SimulationTest 
+          screenshot={screenshot} 
+          currentCenter={currentCenter}
+          currentZoom={currentZoom}
+          />
           {screenshot && (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleSavePhoto}
-            >
-              Save Photo
-            </Button>
+            <div>
+              <img src={screenshot} alt="Static Map" width={MAP_WIDTH} height={MAP_HEIGHT} onClick={handleMapClick} />
+              {clickedLatLng && (
+                <div>
+                  <p>Clicked Coordinates:</p>
+                  <p>Latitude: {clickedLatLng.lat}</p>
+                  <p>Longitude: {clickedLatLng.lng}</p>
+                </div>
+              )}
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleSavePhoto}
+              >
+                Save Photo
+              </Button>
+            </div>
           )}
         </TabPanel>
       </TabContext>

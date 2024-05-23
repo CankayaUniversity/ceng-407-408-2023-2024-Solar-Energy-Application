@@ -17,7 +17,12 @@ import {
   AccordionDetails,
   TextField,
   Typography,
+  Select,
+  MenuItem, 
+  FormControl, 
+  InputLabel
 } from "@mui/material";
+import { useMemo } from "react";
 import { AddPanelArea } from "../../components/AddPanelArea";
 import { loadOriginalModel } from "../../components/LoadOriginalModel";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -158,7 +163,14 @@ function RaycasterComponent({
   return null;
 }
 
-function SimulationTest({ screenshot }) {
+/**
+ * Represents the SimulationTest component.
+ *
+ * @param {Object} props - The component props.
+ * @param {string} props.screenshot - The screenshot to be displayed.
+ * @returns {JSX.Element} The SimulationTest component.
+ */
+function SimulationTest({ screenshot,currentCenter,currentZoom }) {
   const [isSelecting, setIsSelecting] = useState(false);
   const [showModelPreview, setShowModelPreview] = useState(false);
   const [addPanelMode, setAddPanelMode] = useState(false);
@@ -189,6 +201,13 @@ function SimulationTest({ screenshot }) {
   const [addPanelEnd, setAddPanelEnd] = useState(null);
   const [editPanel, setEditPanel] = useState(false);
   
+  const [modelPath, setModelPath] = useState('s2.glb'); 
+
+  const handleModelChange = (event) => {
+    console.log("Model path changed to:", event.target.value);
+    setModelPath(event.target.value);
+  };
+
   const handleOrientationToggle = () => {
     setOrientationMode(!orientationMode);
   };
@@ -222,10 +241,14 @@ function SimulationTest({ screenshot }) {
   const canvasRef = useRef();
 
   useEffect(() => {
-    loadOriginalModel((originalModel) => {
-      const modelClone = originalModel.clone();
+    console.log("Model path in useEffect:", modelPath);
+    loadOriginalModel(modelPath, (originalModel) => {
+      console.log('original',originalModel);
+      
+     
+      // Model ile ilgili işlemleriniz
     });
-  }, []);
+  }, [modelPath]);
 
   const toggleRoofSelection = () =>
     setRoofSelectionActive(!roofSelectionActive);
@@ -590,6 +613,92 @@ function SimulationTest({ screenshot }) {
               {editPanel ? "Finish Edit Panels" : "Edit Panels"}
             </Button>
           </Grid>
+          <Grid item>
+            <FormControl variant="outlined" sx={{ minWidth: "200px" }}>
+              <InputLabel id="model-select-label" sx={{ color: "#1976d2" }}>Model</InputLabel>
+              <Select
+                labelId="model-select-label"
+                value={modelPath}
+                onChange={handleModelChange}
+                label="Model"
+                MenuProps={{
+                  anchorOrigin: {
+                    vertical: "bottom",
+                    horizontal: "left",
+                  },
+                  transformOrigin: {
+                    vertical: "top",
+                    horizontal: "left",
+                  },
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    backgroundColor: "#1976d2", // Arka plan rengini mavi yapıyoruz
+                    color: "white", // Yazı rengini beyaz yapıyoruz
+                    height: "40px", // Yüksekliği daha ince yapıyoruz
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#1976d2", // Kenar rengini mavi yapıyoruz
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#1976d2", // Hover durumunda kenar rengi
+                    },
+                  },
+                  "& .MuiSvgIcon-root": {
+                    color: "white", // İkon rengini beyaz yapıyoruz
+                  },
+                  "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#1976d2", // Odaklandığında kenar rengini mavi yapıyoruz
+                  },
+                }}
+              >
+                <MenuItem value="s1.glb">Model S1</MenuItem>
+                <MenuItem value="s2.glb">Model S2</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item>
+            <FormControl variant="outlined" sx={{ minWidth: "200px" }}>
+              <InputLabel id="model-select-label" sx={{ color: "#1976d2" }}>Model</InputLabel>
+              <Select
+                labelId="model-select-label"
+                value={modelPath}
+                onChange={handleModelChange}
+                label="Model"
+                MenuProps={{
+                  anchorOrigin: {
+                    vertical: "bottom",
+                    horizontal: "left",
+                  },
+                  transformOrigin: {
+                    vertical: "top",
+                    horizontal: "left",
+                  },
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    backgroundColor: "#1976d2", // Arka plan rengini mavi yapıyoruz
+                    color: "white", // Yazı rengini beyaz yapıyoruz
+                    height: "40px", // Yüksekliği daha ince yapıyoruz
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#1976d2", // Kenar rengini mavi yapıyoruz
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#1976d2", // Hover durumunda kenar rengi
+                    },
+                  },
+                  "& .MuiSvgIcon-root": {
+                    color: "white", // İkon rengini beyaz yapıyoruz
+                  },
+                  "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#1976d2", // Odaklandığında kenar rengini mavi yapıyoruz
+                  },
+                }}
+              >
+                <MenuItem value="s1.glb">Model S1</MenuItem>
+                <MenuItem value="s2.glb">Model S2</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
         </Grid>
         <Stack>
           <Canvas
@@ -636,10 +745,11 @@ function SimulationTest({ screenshot }) {
               selectionEnd={selectionEnd}
               setSelectionEnd={setSelectionEnd}
               batchAddPanelMode={batchAddPanelMode}
-              gridPositions={gridPositions}
-              handlePanelClick={handlePanelClick} // Pass handlePanelClick to Experience
+              gridPositions={gridPositions} // Pass the calculated positions
+              currentCenter={currentCenter}
+              currentZoom={currentZoom}
             />
-            {(batchAddPanelMode || batchEditing) && (
+            {(batchAddPanelMode || batchEditing) && modelPath && (
               <AddPanelArea
                 selectedRoofPoints={selectedRoofPoints}
                 orientationAngle={(orientationAngle * Math.PI) / 180}
@@ -655,6 +765,7 @@ function SimulationTest({ screenshot }) {
                 savePanels={savePanels} // Pass savePanels function
                 modelGroupRef={modelGroupRef} // Pass modelGroupRef
                 batchAddPanelMode={batchAddPanelMode}
+                modelPath={modelPath}
               />
             )}
             {addPanelMode && (
@@ -662,6 +773,7 @@ function SimulationTest({ screenshot }) {
                 isCancelled={isCancelled}
                 position={panelPosition}
                 isVisible={addPanelMode}
+                modelPath={modelPath}
               />
             )}
           </Canvas>

@@ -59,129 +59,6 @@ function createData(
   };
 }
 
-const rows2 = [
-  createData(
-    1,
-    "John Doe",
-    "ABC Company",
-    "john.doe@example.com",
-    "123 Main St",
-    "123456789",
-    "VAT Office 1",
-    "555-1234",
-    "555-5678",
-    "Some notes about John Doe"
-  ),
-  createData(
-    2,
-    "Jane Smith",
-    "XYZ Corporation",
-    "jane.smith@example.com",
-    "456 Oak St",
-    "987654321",
-    "VAT Office 2",
-    "555-9876",
-    "555-4321",
-    "Some notes about Jane Smith"
-  ),
-  createData(
-    3,
-    "Alice Johnson",
-    "LMN Ltd",
-    "alice.johnson@example.com",
-    "789 Pine St",
-    "456789012",
-    "VAT Office 3",
-    "555-5678",
-    "555-1234",
-    "Some notes about Alice Johnson"
-  ),
-  createData(
-    4,
-    "Bob Williams",
-    "PQR Inc",
-    "bob.williams@example.com",
-    "101 Cedar St",
-    "345678901",
-    "VAT Office 4",
-    "555-4321",
-    "555-9876",
-    "Some notes about Bob Williams"
-  ),
-  createData(
-    5,
-    "Eva Davis",
-    "UVW Enterprises",
-    "eva.davis@example.com",
-    "202 Elm St",
-    "234567890",
-    "VAT Office 5",
-    "555-8765",
-    "555-2109",
-    "Some notes about Eva Davis"
-  ),
-  createData(
-    6,
-    "Michael Miller",
-    "LMN Ltd",
-    "michael.miller@example.com",
-    "303 Oak St",
-    "567890123",
-    "VAT Office 6",
-    "555-3210",
-    "555-7654",
-    "Some notes about Michael Miller"
-  ),
-  createData(
-    7,
-    "Emily Davis",
-    "ABC Company",
-    "emily.davis@example.com",
-    "404 Pine St",
-    "678901234",
-    "VAT Office 7",
-    "555-2109",
-    "555-8765",
-    "Some notes about Emily Davis"
-  ),
-  createData(
-    8,
-    "David Smith",
-    "PQR Inc",
-    "david.smith@example.com",
-    "505 Cedar St",
-    "789012345",
-    "VAT Office 8",
-    "555-7654",
-    "555-3210",
-    "Some notes about David Smith"
-  ),
-  createData(
-    9,
-    "Sophia Johnson",
-    "XYZ Corporation",
-    "sophia.johnson@example.com",
-    "606 Elm St",
-    "890123456",
-    "VAT Office 9",
-    "555-4321",
-    "555-9876",
-    "Some notes about Sophia Johnson"
-  ),
-  createData(
-    10,
-    "Matthew Williams",
-    "UVW Enterprises",
-    "matthew.williams@example.com",
-    "707 Oak St",
-    "901234567",
-    "VAT Office 10",
-    "555-9876",
-    "555-4321",
-    "Some notes about Matthew Williams"
-  ),
-];
-
 function descendingComparator(a, b, orderBy) {
   if (b[orderBy] < a[orderBy]) {
     return -1;
@@ -336,7 +213,7 @@ EnhancedTableHead.propTypes = {
 };
 
 function EnhancedTableToolbar(props) {
-  const { numSelected, onSearchChange, setShowAddCustomer } = props;
+  const { numSelected, onSearchChange, setShowAddCustomer, onDeleteClick } = props; 
 
   const handleClickAddCustomer = () => {
     console.log("Add customer clicked");
@@ -394,7 +271,7 @@ function EnhancedTableToolbar(props) {
       <Box sx={{ display: "flex", alignItems: "center" }}>
         {numSelected > 0 ? (
           <Tooltip title="Delete">
-            <IconButton>
+            <IconButton onClick={onDeleteClick}> 
               <DeleteIcon />
             </IconButton>
           </Tooltip>
@@ -427,6 +304,7 @@ EnhancedTableToolbar.propTypes = {
   numSelected: PropTypes.number.isRequired,
   onSearchChange: PropTypes.func.isRequired,
   setShowAddCustomer: PropTypes.func.isRequired, // Add prop type for setShowAddCustomer
+  onDeleteClick: PropTypes.func.isRequired,
 };
 
 export default function Customers() {
@@ -492,6 +370,16 @@ export default function Customers() {
   const handleSearchChange = (value) => {
     setSearchInput(value);
     setPage(0);
+  };
+
+  const handleDeleteClick = async () => {
+    const confirmDelete = window.confirm("Are you sure you want to delete the selected customers?");
+    if (confirmDelete) {
+      const deletePromises = selected.map(id => CUSTOMERS.deleteCustomer(id));
+      await Promise.all(deletePromises);
+      setRows(rows.filter(row => !selected.includes(row._id)));
+      setSelected([]);
+    }
   };
 
   const isSelected = (id) => selected.indexOf(id) !== -1;
@@ -568,6 +456,7 @@ export default function Customers() {
             numSelected={selected.length}
             onSearchChange={handleSearchChange}
             setShowAddCustomer={setShowAddCustomer}
+            onDeleteClick={handleDeleteClick}
           />
           <TableContainer>
             <Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle">

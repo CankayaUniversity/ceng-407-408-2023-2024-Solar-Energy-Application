@@ -19,6 +19,7 @@ export const AddPanelArea = ({
   savePanels, // Add savePanels prop
   modelGroupRef, // Add modelGroupRef prop
   batchAddPanelMode,
+  modelPath,
 }) => {
   const [startPosition, setStartPosition] = useState(addPanelStart);
   const [currentPosition, setCurrentPosition] = useState(addPanelEnd);
@@ -27,6 +28,17 @@ export const AddPanelArea = ({
   const selectionBoxRef = useRef(null);
   const [batchIdx, setBatchIdx] = useState(0);
   const modelRef = useRef(new THREE.Group());
+  const [rotationAngle, setRotationAngle] = useState(0); // Açıyı radian olarak saklayacağız.
+  const [panelPlaced, setPanelPlaced] = useState([]);
+  const panelsToRemove = [];
+  const [validPanels, setValidPanels] = useState([]); // Engellerden kaçınan geçerli paneller
+  const rotatePanelsRight = () => {
+    setRotationAngle((prev) => prev + 0.01); // 90 derece sağa dön
+  };
+
+  const rotatePanelsLeft = () => {
+    setRotationAngle((prev) => prev - 0.01); // 90 derece sola dön
+  };
 
   useEffect(() => {
     if (batchAddPanelMode) {
@@ -124,15 +136,15 @@ export const AddPanelArea = ({
     }
   });
 
-  const updatePanelLayout = (startPos, currentPos) => {
+  const updatePanelLayout = (startPos, currentPos, orientationAngle) => {
     if (!startPos || !currentPos) return;
-
-    const gap = 3;
-    const baseModelWidth = 8;
-    const baseModelHeight = 6.5;
-
-    const scaleX = 1.7;
-    const scaleY = 3.4;
+  
+    const gap = 3; // Gap between panels
+    const baseModelWidth = 8; // Base model width
+    const baseModelHeight = 6.5; // Base model height
+  
+    const scaleX = 1.7; // Horizontal scaling
+    const scaleY = 3.4; // Vertical scaling
     const modelWidth = baseModelWidth * scaleX;
     const modelHeight = baseModelHeight * scaleY;
 
@@ -151,7 +163,7 @@ export const AddPanelArea = ({
 
     scene.remove(modelRef.current);
     modelRef.current = new THREE.Group();
-    loadOriginalModel((originalModel) => {
+    loadOriginalModel(modelPath, (originalModel) => {
       const placedPanels = [];
       const rotationMatrix = new THREE.Matrix4().makeRotationZ(rotationAngle);
 
@@ -159,14 +171,13 @@ export const AddPanelArea = ({
         for (let j = 0; j < numY; j++) {
           const offsetX = (i - numX / 2) * paddedModelWidth;
           const offsetY = (j - numY / 2) * paddedModelHeight;
-          const panelPosition = new THREE.Vector3(offsetX, offsetY, 12)
-            .applyMatrix4(rotationMatrix)
-            .add(selectionCenter);
-
-          const modelClone = originalModel.clone();
+          const panelPosition = new THREE.Vector3(offsetX, offsetY, 12).applyMatrix4(rotationMatrix).add(selectionCenter);
+          
+          const modelClone = originalModel.scene.clone();
           modelClone.scale.set(scaleX, scaleY, 1.7);
           modelClone.rotation.x = orientationAngle ?? Math.PI / 2;
           modelClone.rotation.y = rotationAngle;
+  
 
           if (batchAddPanelMode) {
             modelClone.userData = {
@@ -252,6 +263,7 @@ export const AddPanelArea = ({
       savePanels(placedPanels.map((panel) => panel.position));
     });
   };
+
 
   const updateSelectionBox = (startPos, currentPos) => {
     if (!selectionBoxRef.current) {

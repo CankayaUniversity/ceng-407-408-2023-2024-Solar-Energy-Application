@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import CircularProgress from '@mui/material/CircularProgress';
+import Box from '@mui/material/Box';
 import Blog from './pages/homepage/Blog';
 import LoginPage from '../src/pages/login-register/LoginPage';
 import RegisterPage from '../src/pages/login-register/RegisterPage';
@@ -12,28 +14,40 @@ import AddProject from './pages/dashboard/AddProject';
 import SimulationTest from "./pages/homepage/SimulationTest";
 import WelcomeScreen from './pages/welcome/WelcomeScreen';
 
-// Giriş yapılmış mı kontrol eden fonksiyon
 const isAuthenticated = () => {
-  const token = localStorage.getItem('accessToken'); // accessToken var mı kontrol et
+  const token = localStorage.getItem('accessToken'); 
   return token ? true : false;
 };
 
-// Korunan route bileşeni
 const ProtectedRoute = ({ children }) => {
   if (!isAuthenticated()) {
-    // Giriş yapılmamışsa, LoginPage'e yönlendir
     return <Navigate to="/login" />;
   }
-  return children; // Giriş yapılmışsa, çocuk bileşenleri (children) döndür
+  return children; 
 };
 
 function App() {
+  const [isAuth, setIsAuth] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    setIsAuth(!!token); 
+  }, []);
+
+  if (isAuth === null) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    ); 
+  }
+
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<WelcomeScreen />} />
-        <Route path='/blog' element={<Blog />}/>
-        <Route path="/welcome" element={<WelcomeScreen />}/>
+        <Route path="/" element={isAuth ? <Navigate to="/paperbase" /> : <WelcomeScreen />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/welcome" element={<WelcomeScreen />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/sign-up" element={<RegisterPage />} />
         <Route path="/paperbase" element={

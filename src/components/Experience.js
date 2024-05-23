@@ -1,9 +1,27 @@
 import React, { useState, useEffect, useRef } from "react";
 import * as THREE from "three";
 import { useThree, useFrame } from "@react-three/fiber";
-import { TextureLoader } from "three";
 import { PlaneGeometry, MeshBasicMaterial, Mesh } from "three";
 import { AddPanel } from "../components/AddPanel";
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
+
+function Text({ text, position, size, color }) {
+  const font = new FontLoader().parse(require('../fonts/helvetiker_regular.typeface.json')); // Replace with your font file
+  const textGeometry = new TextGeometry(text, {
+    font: font,
+    size: size,
+    height: 0.1, // Adjust as needed
+    curveSegments: 12,
+    bevelEnabled: false,
+  });
+  const textMaterial = new THREE.MeshBasicMaterial({ color: color });
+  const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+  textMesh.position.copy(position);
+
+  return <primitive object={textMesh} />;
+}
+
 function createHatchTexture() {
   const canvas = document.createElement("canvas");
   const size = 128; // Doku boyutu
@@ -34,6 +52,24 @@ function createHatchTexture() {
   return new THREE.CanvasTexture(canvas);
 }
 
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const toRadians = (degree) => degree * (Math.PI / 180);
+
+  const R = 6371e3; // Radius of the Earth in meters
+  const φ1 = toRadians(lat1);
+  const φ2 = toRadians(lat2);
+  const Δφ = toRadians(lat2 - lat1);
+  const Δλ = toRadians(lon2 - lon1);
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  const distance = R * c; // in meters
+  return distance;
+}
+
 export const Experience = ({
   roofImage,
   isSelecting,
@@ -49,6 +85,8 @@ export const Experience = ({
   setSelectionEnd,
   batchAddPanelMode,
   gridPositions,
+  currentCenter,
+  currentZoom,
 }) => {
   const [roofTexture, setRoofTexture] = useState(null);
   const planeRef = useRef();
@@ -60,6 +98,43 @@ export const Experience = ({
   const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
   const pointsGeometry = new THREE.BufferGeometry();
   const hatchTexture = createHatchTexture();
+  const [clickedLatLng, setClickedLatLng] = useState(null);
+  const MAP_WIDTH = 512;
+  const MAP_HEIGHT = 512;
+  const mapSize = [MAP_WIDTH, MAP_HEIGHT];
+  const [clickPositions, setClickPositions] = useState([]);
+  const [textPositions, setTextPositions] = useState([]);
+
+  useEffect(() => {
+    if (clickPositions.length < 2) return;
+    if(roofSelectionActive){
+      const [firstClick, secondClick] = clickPositions.slice(-2);
+    const distance = calculateDistance(
+        firstClick.lat,
+        firstClick.lng,
+        secondClick.lat,
+        secondClick.lng
+    );
+
+    console.log("Mesafe:", distance.toFixed(2), "m");
+
+    // Calculate the midpoint
+    const midPoint = new THREE.Vector3(
+      (firstClick.x + secondClick.x) / 2 ,
+      (firstClick.y + secondClick.y) / 2 - 1, // Adjust the y position to place it slightly below the line
+      (firstClick.z + secondClick.z) / 2
+    );
+
+    // Adjust the midPoint position slightly for better visibility
+    midPoint.y += 0.5; // Bu değeri ihtiyacınıza göre ayarlayabilirsiniz
+    midPoint.x += 0.5; 
+    // Add the distance text to the text positions array
+    setTextPositions(prevTextPositions => [
+      ...prevTextPositions,
+      { position: midPoint, text: `${distance.toFixed(2)} m` },
+    ]);
+    }
+  }, [clickPositions]);
 
   useEffect(() => {
     const handleMouseMove = (event) => {
@@ -85,66 +160,47 @@ export const Experience = ({
       window.removeEventListener("mousemove", handleMouseMove);
     };
   }, [addPanelMode, camera, setPanelPosition, gl.domElement]);
+
   useEffect(() => {
     const loader = new THREE.TextureLoader();
     loader.load(roofImage, (texture) => {
       setRoofTexture(texture);
     });
   }, [roofImage]);
-  // const image = "/216o.png";
-  // const masked = "/216.png";
-  // useEffect(() => {
-  //   const loader = new THREE.TextureLoader();
-  //   loader.load(image, (texture) => {
-  //     loader.load(masked, (maskTexture) => {
-  //       const processImage = () => {
-  //         const maskCanvas = document.createElement("canvas");
-  //         maskCanvas.width = maskTexture.image.width;
-  //         maskCanvas.height = maskTexture.image.height;
-  //         const maskCtx = maskCanvas.getContext("2d");
-  //         maskCtx.drawImage(maskTexture.image, 0, 0);
-  //         const maskData = maskCtx.getImageData(
-  //           0,
-  //           0,
-  //           maskCanvas.width,
-  //           maskCanvas.height
-  //         );
-  //         const canvas = document.createElement("canvas");
-  //         canvas.width = texture.image.width;
-  //         canvas.height = texture.image.height;
-  //         const ctx = canvas.getContext("2d");
-  //         ctx.drawImage(texture.image, 0, 0);
-  //         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  //         const data = imageData.data;
-  //         const maskDataPixels = maskData.data;
 
-  //         for (let i = 0; i < data.length; i += 4) {
-  //           // RGB değerlerinin her birinin 8'den düşük olup olmadığını kontrol et
-  //           if (
-  //             maskDataPixels[i] < 8 &&
-  //             maskDataPixels[i + 1] < 8 &&
-  //             maskDataPixels[i + 2] < 8
-  //           ) {
-  //             // Eğer doğru ise, orijinal resimdeki bu pikseli kırmızı yap
-  //             data[i] = 255; // Kırmızı
-  //             data[i + 1] = 0; // Yeşil
-  //             data[i + 2] = 0; // Mavi
-  //           }
-  //         }
+  const [newSelectedPoints, setNewSelectedPoints] = useState([]);
+  const [allLines, setAllLines] = useState([]);
 
-  //         ctx.putImageData(imageData, 0, 0);
-  //         const finalTexture = new THREE.CanvasTexture(canvas);
-  //         setRoofTexture(finalTexture);
-  //       };
+  useEffect(() => {
+    if (!roofSelectionActive) {
+      if (newSelectedPoints.length > 0) {
+        setAllLines((prevLines) => [...prevLines, [...newSelectedPoints]]);
+        setNewSelectedPoints([]);
+      }
+      return;
+    }
 
-  //       if (maskTexture.image.complete) {
-  //         processImage();
-  //       } else {
-  //         maskTexture.image.onload = processImage;
-  //       }
-  //     });
-  //   });
-  // }, []);
+    const handleClick = (event) => {
+      const rect = gl.domElement.getBoundingClientRect();
+      const mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      const mouseY = (-(event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera({ x: mouseX, y: mouseY }, camera);
+      const intersects = raycaster.intersectObject(planeRef.current);
+
+      if (intersects.length > 0) {
+        const intersect = intersects[0];
+        const point = intersect.point;
+        setNewSelectedPoints((prevPoints) => [...prevPoints, point]);
+        setSelectedRoofPoints((prevPoints) => [...prevPoints, point]);
+        onPanelPlace(intersect.point);
+      }
+    };
+
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, [roofSelectionActive, camera, gl.domElement, onPanelPlace, setSelectedRoofPoints, newSelectedPoints]);
 
   useEffect(() => {
     const handleClick = (event) => {
@@ -265,6 +321,73 @@ export const Experience = ({
     // ));
   };
 
+  const latLngToPoint = (lat, lng, mapWidth, mapHeight, mapZoom) => {
+    const siny = Math.sin((lat * Math.PI) / 180);
+    const y = 0.5 - (Math.log((1 + siny) / (1 - siny)) / (4 * Math.PI));
+    const x = (lng + 180) / 360;
+    const scale = 1 << mapZoom;
+
+    return [
+      Math.floor(mapWidth * x * scale),
+      Math.floor(mapHeight * y * scale),
+    ];
+  };
+
+  const pixelToLatLng = (x, y, mapCenter, zoom, mapSize) => {
+    const scale = 1 << zoom; // 2 üzeri zoom
+    console.log("x", x, "y", y, "mapCenter", mapCenter[1], "zoom", zoom, "mapSize", mapSize[1])
+    console.log("scale", scale)
+    // Longitude calculation
+    const lng = mapCenter.lng + ((x - mapSize[0] / 2) / (256 * scale)) * 360;
+    console.log(mapCenter.lng + ((x - mapSize[0] / 2) / (256 * scale)) * 360)
+    // Latitude calculation
+    const adjustedY = y - mapSize[1] / 2 + latLngToPoint(mapCenter.lat, mapCenter.lng, mapSize[0], mapSize[1], zoom)[1];
+    const worldY = adjustedY / (scale * mapSize[1]);
+    const n = Math.PI - 2 * Math.PI * worldY;
+    const lat = (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+    console.log("lat", lat, "lng", lng)
+    return [parseFloat(lat.toFixed(8)), parseFloat(lng.toFixed(8))];
+  };
+
+  // Your latLngToPoint function adapted for React
+
+  const handleMapClick = (event) => {
+    const rect = gl.domElement.getBoundingClientRect();
+    const x = event.clientX - rect.left; // x position within the element.
+    const y = event.clientY - rect.top; // y position within the element.
+
+    const latLng = pixelToLatLng(x, y, currentCenter, currentZoom, mapSize);
+    console.log("latLng", latLng);
+    setClickedLatLng({ lat: latLng[0], lng: latLng[1] });
+
+    // Convert clicked pixel position to 3D world position
+    const mouse = new THREE.Vector2();
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(planeRef.current);
+
+    if (intersects.length > 0) {
+      const intersect = intersects[0].point;
+
+      setClickPositions(prevPositions => {
+        const newPositions = [...prevPositions, { lat: latLng[0], lng: latLng[1], ...intersect }];
+        return newPositions.length > 2 ? newPositions.slice(-2) : newPositions;
+      });
+    }
+  };
+
+  useEffect(() => {
+    const handleClick = (event) => {
+      handleMapClick(event);
+    };
+
+    gl.domElement.addEventListener("click", handleClick);
+    return () => gl.domElement.removeEventListener("click", handleClick);
+  }, [currentCenter, currentZoom, mapSize]);
+
   useEffect(() => {
     if (!roofSelectionActive) return;
 
@@ -293,21 +416,21 @@ export const Experience = ({
 
   // Seçilen noktaları birleştiren çizgiyi oluştur
   useEffect(() => {
-    // Eğer seçilen nokta yoksa veya sadece bir nokta varsa çizgi çizme
-    if (selectedRoofPoints.length < 2) return;
+    const linesToDraw = [...allLines, newSelectedPoints];
+    linesToDraw.forEach(points => {
+      if (points.length < 2) return;
 
-    // Seçilen noktaları birleştiren çizgiyi oluştur
-    pointsGeometry.setFromPoints(selectedRoofPoints);
-    const line = new THREE.Line(pointsGeometry, lineMaterial);
+      const pointsGeometry = new THREE.BufferGeometry().setFromPoints(points);
+      const line = new THREE.Line(pointsGeometry, lineMaterial);
+      scene.add(line);
 
-    scene.add(line);
-
-    // Cleanup function: Component unmount olduğunda çizgiyi sahneden kaldır
-    return () => {
-      scene.remove(line);
-      pointsGeometry.dispose();
-    };
-  }, [selectedRoofPoints, scene]);
+      // Cleanup function: Component unmount olduğunda çizgiyi sahneden kaldır
+      return () => {
+        scene.remove(line);
+        pointsGeometry.dispose();
+      };
+    });
+  }, [newSelectedPoints, allLines, scene]);
 
   return (
     <>
@@ -342,6 +465,16 @@ export const Experience = ({
           />
         </mesh>
       )}
+      
+      {textPositions.map((textPos, index) => (
+        <Text 
+          key={index}
+          text={textPos.text}
+          position={textPos.position}
+          size={15}
+          color="black"
+        />
+      ))}
     </>
   );
 };
