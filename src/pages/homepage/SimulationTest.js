@@ -22,7 +22,6 @@ import {
   FormControl, 
   InputLabel
 } from "@mui/material";
-import { useMemo } from "react";
 import { AddPanelArea } from "../../components/AddPanelArea";
 import { loadOriginalModel } from "../../components/LoadOriginalModel";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";

@@ -7,8 +7,8 @@ import { pointInPolygon } from "../pages/homepage/SimulationTest";
 export const AddPanelArea = ({
   selectedRoofPoints,
   orientationAngle,
-  rotationAngle,
   points,
+  rotationAngle,
   occupiedPositions,
   placedPanelPositionsRef,
   handlePanelClick,
@@ -28,17 +28,10 @@ export const AddPanelArea = ({
   const selectionBoxRef = useRef(null);
   const [batchIdx, setBatchIdx] = useState(0);
   const modelRef = useRef(new THREE.Group());
-  const [rotationAngle, setRotationAngle] = useState(0); // Açıyı radian olarak saklayacağız.
   const [panelPlaced, setPanelPlaced] = useState([]);
   const panelsToRemove = [];
   const [validPanels, setValidPanels] = useState([]); // Engellerden kaçınan geçerli paneller
-  const rotatePanelsRight = () => {
-    setRotationAngle((prev) => prev + 0.01); // 90 derece sağa dön
-  };
-
-  const rotatePanelsLeft = () => {
-    setRotationAngle((prev) => prev - 0.01); // 90 derece sola dön
-  };
+ 
 
   useEffect(() => {
     if (batchAddPanelMode) {
