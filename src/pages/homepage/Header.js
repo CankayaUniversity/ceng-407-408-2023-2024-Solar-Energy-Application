@@ -6,15 +6,16 @@ import IconButton from '@mui/material/IconButton';
 import SearchIcon from '@mui/icons-material/Search';
 import Typography from '@mui/material/Typography';
 import Link from '@mui/material/Link';
-import { Link as RouterLink } from 'react-router-dom'; 
+import { Link as RouterLink } from 'react-router-dom'; ; 
+
 
 function Header(props) {
-  const { sections, title } = props;
+
 
   return (
     <React.Fragment>
       <Toolbar sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Button size="small">Subscribe</Button>
+        <Button size="small">Solar App</Button>
         <Typography
           component="h2"
           variant="h5"
@@ -23,7 +24,7 @@ function Header(props) {
           noWrap
           sx={{ flex: 1 }}
         >
-          {title}
+          Welcome to SolarApplication 
         </Typography>
         <IconButton>
           <SearchIcon />
@@ -40,7 +41,7 @@ function Header(props) {
         variant="dense"
         sx={{ justifyContent: 'space-between', overflowX: 'auto' }}
       >
-        {sections.map((section) => (
+        {/* {sections.map((section) => (
           <Link
             color="inherit"
             noWrap
@@ -51,7 +52,7 @@ function Header(props) {
           >
             {section.title}
           </Link>
-        ))}
+        ))} */}
       </Toolbar>
     </React.Fragment>
   );

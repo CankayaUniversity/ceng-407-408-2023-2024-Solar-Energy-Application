@@ -46,7 +46,7 @@ function Header(props) {
   const navigate = useNavigate();
   const onLogoutClick = () => {
     auth.logout();
-    navigate('/login');
+    navigate('/blog');
   };
 
   const [anchorEl, setAnchorEl] = useState(null);

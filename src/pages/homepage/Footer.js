@@ -8,10 +8,8 @@ import Link from '@mui/material/Link';
 function Copyright() {
   return (
     <Typography variant="body2" color="text.secondary" align="center">
-      {'Copyright © '}
-      <Link color="inherit" href="https://mui.com/">
-        Your Website
-      </Link>{' '}
+      {'SolarApplication © '}
+      
       {new Date().getFullYear()}
       {'.'}
     </Typography>
@@ -27,14 +25,14 @@ function Footer(props) {
         <Typography variant="h6" align="center" gutterBottom>
           {title}
         </Typography>
-        <Typography
+        {/* <Typography
           variant="subtitle1"
           align="center"
           color="text.secondary"
           component="p"
         >
           {description}
-        </Typography>
+        </Typography> */}
         <Copyright />
       </Container>
     </Box>
