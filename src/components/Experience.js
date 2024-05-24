@@ -87,6 +87,7 @@ export const Experience = ({
   gridPositions,
   currentCenter,
   currentZoom,
+  singleEditing,
 }) => {
   const [roofTexture, setRoofTexture] = useState(null);
   const planeRef = useRef();
@@ -159,7 +160,34 @@ export const Experience = ({
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
     };
-  }, [addPanelMode, camera, setPanelPosition, gl.domElement]);
+  }, [addPanelMode, camera, setPanelPosition, gl.domElement, singleEditing]);
+
+  useEffect(() => {
+    const handleMouseMove = (event) => {
+      if (!singleEditing) return;
+
+      // Fare konumunu hesaplama
+      const rect = gl.domElement.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera({ x, y }, camera);
+      const intersects = raycaster.intersectObject(planeRef.current);
+
+      if (intersects.length > 0) {
+        const { x, y, z } = intersects[0].point;
+        setPanelPosition(new THREE.Vector3(x, y, z)); // Panelin konumunu güncelle
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, [singleEditing, camera, setPanelPosition, gl.domElement, singleEditing]);
+
+  
 
   useEffect(() => {
     const loader = new THREE.TextureLoader();
@@ -225,6 +253,34 @@ export const Experience = ({
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
   }, [addPanelMode, camera, gl.domElement, setPanelPosition]);
+
+  useEffect(() => {
+    const handleClick = (event) => {
+      if (!singleEditing) return; // Sadece panel ekleme modu aktifken işlem yap
+
+      // Fare konumunu hesaplama
+      const rect = gl.domElement.getBoundingClientRect();
+      const mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      const mouseY = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      // Raycaster kullanarak tıklanan noktayı bulma
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera({ x: mouseX, y: mouseY }, camera);
+      const intersects = raycaster.intersectObject(planeRef.current, true);
+
+      console.log("exper")
+
+      if (intersects.length > 0 && singleEditing) {
+        const intersect = intersects[0];
+        onPanelPlace(intersect.point);
+      }
+    };
+
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, [singleEditing, camera, gl.domElement, setPanelPosition]);
+
+
 
   useEffect(() => {
     const handleMouseDown = (event) => {

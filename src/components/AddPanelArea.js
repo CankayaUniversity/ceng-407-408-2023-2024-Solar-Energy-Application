@@ -16,7 +16,6 @@ export const AddPanelArea = ({
   currentBatchIndex, // Add currentBatchIndex prop
   addPanelStart,
   addPanelEnd,
-  savePanels, // Add savePanels prop
   modelGroupRef, // Add modelGroupRef prop
   batchAddPanelMode,
   modelPath,
@@ -253,7 +252,6 @@ export const AddPanelArea = ({
       placedPanels.forEach((panel) => modelRef.current.add(panel));
       scene.add(modelRef.current);
 
-      savePanels(placedPanels.map((panel) => panel.position));
     });
   };
 
