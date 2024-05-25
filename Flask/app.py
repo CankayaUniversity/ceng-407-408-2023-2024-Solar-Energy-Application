@@ -9,12 +9,13 @@ import segmentation_models as sm
 from tensorflow.keras import models
 import requests
 from PIL import Image
+import uuid
 
 os.environ["SM_FRAMEWORK"] = "tf.keras"
 
 MODEL_NAME = 'UNet_2_initial'
-MODEL_TYPE = 'UNet' # options are: 'Unet', 'FPN' or 'PSPNet'
-BACKBONE = 'resnet34' #resnet34, efficientnetb2
+MODEL_TYPE = 'UNet'  # options are: 'Unet', 'FPN' or 'PSPNet'
+BACKBONE = 'resnet34'  # resnet34, efficientnetb2
 
 label_classes_superstructures_annotation_experiment = ['pvmodule', 'dormer', 'window', 'ladder', 'chimney', 'shadow',
                                                        'tree', 'unknown'] #
@@ -24,7 +25,7 @@ LABEL_CLASSES_SUPERSTRUCTURES = dict(zip(np.arange(0, len(label_classes_superstr
 label_classes_segments_18 = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
                              'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW', 'flat']
 
-LABEL_CLASSES_SEGMENTS = dict(zip(np.arange(0, len(label_classes_segments_18)), label_classes_segments_18))    
+LABEL_CLASSES_SEGMENTS = dict(zip(np.arange(0, len(label_classes_segments_18)), label_classes_segments_18))
 
 label_clases_pv_areas = ['pv_area']
 
@@ -32,16 +33,16 @@ LABEL_CLASSES_PV_AREAS = dict(zip(np.arange(0, len(label_clases_pv_areas)), labe
 
 # Define a color map for the classes
 COLOR_MAP = {
-    0: [255, 0, 0],     # Class 1 - Red
-    1: [0, 255, 0],     # Class 2 - Green
-    2: [0, 0, 255],     # Class 3 - Blue
-    3: [255, 255, 0],   # Class 4 - Yellow
-    4: [255, 0, 255],   # Class 5 - Magenta
-    5: [0, 255, 255],   # Class 6 - Cyan
-    6: [128, 0, 0],     # Class 7 - Maroon
-    7: [0, 128, 0],     # Class 8 - Olive
-    8: [0, 0, 128],     # Class 9 - Navy
-    9: [128, 128, 0],   # Class 10 - Purple
+    0: [255, 0, 0],  # Class 1 - Red
+    1: [0, 255, 0],  # Class 2 - Green
+    2: [0, 0, 255],  # Class 3 - Blue
+    3: [255, 255, 0],  # Class 4 - Yellow
+    4: [255, 0, 255],  # Class 5 - Magenta
+    5: [0, 255, 255],  # Class 6 - Cyan
+    6: [128, 0, 0],  # Class 7 - Maroon
+    7: [0, 128, 0],  # Class 8 - Olive
+    8: [0, 0, 128],  # Class 9 - Navy
+    9: [128, 128, 0],  # Class 10 - Purple
     10: [0, 128, 128],  # Class 11 - Teal
 }
 
@@ -88,34 +89,42 @@ def process_image(image, model, preprocess_input):
     for class_id, color in COLOR_MAP.items():
         color_mask[prediction_mask == class_id] = color
 
-    # Encode the color mask to Base64
-    _, buffer = cv2.imencode('.png', color_mask)
-    encoded_image = base64.b64encode(buffer).decode('utf-8')
-
-    return encoded_image
+    return color_mask
 
 app = Flask(__name__)
 CORS(app)
 
-@app.route('/process_image', methods=['POST'])
+@app.route('/ml', methods=['POST'])
 def process_image_route():
-    if 'staticmapurl' not in request.form:
+    data = request.get_json()
+    print("Received data:", data)  # Gelen veriyi kontrol edelim
+    if not data or 'staticmapurl' not in data:
         return jsonify({'error': 'No URL provided'}), 400
 
-    url = request.form['staticmapurl']
+    url = data['staticmapurl']
+    print("URL:", url)  # Debugging için ekleyelim
     response = requests.get(url)
     if response.status_code != 200:
-        return jsonify({'error': 'Failed to download image'}), 400
+        return jsonify({'error': 'Failed to download image'})
 
     image = Image.open(BytesIO(response.content)).convert('RGB')
     image = np.array(image)
 
-    encoded_image = process_image(image, model, preprocess_input)
+    color_mask = process_image(image, model, preprocess_input)
 
-    return jsonify({'image': encoded_image}), 200
+    # Encode the color mask to save as image
+    random_filename = str(uuid.uuid4()) + '.png'
+    save_path = os.path.join('..', 'public', random_filename)  # Bir üst klasöre çıkıp public klasörüne kaydediyoruz
+    try:
+        cv2.imwrite(save_path, cv2.cvtColor(color_mask, cv2.COLOR_RGB2BGR))
+        print(f"Image saved successfully at {save_path}")
+    except Exception as e:
+        print(f"Failed to save image: {e}")
+        return jsonify({'error': 'Failed to save image'}), 500
 
+    return jsonify({'message': 'Image processed and saved successfully', 'path': random_filename}), 200
 
 if __name__ == '__main__':
     if not os.path.exists('uploads'):
         os.makedirs('uploads')
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)

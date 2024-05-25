@@ -167,12 +167,13 @@ export const Experience = ({
 
   const processRoofImage = async (url) => {
     try {
-      const response = await axios.post('http://localhost:5000/process_image', { url }, {
+      console.log("url", url);
+      const response = await axios.post('http://localhost:5000/ml', { staticmapurl: url }, {
         headers: {
           'Content-Type': 'application/json',
         },
       });
-      const processedImage = `data:image/png;base64,${response.data.processed_image}`;
+      const processedImage = response.data;
       return processedImage;
     } catch (error) {
       console.error('Error processing image:', error);
@@ -181,25 +182,93 @@ export const Experience = ({
   };
   
   
+  
+
+  // useEffect(() => {
+  //   const loadAndProcessImage = async () => {
+  //     if (roofImage) {
+  //       const processedImageUrl = await processRoofImage(roofImage);
+  //       console.log("processedImageUrl", processedImageUrl.path)
+  //       if (processedImageUrl) {
+  //         const loader = new THREE.TextureLoader();
+  //         loader.load(roofImage, (texture) => {
+  //           setRoofTexture(texture);
+  //           setIsLoading(false);
+  //         });
+  //       }
+  //     } else {
+  //       setIsLoading(false);
+  //     }
+  //   };
+  //   loadAndProcessImage();
+  // }, [roofImage]);
+  
+
 
   useEffect(() => {
-    const loadAndProcessImage = async () => {
+    const processImage = async () => {
       if (roofImage) {
         const processedImageUrl = await processRoofImage(roofImage);
+        console.log("processedImageUrl", processedImageUrl.path);
+        const masked = processedImageUrl.path;
         if (processedImageUrl) {
           const loader = new THREE.TextureLoader();
-          loader.load(processedImageUrl, (texture) => {
-            setRoofTexture(texture);
-            setIsLoading(false);
+          loader.load(roofImage, (texture) => {
+            loader.load(masked, (maskTexture) => {
+              const applyMask = () => {
+                const maskCanvas = document.createElement("canvas");
+                maskCanvas.width = maskTexture.image.width;
+                maskCanvas.height = maskTexture.image.height;
+                const maskCtx = maskCanvas.getContext("2d");
+                maskCtx.drawImage(maskTexture.image, 0, 0);
+                const maskData = maskCtx.getImageData(
+                  0,
+                  0,
+                  maskCanvas.width,
+                  maskCanvas.height
+                );
+                const canvas = document.createElement("canvas");
+                canvas.width = texture.image.width;
+                canvas.height = texture.image.height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(texture.image, 0, 0);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                const maskDataPixels = maskData.data;
+
+                for (let i = 0; i < data.length; i += 4) {
+                  // Check if RGB values are not #000080
+                  if (
+                    !(maskDataPixels[i] === 0 && maskDataPixels[i + 1] === 0 && maskDataPixels[i + 2] === 128)
+                  ) {
+                    // Set the original pixel to red
+                    data[i] = 255; // Red
+                    data[i + 1] = 0; // Green
+                    data[i + 2] = 0; // Blue
+                  }
+                }
+
+                ctx.putImageData(imageData, 0, 0);
+                const finalTexture = new THREE.CanvasTexture(canvas);
+                setRoofTexture(finalTexture);
+              };
+
+              if (maskTexture.image.complete) {
+                applyMask();
+              } else {
+                maskTexture.image.onload = applyMask;
+              }
+              setIsLoading(false);
+            });
           });
+        } else {
+          setIsLoading(false);
         }
-      } else {
-        setIsLoading(false);
       }
     };
-    loadAndProcessImage();
-  }, [roofImage]);
 
+    processImage();
+  }, [roofImage]);
 
   useEffect(() => {
     const handleClick = (event) => {
