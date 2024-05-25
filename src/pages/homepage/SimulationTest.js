@@ -303,12 +303,11 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
     console.log("scene cancel", scene);
     console.log("modelRef cancel", modelRef.current);
 
-    if(modelRef.current){
-      console.log("cancel if")
+    if (modelRef.current) {
+      console.log("cancel if");
       scene.remove(modelRef.current);
       setIsCancelled(false);
     }
-
   };
 
   const calculateGridPositions = (selectedRoofPoints, panelSize) => {
@@ -463,11 +462,13 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
     const positions = newPanels.current.map((panel) => panel.position);
     console.log("newpanels", newPanels);
     setBatchGroups((prev) => [...prev, newPanels.current]);
+    const batchCorners = newPanels.current.flatMap(panel => getPanelCorners(panel.position));
+
 
     setCurrentBatchIndex((prevIndex) => prevIndex + 1);
 
     setPanels((prev) => [...prev, ...positions]);
-    setOccupiedPositions((prev) => [...prev, ...positions]);
+    setOccupiedPositions((prev) => [...prev, ...batchCorners]);
 
     setCurrentBatch([]);
     setBatchAddPanelMode(false);
@@ -477,8 +478,8 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
     if (isSingle) {
       modelRef.current = panel;
       setSingleEditing(true);
-
-      // Panelin mevcut pozisyonunu occupiedPositions'dan çıkar
+  
+      // Tekli panelin mevcut pozisyonunu occupiedPositions'dan çıkar
       const corners = getPanelCorners(panel.position);
       setOccupiedPositions((prev) =>
         prev.filter(
@@ -492,29 +493,43 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
       );
     } else {
       const batchIndex = panel.userData.batchIndex;
-      console.log("handlepanelclickdeyim ve batchgroup:", batchGroups);
-      console.log("handlepanelclickdeyim ve batchindex:", batchIndex);
-
       const batchPanels = batchGroups[batchIndex];
-      modelGroupRef.current.clear(); // Clear existing panels in modelGroupRef
-
+      modelGroupRef.current.clear();
+  
       if (batchPanels) {
         setSelectedBatch(batchPanels);
-        setBatchEditing(true); // Enable batch editing
-        modelGroupRef.current.clear(); // Clear existing panels in modelGroupRef
-        console.log("önemli modelgroupref", modelGroupRef.current);
-        batchPanels.forEach((panel) => modelGroupRef.current.add(panel)); // Add selected batch panels to modelGroupRef
-        console.log("önemli modelgroupsssss", modelGroupRef.current);
+        setBatchEditing(true);
+        modelGroupRef.current.clear();
+  
+        // Batch'in mevcut pozisyonlarını sakla
+        const batchPositions = batchPanels.flatMap(panel => getPanelCorners(panel.position));
+  
+        // Yalnızca bu batch'e ait pozisyonları occupiedPositions'dan çıkar
+        setOccupiedPositions((prev) =>
+          prev.filter(
+            (occupiedPosition) =>
+              !batchPositions.some(
+                (corner) =>
+                  Math.abs(occupiedPosition.x - corner.x) < panelSize.width &&
+                  Math.abs(occupiedPosition.y - corner.y) < panelSize.height
+              )
+          )
+        );
+  
+        batchPanels.forEach((panel) => modelGroupRef.current.add(panel));
       } else {
         console.error(`Batch group not found for index: ${batchIndex}`);
       }
     }
   };
+  
 
   const handleBatchEditingFinish = (newPanels) => {
     const positions = newPanels.current.map((panel) => panel.position);
     const index = newPanels.current[0].userData.batchIndex;
     console.log("newpanels", newPanels);
+    const batchCorners = newPanels.current.flatMap(panel => getPanelCorners(panel.position));
+
     setBatchGroups((prev) => {
       const updatedBatchGroups = [...prev];
       updatedBatchGroups[index] = newPanels.current;
@@ -531,7 +546,7 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
       return updatedPanels;
     });
 
-    setOccupiedPositions((prev) => [...prev, ...positions]);
+    setOccupiedPositions((prev) => [...prev, ...batchCorners]);
 
     // `currentBatch`'i sıfırla
     setCurrentBatch([]);

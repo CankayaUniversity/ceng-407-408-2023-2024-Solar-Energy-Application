@@ -4,10 +4,8 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 let originalModel = null; // Orijinal modeli saklamak için
 
 export const loadOriginalModel = async (modelPath, onLoad) => {
-  console.log("originalModel", originalModel, " modelPath", modelPath)
   if (originalModel && originalModel.path === modelPath) {
     onLoad(originalModel);
-    console.log('scenesiz')
     return;
   }
 
