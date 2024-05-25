@@ -10,10 +10,13 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Snackbar,
+  Alert,
+  LinearProgress,
+  Box
 } from "@mui/material";
 import CancelIcon from "@mui/icons-material/Cancel";
 import SaveIcon from "@mui/icons-material/Save";
-// import LockResetIcon from "@mui/icons-material/LockReset";
 import { USER } from "../../api/api";
 import { useNavigate } from "react-router-dom";
 
@@ -26,10 +29,12 @@ function Profile({ onCancel }) {
     password: "",
   });
 
-  const navigate = useNavigate();
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
+  const [passwordStrength, setPasswordStrength] = useState(0);
 
-  // const [oldPassword, setOldPassword] = useState('');
-  // const [newPassword, setNewPassword] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     USER.getProfile().then(([data, error]) => {
@@ -37,7 +42,7 @@ function Profile({ onCancel }) {
         console.log("Profil bilgileri yüklendi:", data);
         setUser({
           ...data,
-          birthDate: data.birthDate.split("T")[0], // ISO string formatından tarihi alın
+          birthDate: data.birthDate.split("T")[0],
           password: "",
         });
       } else {
@@ -52,18 +57,24 @@ function Profile({ onCancel }) {
       ...prevUser,
       [name]: value,
     }));
+
+    if (name === "password") {
+      setPasswordStrength(value.length > 5 ? 100 : (value.length / 5) * 100);
+    }
   };
 
-  // const handlePasswordChange = (e) => {
-  //   if (e.target.name === "currentPassword") {
-  //     setOldPassword(e.target.value);
-  //   } else if (e.target.name === "newPassword") {
-  //     setNewPassword(e.target.value);
-  //   }
-  // };
-
   const handleSave = () => {
-    console.log("data", user);
+    if (user.password === "" || user.password.length < 5) {
+      setSnackbarMessage(
+        user.password === ""
+          ? "Please type the password correctly."
+          : "Password must be at least 5 characters."
+      );
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+      return;
+    }
+
     USER.updateProfile(user._id, {
       name: user.name,
       email: user.email,
@@ -72,10 +83,14 @@ function Profile({ onCancel }) {
       birthDate: user.birthDate,
     }).then(([data, error]) => {
       if (!error) {
-        alert("Profil güncellendi!");
+        setSnackbarMessage("Profil güncellendi!");
+        setSnackbarSeverity("success");
+        setSnackbarOpen(true);
         navigate("/paperbase");
       } else {
-        alert("Profil güncellenemedi!");
+        setSnackbarMessage("Profil güncellenemedi!");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
       }
     });
   };
@@ -84,24 +99,9 @@ function Profile({ onCancel }) {
     navigate("/paperbase");
   };
 
-  // const handleUpdatePassword = () => {
-  //   if (oldPassword && newPassword) {
-  //     USER.updateProfile(user.id, { oldPassword, newPassword }) // API'nize göre değişiklik yapabilirsiniz
-  //       .then(([data, error]) => {
-  //         if (data) {
-  //           console.log('Şifre güncellendi:', data);
-  //           alert('Şifre başarıyla güncellendi.');
-  //           setOldPassword('');
-  //           setNewPassword('');
-  //         } else {
-  //           console.error('Şifre güncellenirken hata oluştu:', error);
-  //           alert('Eski şifre yanlış veya diğer hata!');
-  //         }
-  //       });
-  //   } else {
-  //     alert('Lütfen eski ve yeni şifre alanlarını doldurunuz.');
-  //   }
-  // };
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
 
   return (
     <Paper style={{ padding: "20px", maxWidth: 500, margin: "20px auto" }}>
@@ -164,7 +164,7 @@ function Profile({ onCancel }) {
         </Grid>
         <Grid item xs={12}>
           <TextField
-            label="New Password"
+            label="Current Password or New Password"
             fullWidth
             name="password"
             type="password"
@@ -172,18 +172,21 @@ function Profile({ onCancel }) {
             onChange={handleInputChange}
             placeholder="Enter new password"
           />
+          <Box sx={{ width: '100%', mt: 2, display: 'flex', alignItems: 'center' }}>
+            <LinearProgress
+              variant="determinate"
+              value={passwordStrength}
+              sx={{
+                height: 10,
+                flex: 1,
+                bgcolor: passwordStrength === 100 ? 'green' : 'red'
+              }}
+            />
+            <Typography variant="body2" sx={{ ml: 2 }}>
+              {`${Math.round(passwordStrength)}%`}
+            </Typography>
+          </Box>
         </Grid>
-        {/* <Grid item xs={12}>
-          <TextField
-            label="New Password"
-            fullWidth
-            name="newPassword"
-            type="password"
-            value={newPassword}
-            onChange={handlePasswordChange}
-            placeholder="Enter new password"
-          />
-        </Grid> */}
         <Grid item xs={6} align="right">
           <Button
             startIcon={<CancelIcon />}
@@ -204,17 +207,17 @@ function Profile({ onCancel }) {
             Save
           </Button>
         </Grid>
-        {/* <Grid item xs={12} align="center">
-          <Button
-            startIcon={<LockResetIcon />}
-            variant="contained"
-            color="secondary"
-            onClick={handleUpdatePassword}
-          >
-            Update Password
-          </Button>
-        </Grid> */}
       </Grid>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Paper>
   );
 }
