@@ -26,6 +26,8 @@ import { AddPanelArea } from "../../components/AddPanelArea";
 import { loadOriginalModel } from "../../components/LoadOriginalModel";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
+//cancel'e bakılacak
+
 export function pointInPolygon(point, polygon) {
   let isInside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -42,8 +44,8 @@ export function pointInPolygon(point, polygon) {
   return isInside;
 }
 
-function CameraControlled() {
-  const { camera } = useThree();
+function CameraControlled({ handleCancel, isCancelled }) {
+  const { camera, scene } = useThree();
 
   useEffect(() => {
     const initialDistance = 600;
@@ -76,6 +78,12 @@ function CameraControlled() {
       document.removeEventListener("wheel", handleMouseWheel);
     };
   }, [camera]);
+
+  useEffect(() => {
+    if (isCancelled) {
+      handleCancel(scene);
+    }
+  }, [isCancelled]);
 
   return null;
 }
@@ -214,7 +222,6 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
   const [singleEditing, setSingleEditing] = useState(false);
   const [isSingle, setIsSingle] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-
   const [modelPath, setModelPath] = useState("s2.glb");
 
   const handleModelChange = (event) => {
@@ -276,20 +283,32 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
   const getPanelCorners = (position) => {
     const baseModelWidth = 8; // Base model width
     const baseModelHeight = 6.5; // Base model height
-  
+
     const scaleX = 1.7; // Horizontal scaling
     const scaleY = 3.4; // Vertical scaling
     const modelWidth = baseModelWidth * scaleX;
     const modelHeight = baseModelHeight * scaleY;
-  
+
     const corners = [
       new THREE.Vector3(-modelWidth / 2, -modelHeight / 2, 0).add(position),
       new THREE.Vector3(modelWidth / 2, -modelHeight / 2, 0).add(position),
       new THREE.Vector3(modelWidth / 2, modelHeight / 2, 0).add(position),
       new THREE.Vector3(-modelWidth / 2, modelHeight / 2, 0).add(position),
     ];
-  
+
     return corners;
+  };
+
+  const handleCancel = (scene) => {
+    console.log("scene cancel", scene);
+    console.log("modelRef cancel", modelRef.current);
+
+    if(modelRef.current){
+      console.log("cancel if")
+      scene.remove(modelRef.current);
+      setIsCancelled(false);
+    }
+
   };
 
   const calculateGridPositions = (selectedRoofPoints, panelSize) => {
@@ -577,25 +596,16 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
           <Grid item>
             <Button
               variant="contained"
-              onClick={() => setAddPanelMode(!addPanelMode)}
-            >
-              {addPanelMode ? "Cancel" : "Add Solar Panel"}
-            </Button>
-          </Grid>
-          <Grid item>
-            <Button
-              variant="contained"
               onClick={() => {
-                setIsCancelled(true);
-                setAddPanelMode(false);
-                setShowModelPreview(false);
-                setPanelPosition(new THREE.Vector3());
-                if (panels.length > 0) {
-                  setPanels(panels.slice(0, -1));
+                if (addPanelMode) {
+                  setIsCancelled(true);
+                  setAddPanelMode(false);
+                } else {
+                  setAddPanelMode(!addPanelMode);
                 }
               }}
             >
-              Cancel
+              {addPanelMode ? "Cancel" : "Add Solar Panel"}
             </Button>
           </Grid>
           <Grid item>
@@ -739,7 +749,10 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
               enablePan={true}
               enableRotate={false}
             />
-            <CameraControlled />
+            <CameraControlled
+              handleCancel={handleCancel}
+              isCancelled={isCancelled}
+            />
             {editPanel && (
               <RaycasterComponent
                 handlePanelClick={handlePanelClick}
@@ -794,7 +807,6 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
               <AddPanel
                 isCancelled={isCancelled}
                 position={panelPosition}
-                isVisible={addPanelMode}
                 modelPath={modelPath}
                 modelReference={modelRef}
                 currentIndex={currentIndex}

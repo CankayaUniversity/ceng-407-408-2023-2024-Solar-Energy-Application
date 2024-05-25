@@ -16,27 +16,23 @@ const loadGLTFModel = async (path, onLoad) => {
 
 export const AddPanel = ({
   position,
-  isPlaced,
   isCancelled,
   modelPath,
   modelReference,
   currentIndex,
   singleEditing,
 }) => {
-  const [model, setModel] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const modelRef = useRef();
   const { scene } = useThree();
   const [rotation, setRotation] = useState(0); // Başlangıç dönüş açısı 0 derece. Panelin dönmesi için gerekli
-  const light = new THREE.AmbientLight(undefined, 0.5); // soft white light with 0.5 intensity
   const [rotationX, setRotationX] = useState(Math.PI / 2);
 
   useEffect(() => {
-    if(singleEditing){
+    if (singleEditing) {
       modelRef.current = modelReference.current;
-      console.log("model referecnec.curr",modelReference.current)
+      currentIndex = modelReference.current.userData.index;
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     // 'position' prop'u her değiştiğinde modelin konumunu güncelle
@@ -51,14 +47,12 @@ export const AddPanel = ({
     // Model yalnızca bir kez yüklenir
 
     if (modelRef.current) {
-      console.log("2");
 
       scene.remove(modelRef.current);
       modelRef.current = null;
     }
 
     if (!modelRef.current) {
-      console.log("3");
 
       loadOriginalModel(modelPath, (originalModel) => {
         const modelClone = originalModel.scene.clone();
@@ -74,9 +68,10 @@ export const AddPanel = ({
         };
         scene.add(modelClone);
         modelRef.current = modelClone;
-        modelReference = modelRef;
+        modelReference.current = modelClone;
       });
     }
+
   }, [scene, isCancelled]);
 
   useEffect(() => {
@@ -111,4 +106,3 @@ export const AddPanel = ({
 
   return null;
 };
-
