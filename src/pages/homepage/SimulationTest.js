@@ -300,9 +300,6 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
   };
 
   const handleCancel = (scene) => {
-    console.log("scene cancel", scene);
-    console.log("modelRef cancel", modelRef.current);
-
     if (modelRef.current) {
       console.log("cancel if");
       scene.remove(modelRef.current);
@@ -386,7 +383,6 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
         )
       ) {
         console.warn("You can not replace a panel to another panels top.");
-        console.log("occupied'a yakalandım", occupiedPositions);
         return;
       }
       if (!isCancelled) {
@@ -408,7 +404,6 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
         }
       }
     } else {
-      console.log("elsedeyim");
       if (!pointInPolygon(position, selectedRoofPoints)) {
         console.warn("Panel can only be placed within the selected area.");
         return;
@@ -462,8 +457,9 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
     const positions = newPanels.current.map((panel) => panel.position);
     console.log("newpanels", newPanels);
     setBatchGroups((prev) => [...prev, newPanels.current]);
-    const batchCorners = newPanels.current.flatMap(panel => getPanelCorners(panel.position));
-
+    const batchCorners = newPanels.current.flatMap((panel) =>
+      getPanelCorners(panel.position)
+    );
 
     setCurrentBatchIndex((prevIndex) => prevIndex + 1);
 
@@ -478,7 +474,7 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
     if (isSingle) {
       modelRef.current = panel;
       setSingleEditing(true);
-  
+
       // Tekli panelin mevcut pozisyonunu occupiedPositions'dan çıkar
       const corners = getPanelCorners(panel.position);
       setOccupiedPositions((prev) =>
@@ -491,19 +487,23 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
             )
         )
       );
-    } else {
+
+      setIsSingle(false);
+    } else if(panel.userData.startPosition) {
       const batchIndex = panel.userData.batchIndex;
       const batchPanels = batchGroups[batchIndex];
       modelGroupRef.current.clear();
-  
+
       if (batchPanels) {
         setSelectedBatch(batchPanels);
         setBatchEditing(true);
         modelGroupRef.current.clear();
-  
+
         // Batch'in mevcut pozisyonlarını sakla
-        const batchPositions = batchPanels.flatMap(panel => getPanelCorners(panel.position));
-  
+        const batchPositions = batchPanels.flatMap((panel) =>
+          getPanelCorners(panel.position)
+        );
+
         // Yalnızca bu batch'e ait pozisyonları occupiedPositions'dan çıkar
         setOccupiedPositions((prev) =>
           prev.filter(
@@ -515,20 +515,21 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
               )
           )
         );
-  
+
         batchPanels.forEach((panel) => modelGroupRef.current.add(panel));
       } else {
         console.error(`Batch group not found for index: ${batchIndex}`);
       }
     }
   };
-  
 
   const handleBatchEditingFinish = (newPanels) => {
     const positions = newPanels.current.map((panel) => panel.position);
     const index = newPanels.current[0].userData.batchIndex;
     console.log("newpanels", newPanels);
-    const batchCorners = newPanels.current.flatMap(panel => getPanelCorners(panel.position));
+    const batchCorners = newPanels.current.flatMap((panel) =>
+      getPanelCorners(panel.position)
+    );
 
     setBatchGroups((prev) => {
       const updatedBatchGroups = [...prev];
