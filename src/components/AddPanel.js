@@ -21,6 +21,8 @@ export const AddPanel = ({
   modelReference,
   currentIndex,
   singleEditing,
+  rotationAngle,
+  orientationAngle,
 }) => {
   const modelRef = useRef();
   const { scene } = useThree();
@@ -32,7 +34,12 @@ export const AddPanel = ({
       modelRef.current = modelReference.current;
       currentIndex = modelReference.current.userData.index;
     }
-  }, []);
+
+    if(orientationAngle && rotationAngle){
+      setRotation(rotationAngle);
+      setRotationX(orientationAngle)
+    }
+  }, [rotationAngle, orientationAngle]);
 
   useEffect(() => {
     // 'position' prop'u her değiştiğinde modelin konumunu güncelle
