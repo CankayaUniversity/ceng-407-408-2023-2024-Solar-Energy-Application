@@ -26,6 +26,11 @@ import { AddPanelArea } from "../../components/AddPanelArea";
 import { loadOriginalModel } from "../../components/LoadOriginalModel";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
+let redPixels = [];
+export function setRedPixels(pixels) {
+  redPixels = pixels;
+}
+
 //cancel'e bakılacak
 
 export function pointInPolygon(point, polygon) {
@@ -817,6 +822,7 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
                 modelGroupRef={modelGroupRef} // Pass modelGroupRef
                 batchAddPanelMode={batchAddPanelMode}
                 modelPath={modelPath}
+                redPixels={redPixels}
               />
             )}
             {(addPanelMode || singleEditing) && (

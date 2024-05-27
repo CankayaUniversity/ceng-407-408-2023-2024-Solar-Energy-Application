@@ -19,6 +19,7 @@ export const AddPanelArea = ({
   modelGroupRef, // Add modelGroupRef prop
   batchAddPanelMode,
   modelPath,
+  redPixels,
 }) => {
   const [startPosition, setStartPosition] = useState(addPanelStart);
   const [currentPosition, setCurrentPosition] = useState(addPanelEnd);

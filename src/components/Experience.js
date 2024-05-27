@@ -5,6 +5,8 @@ import { PlaneGeometry, MeshBasicMaterial, Mesh } from "three";
 import { AddPanel } from "../components/AddPanel";
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
+import axios from 'axios';
+import { setRedPixels } from '../pages/homepage/SimulationTest';
 
 function Text({ text, position, size, color }) {
   const font = new FontLoader().parse(require('../fonts/helvetiker_regular.typeface.json')); // Replace with your font file
@@ -189,11 +191,125 @@ export const Experience = ({
 
   
 
+  const [isLoading, setIsLoading] = useState(true);
+
+
+  const processRoofImage = async (url) => {
+    try {
+      console.log("url", url);
+      const response = await axios.post('http://localhost:5000/ml', { staticmapurl: url }, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const processedImage = response.data;
+      return processedImage;
+    } catch (error) {
+      console.error('Error processing image:', error);
+      return null;
+    }
+  };
+  
+  
+  
+
+  // useEffect(() => {
+  //   const loadAndProcessImage = async () => {
+  //     if (roofImage) {
+  //       const processedImageUrl = await processRoofImage(roofImage);
+  //       console.log("processedImageUrl", processedImageUrl.path)
+  //       if (processedImageUrl) {
+  //         const loader = new THREE.TextureLoader();
+  //         loader.load(roofImage, (texture) => {
+  //           setRoofTexture(texture);
+  //           setIsLoading(false);
+  //         });
+  //       }
+  //     } else {
+  //       setIsLoading(false);
+  //     }
+  //   };
+  //   loadAndProcessImage();
+  // }, [roofImage]);
+  
+
+
   useEffect(() => {
-    const loader = new THREE.TextureLoader();
-    loader.load(roofImage, (texture) => {
-      setRoofTexture(texture);
-    });
+    const processImage = async () => {
+      if (roofImage) {
+        const processedImageUrl = await processRoofImage(roofImage);
+        console.log("processedImageUrl", processedImageUrl.path);
+        const masked = processedImageUrl.path;
+        if (processedImageUrl) {
+          const loader = new THREE.TextureLoader();
+          loader.load(roofImage, (texture) => {
+            loader.load(masked, (maskTexture) => {
+              const applyMask = () => {
+                const maskCanvas = document.createElement("canvas");
+                maskCanvas.width = maskTexture.image.width;
+                maskCanvas.height = maskTexture.image.height;
+                const maskCtx = maskCanvas.getContext("2d");
+                maskCtx.drawImage(maskTexture.image, 0, 0);
+                const maskData = maskCtx.getImageData(
+                  0,
+                  0,
+                  maskCanvas.width,
+                  maskCanvas.height
+                );
+                const canvas = document.createElement("canvas");
+                canvas.width = texture.image.width;
+                canvas.height = texture.image.height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(texture.image, 0, 0);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                const maskDataPixels = maskData.data;
+  
+                let redPixels = []; // Kırmızı piksellerin koordinatlarını depolamak için bir dizi
+  
+                for (let i = 0; i < data.length; i += 4) {
+                  // Check if RGB values are not #000080
+                  if (
+                    !(maskDataPixels[i] === 0 && maskDataPixels[i + 1] === 0 && maskDataPixels[i + 2] === 128)
+                  ) {
+                    // Set the original pixel to red
+                    data[i] = 255; // Red
+                    data[i + 1] = 0; // Green
+                    data[i + 2] = 0; // Blue
+  
+                    // Kırmızı pikselin x, y, z koordinatlarını hesapla ve depola
+                    const index = i / 4;
+                    const x = index % canvas.width;
+                    const y = Math.floor(index / canvas.width);
+                    const z = 0; // 2D canvas olduğu için z koordinatı 0
+  
+                    redPixels.push({ x, y, z });
+                  }
+                }
+  
+                console.log("Red Pixels: ", redPixels); // Kırmızı piksellerin koordinatlarını konsola yazdır
+                setRedPixels(redPixels); // Kırmızı pikselleri redPixels.js dosyasına aktar
+
+                ctx.putImageData(imageData, 0, 0);
+                const finalTexture = new THREE.CanvasTexture(canvas);
+                setRoofTexture(finalTexture);
+              };
+  
+              if (maskTexture.image.complete) {
+                applyMask();
+              } else {
+                maskTexture.image.onload = applyMask;
+              }
+              setIsLoading(false);
+            });
+          });
+        } else {
+          setIsLoading(false);
+        }
+      }
+    };
+  
+    processImage();
   }, [roofImage]);
 
   const [newSelectedPoints, setNewSelectedPoints] = useState([]);
@@ -491,7 +607,12 @@ export const Experience = ({
   return (
     <>
       {renderPanelPreviews()}
-      {roofTexture && (
+      {isLoading && (
+        <mesh position={[0, 0, 0]}>
+          <Text text="Loading..." position={[0, 0, 0]} size={1} color="black" />
+        </mesh>
+      )}
+      {!isLoading && roofTexture && (
         <mesh ref={planeRef} position={[0, 0, 0]}>
           <planeGeometry
             args={[window.innerWidth / 2, window.innerHeight, 1, 1]}
