@@ -22,7 +22,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import { visuallyHidden } from "@mui/utils";
-import { Button, TextField } from "@mui/material";
+import { Button, TextField, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
 import { Link } from "react-router-dom";
 import EditIcon from "@mui/icons-material/Edit";
 import SearchIcon from "@mui/icons-material/Search";
@@ -373,13 +373,22 @@ export default function Customers() {
   };
 
   const handleDeleteClick = async () => {
-    const confirmDelete = window.confirm("Are you sure you want to delete the selected customers?");
-    if (confirmDelete) {
-      const deletePromises = selected.map(id => CUSTOMERS.deleteCustomer(id));
-      await Promise.all(deletePromises);
-      setRows(rows.filter(row => !selected.includes(row._id)));
-      setSelected([]);
-    }
+    setDeleteDialogOpen(true); // Dialogu açmak için state'i güncelle
+  };
+  
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false); // Dialog açık/kapalı durumu için state ekle
+  
+  // Dialog onay ve iptal fonksiyonları
+  const handleConfirmDelete = async () => {
+    const deletePromises = selected.map(id => CUSTOMERS.deleteCustomer(id));
+    await Promise.all(deletePromises);
+    setRows(rows.filter(row => !selected.includes(row._id)));
+    setSelected([]);
+    setDeleteDialogOpen(false); // Dialogu kapat
+  };
+  
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false); // Dialogu kapat
   };
 
   const isSelected = (id) => selected.indexOf(id) !== -1;
@@ -540,6 +549,27 @@ export default function Customers() {
           />
         </Paper>
       )}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleCancelDelete}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to delete the selected customers?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmDelete} color="primary" autoFocus>
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
