@@ -6,11 +6,9 @@ import FlashOnIcon from '@mui/icons-material/FlashOn';
 import SecurityIcon from '@mui/icons-material/Security';
 import SolarPowerIcon from '@mui/icons-material/SolarPower';
 import image1 from '../../assets/images/cardblog1.png';
-import image2 from '../../assets/images/cardblog2.png';
-import image3 from '../../assets/images/panelandcard-image/image3.jpeg';
-import image4 from '../../assets/images/panelandcard-image/image4.jpeg';
-import image5 from '../../assets/images/panelandcard-image/image5.jpeg';
-import image6 from '../../assets/images/panelandcard-image/image6.jpeg';
+import solar3 from '../../assets/images/panelandcard-image/solar3.jpg'
+import solar4 from '../../assets/images/panelandcard-image/solar4.jpg'
+import solar5 from '../../assets/images/panelandcard-image/solar5.jpg'
 
 const data = [
   {
@@ -24,21 +22,21 @@ const data = [
     icon: FlashOnIcon,
     title: 'Grid Off. Lights On.',
     description: 'Store more excess energy in your SolarApp Home Battery, and keep the power on during an outage with the Backup Interface.',
-    image: image6,
+    image: solar3,
     color: 'blue',
   },
   {
     icon: SecurityIcon,
     title: 'Maximum Safety',
     description: 'Ensure the highest level of safety with advanced protection features integrated into your SolarApp system.',
-    image: image3,
+    image: solar4,
     color: 'purple',
   },
   {
     icon: SolarPowerIcon,
     title: 'Smart Battery',
     description: 'Optimize your energy usage with a smart battery that stores solar energy for later use.',
-    image: image4,
+    image: solar5,
     color: 'orange',
   },
 ];

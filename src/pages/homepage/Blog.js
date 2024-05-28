@@ -33,8 +33,8 @@ export default function Blog() {
   useEffect(() => {
     const accestoken = localStorage.getItem("accessToken");
     if (accestoken) {
-      console.log("Token alındı:", accestoken); 
-      navigate("/paperbase"); 
+      console.log("Token alındı:", accestoken);
+      navigate("/paperbase");
     }
   }, []);
 
@@ -51,14 +51,14 @@ export default function Blog() {
             </Grid>
             <Grid item xs={12} md={12}></Grid>
           </Grid>
-          <Grid item xs={12} md={12}>
-            <CardBlog></CardBlog>
-          </Grid>
         </main>
       </Container>
       <VideoBlog></VideoBlog>
       <Container maxWidth="lg">
         <main>
+          <Grid item xs={12} md={12}>
+            <CardBlog></CardBlog>
+          </Grid>
           <Grid item xs={12} md={12}>
             <BlogLink></BlogLink>
           </Grid>

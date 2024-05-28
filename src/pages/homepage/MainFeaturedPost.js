@@ -26,6 +26,7 @@ function MainFeaturedPost(props) {
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center',
           backgroundImage: `url(${post.image})`,
+          height: '55vh', 
         }}
       >
         {<img style={{ display: 'none' }} src={post.image} alt={post.imageText} />}
@@ -39,13 +40,19 @@ function MainFeaturedPost(props) {
             backgroundColor: 'rgba(0,0,0,.3)',
           }}
         />
-        <Grid container>
+        <Grid 
+          container 
+          alignItems="center" 
+          justifyContent="center"
+          sx={{ height: '100%' }} 
+        >
           <Grid item md={6}>
             <Box
               sx={{
                 position: 'relative',
                 p: { xs: 3, md: 6 },
                 pr: { md: 0 },
+                textAlign: 'center',
               }}
             >
               <Typography component="h1" variant="h3" color="inherit" gutterBottom>

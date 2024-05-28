@@ -2,13 +2,11 @@ import * as React from 'react';
 import { useState } from 'react';
 import { Box, Grid, Typography, Card, CardActionArea, CardContent, CardMedia, Dialog, DialogTitle, DialogContent, Button } from '@mui/material';
 import { styled } from '@mui/system';
-import image1 from '../../assets/images/cardblog1.png';
-import image2 from '../../assets/images/cardblog2.png';
 import moresolar from '../../assets/images/moresolar.png';
 import moresolarss from '../../assets/images/moresolar.jpeg'; 
 import card1 from '../../assets/images/card1.jpeg';
-import model1 from '../../assets/images/model1.jpeg'; 
-import model2 from '../../assets/images/model2.jpeg'; 
+import model2 from '../../assets/images/panelandcard-image/solardeneme2.jpg'; 
+import model4 from '../../assets/images/panelandcard-image/solardeneme.jpg'
 
 const cards = [
   {
@@ -30,14 +28,14 @@ const cards = [
 
 const images = [
   {
-    src: model1,
+    src: model2,
     alt: 'Image 1',
-    text: 'Model1 buraya yazı yazılacak',
+    text: 'Model1 ',
   },
   {
-    src: model2,
+    src: model4,
     alt: 'Image 2',
-    text: 'model2 yazı yazılacak',
+    text: 'Model2 ',
   },
 ];
 
@@ -50,6 +48,7 @@ const CardBlog = styled(Card)(({ theme }) => ({
 export default function PostBlog() {
   const [open, setOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
+  const [thirdCardOpen, setThirdCardOpen] = useState(false);
 
   const handleOpenDialog = (card) => {
     setSelectedCard(card);
@@ -58,6 +57,14 @@ export default function PostBlog() {
 
   const handleCloseDialog = () => {
     setOpen(false);
+  };
+
+  const handleOpenThirdCard = () => {
+    setThirdCardOpen(true);
+  };
+
+  const handleCloseThirdCard = () => {
+    setThirdCardOpen(false);
   };
 
   const handleNavigate = (url) => {
@@ -70,7 +77,7 @@ export default function PostBlog() {
         {cards.map((card, index) => (
           <Grid item key={index}>
             <CardBlog>
-              <CardActionArea onClick={() => index === 1 ? handleNavigate('https://github.com/CankayaUniversity/ceng-407-408-2023-2024-Solar-Energy-Application/wiki/User-Manual') : handleOpenDialog(card)}>
+              <CardActionArea onClick={() => index === 1 ? handleNavigate('https://github.com/CankayaUniversity/ceng-407-408-2023-2024-Solar-Energy-Application/wiki/User-Manual') : index === 2 ? handleOpenThirdCard() : handleOpenDialog(card)}>
                 <CardMedia component="img" height="200" image={card.image} alt={card.title} />
                 <CardContent>
                   <Typography gutterBottom variant="h5" component="div">
@@ -99,6 +106,16 @@ export default function PostBlog() {
           </Grid>
         </DialogContent>
         <Button onClick={handleCloseDialog} color="primary">
+          Close
+        </Button>
+      </Dialog>
+
+      <Dialog open={thirdCardOpen} onClose={handleCloseThirdCard} maxWidth="md" fullWidth>
+        <DialogTitle>Why SolarApp</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1">...</Typography>
+        </DialogContent>
+        <Button onClick={handleCloseThirdCard} color="primary">
           Close
         </Button>
       </Dialog>
