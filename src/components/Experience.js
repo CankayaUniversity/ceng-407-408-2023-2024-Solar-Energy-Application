@@ -636,7 +636,7 @@ export const Experience = ({
       {!isLoading && roofTexture && (
         <mesh ref={planeRef} position={[0, 0, 0]}>
           <planeGeometry
-            args={[window.innerWidth / 2, window.innerHeight, 1, 1]}
+            args={[window.innerWidth / 1.5, window.innerHeight, 1, 1]}
           />
           <meshBasicMaterial map={roofTexture} />
         </mesh>
