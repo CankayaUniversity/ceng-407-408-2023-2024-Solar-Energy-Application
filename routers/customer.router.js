@@ -16,12 +16,12 @@ router.post("/customers/create-customer", authenticateUser, async (req, res) => 
       const address = req.body.address;
 
       // Adresten koordinatları al
-      const coordinates = await getCoordinatesFromAddress(address);
-      console.log("coordinates", coordinates);
+      //const coordinates = await getCoordinatesFromAddress(address);
+      //console.log("coordinates", coordinates);
 
       // Koordinatları adres bilgisine ekle
-      address.latitude = coordinates.latitude.toString();
-      address.longitude = coordinates.longitude.toString();
+      //address.latitude = coordinates.latitude.toString();
+      //address.longitude = coordinates.longitude.toString();
 
       // Yeni adres nesnesi oluştur ve kaydet
       const newAddress = new Address(address);
@@ -29,8 +29,8 @@ router.post("/customers/create-customer", authenticateUser, async (req, res) => 
 
       // customerData'ya adres ID'sini ve koordinatları ekle
       customerData.address_id = newAddress._id;
-      customerData.latitude = coordinates.latitude;
-      customerData.longitude = coordinates.longitude;
+      //customerData.latitude = coordinates.latitude;
+      //customerData.longitude = coordinates.longitude;
 
       // Mevcut kullanıcının şirket bilgisini al
       const currentUser = req.user;
