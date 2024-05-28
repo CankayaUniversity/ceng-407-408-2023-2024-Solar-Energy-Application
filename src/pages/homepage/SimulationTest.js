@@ -363,17 +363,34 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
       new THREE.Vector3(-modelWidth / 2, modelHeight / 2, 0).add(position),
     ];
 
+    const createSmallPolygon = (center, size) => {
+      const halfSize = size / 2;
+      return [
+        new THREE.Vector3(center.x - halfSize, center.y - halfSize, center.z),
+        new THREE.Vector3(center.x + halfSize, center.y - halfSize, center.z),
+        new THREE.Vector3(center.x + halfSize, center.y + halfSize, center.z),
+        new THREE.Vector3(center.x - halfSize, center.y + halfSize, center.z),
+      ];
+    };
+
+    const isRedPixelCollision = redPixels3D.some(
+      (redPixel) => {
+        const redPixelPolygon = createSmallPolygon(redPixel, paddedModelWidth / 2);
+        return corners.some(corner => pointInPolygon(corner, redPixelPolygon));
+      }
+    );
+
     if (selectionStart != null && selectionEnd != null) {
       let topRight = { x: selectionEnd.x, y: selectionStart.y, z: 0 };
       let bottomLeft = { x: selectionStart.x, y: selectionEnd.y, z: 0 };
       let points = [selectionStart, topRight, selectionEnd, bottomLeft];
       setObstaclesPoints(points);
-      if (pointInPolygon(position, points)) {
-        console.log("pixelssss", redPixels3D);
-        console.warn("Panel can not placed on obstacles.");
-        return;
-      }
-      if (!pointInPolygon(position, selectedRoofPoints)) {
+       if (pointInPolygon(position, points)) {
+      console.log("pixelssss", redPixels3D);
+      console.warn("Panel can not placed on obstacles or red pixels.");
+      return;
+    }
+      if (isRedPixelCollision || !pointInPolygon(position, selectedRoofPoints)) {
         console.warn("Panel can only be placed within the selected area.");
         return;
       }
