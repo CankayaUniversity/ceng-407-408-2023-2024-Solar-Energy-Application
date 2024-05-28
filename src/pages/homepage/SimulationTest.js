@@ -188,7 +188,7 @@ function RaycasterComponent({
  * @param {string} props.screenshot - The screenshot to be displayed.
  * @returns {JSX.Element} The SimulationTest component.
  */
-function SimulationTest({ screenshot, currentCenter, currentZoom }) {
+function SimulationTest({ screenshot, currentCenter, currentZoom, formData, setFormData }) {
   const [isSelecting, setIsSelecting] = useState(false);
   const [showModelPreview, setShowModelPreview] = useState(false);
   const [addPanelMode, setAddPanelMode] = useState(false);
@@ -262,6 +262,7 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
   const canvasRef = useRef();
 
   useEffect(() => {
+    console.log("formData",formData)
     console.log("Model path in useEffect:", modelPath);
     loadOriginalModel(modelPath, (originalModel) => {
       console.log("original", originalModel);
@@ -272,6 +273,13 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
 
   useEffect(() => {
     console.log("panels:", panels);
+    setFormData((prevState) => ({
+      ...prevState,
+      solarPanel: {
+        ...prevState.solarPanel,
+        panels
+      }
+    }));
   }, [panels]);
 
   const toggleRoofSelection = () =>
