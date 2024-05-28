@@ -26,9 +26,10 @@ import { AddPanelArea } from "../../components/AddPanelArea";
 import { loadOriginalModel } from "../../components/LoadOriginalModel";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
-let redPixels = [];
+let redPixels3D = [];
 export function setRedPixels(pixels) {
-  redPixels = pixels;
+  redPixels3D = pixels;
+  console.log("redPixels3Dilk", redPixels3D);
 }
 
 //cancel'e bakılacak
@@ -368,6 +369,7 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
       let points = [selectionStart, topRight, selectionEnd, bottomLeft];
       setObstaclesPoints(points);
       if (pointInPolygon(position, points)) {
+        console.log("pixelssss", redPixels3D);
         console.warn("Panel can not placed on obstacles.");
         return;
       }
@@ -822,7 +824,7 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
                 modelGroupRef={modelGroupRef} // Pass modelGroupRef
                 batchAddPanelMode={batchAddPanelMode}
                 modelPath={modelPath}
-                redPixels={redPixels}
+                redPixels3D={redPixels3D}
               />
             )}
             {(addPanelMode || singleEditing) && (

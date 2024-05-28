@@ -19,7 +19,7 @@ export const AddPanelArea = ({
   modelGroupRef, // Add modelGroupRef prop
   batchAddPanelMode,
   modelPath,
-  redPixels,
+  redPixels3D,
 }) => {
   const [startPosition, setStartPosition] = useState(addPanelStart);
   const [currentPosition, setCurrentPosition] = useState(addPanelEnd);
@@ -128,115 +128,136 @@ export const AddPanelArea = ({
     }
   });
 
+ 
   const updatePanelLayout = (startPos, currentPos, orientationAngle) => {
     if (!startPos || !currentPos) return;
-  
+
     const gap = 3; // Gap between panels
     const baseModelWidth = 8; // Base model width
     const baseModelHeight = 6.5; // Base model height
-  
+
     const scaleX = 1.7; // Horizontal scaling
     const scaleY = 3.4; // Vertical scaling
     const modelWidth = baseModelWidth * scaleX;
     const modelHeight = baseModelHeight * scaleY;
-  
+
     const paddedModelWidth = modelWidth + gap;
     const paddedModelHeight = modelHeight + gap;
-  
+
     const xDistance = Math.abs(currentPos.x - startPos.x);
     const yDistance = Math.abs(currentPos.y - startPos.y);
-  
+
     const numX = Math.floor(xDistance / paddedModelWidth);
     const numY = Math.floor(yDistance / paddedModelHeight);
-  
+
     const centerX = (startPos.x + currentPos.x) / 2;
     const centerY = (startPos.y + currentPos.y) / 2;
     const selectionCenter = new THREE.Vector3(centerX, centerY, 0);
-  
+
     scene.remove(modelRef.current);
     modelRef.current = new THREE.Group();
     loadOriginalModel(modelPath, (originalModel) => {
-      const placedPanels = [];
-      const rotationMatrix = new THREE.Matrix4().makeRotationZ(rotationAngle);
-  
-      for (let i = 0; i < numX; i++) {
-        for (let j = 0; j < numY; j++) {
-          const offsetX = (i - numX / 2) * paddedModelWidth;
-          const offsetY = (j - numY / 2) * paddedModelHeight;
-          const panelPosition = new THREE.Vector3(offsetX, offsetY, 12).applyMatrix4(rotationMatrix).add(selectionCenter);
-          
-          const modelClone = originalModel.scene.clone();
-          modelClone.scale.set(scaleX, scaleY, 1.7);
-          modelClone.rotation.x = orientationAngle ?? Math.PI / 2;
-          modelClone.rotation.y = rotationAngle;
-  
-          if (batchAddPanelMode) {
-            modelClone.userData = {
-              ...modelClone.userData,
-              batchIndex: currentBatchIndex,
-              isPanel: true,
-              startPosition: startPosition,
-              currentPosition: currentPosition,
-            };
-          } else {
-            modelClone.userData = {
-              ...modelClone.userData,
-              batchIndex: batchIdx,
-              isPanel: true,
-              startPosition: startPosition,
-              currentPosition: currentPosition,
-            };
-          }
-  
-          const corners = [
-            new THREE.Vector3(-modelWidth / 2, -modelHeight / 2, 0),
-            new THREE.Vector3(modelWidth / 2, -modelHeight / 2, 0),
-            new THREE.Vector3(modelWidth / 2, modelHeight / 2, 0),
-            new THREE.Vector3(-modelWidth / 2, modelHeight / 2, 0),
-          ].map((corner) =>
-            corner.applyMatrix4(rotationMatrix).add(panelPosition)
-          );
-  
-          if (
-            corners.every((corner) =>
-              pointInPolygon(corner, selectedRoofPoints)
-            )
-          ) {
-            if (points !== null) {
-              if (
-                corners.every((corner) => !pointInPolygon(corner, points)) &&
-                !occupiedPositions.some(
-                  (occupiedPosition) =>
-                    occupiedPosition &&
-                    Math.abs(occupiedPosition.x - panelPosition.x) < paddedModelWidth &&
-                    Math.abs(occupiedPosition.y - panelPosition.y) < paddedModelHeight
-                )
-              ) {
-                modelClone.position.copy(panelPosition);
-                modelClone.callback = () => handlePanelClick(modelClone);
-                placedPanels.push(modelClone);
-              }
-            } else if (
-              !occupiedPositions.some(
-                (occupiedPosition) =>
-                  occupiedPosition &&
-                  Math.abs(occupiedPosition.x - panelPosition.x) < paddedModelWidth &&
-                  Math.abs(occupiedPosition.y - panelPosition.y) < paddedModelHeight
-              )
-            ) {
-              modelClone.position.copy(panelPosition);
-              modelClone.callback = () => handlePanelClick(modelClone);
-              placedPanels.push(modelClone);
+        const placedPanels = [];
+        const rotationMatrix = new THREE.Matrix4().makeRotationZ(rotationAngle);
+
+        for (let i = 0; i < numX; i++) {
+            for (let j = 0; j < numY; j++) {
+                const offsetX = (i - numX / 2) * paddedModelWidth;
+                const offsetY = (j - numY / 2) * paddedModelHeight;
+                const panelPosition = new THREE.Vector3(offsetX, offsetY, 12).applyMatrix4(rotationMatrix).add(selectionCenter);
+
+                const modelClone = originalModel.scene.clone();
+                modelClone.scale.set(scaleX, scaleY, 1.7);
+                modelClone.rotation.x = orientationAngle ?? Math.PI / 2;
+                modelClone.rotation.y = rotationAngle;
+
+                if (batchAddPanelMode) {
+                    modelClone.userData = {
+                        ...modelClone.userData,
+                        batchIndex: currentBatchIndex,
+                        isPanel: true,
+                        startPosition: startPosition,
+                        currentPosition: currentPosition,
+                    };
+                } else {
+                    modelClone.userData = {
+                        ...modelClone.userData,
+                        batchIndex: batchIdx,
+                        isPanel: true,
+                        startPosition: startPosition,
+                        currentPosition: currentPosition,
+                    };
+                }
+
+                const corners = [
+                    new THREE.Vector3(-modelWidth / 2, -modelHeight / 2, 0),
+                    new THREE.Vector3(modelWidth / 2, -modelHeight / 2, 0),
+                    new THREE.Vector3(modelWidth / 2, modelHeight / 2, 0),
+                    new THREE.Vector3(-modelWidth / 2, modelHeight / 2, 0),
+                ].map((corner) =>
+                    corner.applyMatrix4(rotationMatrix).add(panelPosition)
+                );
+                //console.log("redPixels3Darea", redPixels3D);
+                // Red pixel kontrolü
+                const createSmallPolygon = (center, size) => {
+                  const halfSize = size / 2;
+                  return [
+                    new THREE.Vector3(center.x - halfSize, center.y - halfSize, center.z),
+                    new THREE.Vector3(center.x + halfSize, center.y - halfSize, center.z),
+                    new THREE.Vector3(center.x + halfSize, center.y + halfSize, center.z),
+                    new THREE.Vector3(center.x - halfSize, center.y + halfSize, center.z),
+                  ];
+                };
+                
+                const isRedPixelCollision = redPixels3D.some(
+                  (redPixel) => {
+                    const redPixelPolygon = createSmallPolygon(redPixel, paddedModelWidth / 4);
+                    return corners.some(corner => pointInPolygon(corner, redPixelPolygon));
+                  }
+                );
+
+                if (
+                    !isRedPixelCollision && // Yeni kontrol
+                    corners.every((corner) =>
+                        pointInPolygon(corner, selectedRoofPoints)
+                    )
+                ) {
+                    if (points !== null) {
+                        if (
+                            corners.every((corner) => !pointInPolygon(corner, points)) &&
+                            !occupiedPositions.some(
+                                (occupiedPosition) =>
+                                    occupiedPosition &&
+                                    Math.abs(occupiedPosition.x - panelPosition.x) < paddedModelWidth &&
+                                    Math.abs(occupiedPosition.y - panelPosition.y) < paddedModelHeight
+                            )
+                        ) {
+                            modelClone.position.copy(panelPosition);
+                            modelClone.callback = () => handlePanelClick(modelClone);
+                            placedPanels.push(modelClone);
+                        }
+                    } else if (
+                        !occupiedPositions.some(
+                            (occupiedPosition) =>
+                                occupiedPosition &&
+                                Math.abs(occupiedPosition.x - panelPosition.x) < paddedModelWidth &&
+                                Math.abs(occupiedPosition.y - panelPosition.y) < paddedModelHeight
+                        )
+                    ) {
+                        modelClone.position.copy(panelPosition);
+                        modelClone.callback = () => handlePanelClick(modelClone);
+                        placedPanels.push(modelClone);
+                    }
+                }
             }
-          }
         }
-      }
-  
-      placedPanelPositionsRef.current = placedPanels.map((panel) => panel);
-      placedPanels.forEach((panel) => modelRef.current.add(panel));
-      scene.add(modelRef.current);
+
+        placedPanelPositionsRef.current = placedPanels.map((panel) => panel);
+        placedPanels.forEach((panel) => modelRef.current.add(panel));
+        scene.add(modelRef.current);
     });
-  };
+};
+
   
 
   const updateSelectionBox = (startPos, currentPos) => {
