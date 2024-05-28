@@ -700,15 +700,19 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
             </Button>
           </Grid>
           <Grid item>
-            <FormControl variant="outlined" sx={{ minWidth: "200px" }}>
-              <InputLabel id="model-select-label" sx={{ color: "#1976d2" }}>
-                Model
-              </InputLabel>
+            <FormControl
+              variant="outlined"
+              sx={{
+                width: "fit-content",
+                boxShadow: "none",
+                border: "none",
+                minWidth: "200px",
+              }}
+            >
               <Select
-                labelId="model-select-label"
                 value={modelPath}
                 onChange={handleModelChange}
-                label="Model"
+                displayEmpty
                 MenuProps={{
                   anchorOrigin: {
                     vertical: "bottom",
@@ -720,27 +724,41 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
                   },
                 }}
                 sx={{
+                  backgroundColor: "#1976d2",
+                  color: "white",
+                  height: "36.5px",
+                  borderRadius: 1,
                   "& .MuiOutlinedInput-root": {
-                    backgroundColor: "#1976d2", // Arka plan rengini mavi yapıyoruz
-                    color: "white", // Yazı rengini beyaz yapıyoruz
-                    height: "40px", // Yüksekliği daha ince yapıyoruz
+                    backgroundColor: "#1976d2",
+                    color: "white",
                     "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#1976d2", // Kenar rengini mavi yapıyoruz
+                      borderColor: "#1976d2",
                     },
                     "&:hover .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#1976d2", // Hover durumunda kenar rengi
+                      borderColor: "#1565c0",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#1976d2",
                     },
                   },
                   "& .MuiSvgIcon-root": {
-                    color: "white", // İkon rengini beyaz yapıyoruz
+                    color: "white",
                   },
-                  "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#1976d2", // Odaklandığında kenar rengini mavi yapıyoruz
+                  "& .MuiList-root": {
+                    backgroundColor: "#1976d2",
+                    color: "white",
+                  },
+                  "& .MuiListItem-root": {
+                    backgroundColor: "#1976d2",
+                    color: "white",
+                    "&:hover": {
+                      backgroundColor: "#1565c0",
+                    },
                   },
                 }}
               >
-                <MenuItem value="s1.glb">Model S1</MenuItem>
-                <MenuItem value="s2.glb">Model S2</MenuItem>
+                <MenuItem value="s1.glb">Model 1</MenuItem>
+                <MenuItem value="s2.glb">Model 2</MenuItem>
               </Select>
             </FormControl>
           </Grid>
