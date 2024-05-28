@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Box, Grid, Stack, Typography, TextField, Button } from "@mui/material";
+import { Box, Grid, Stack, Typography, TextField, Button, Snackbar, Alert } from "@mui/material";
 import { CUSTOMERS, ADDRESS } from "../../api/api";
 
 export default function AddCustomer() {
@@ -27,6 +27,13 @@ export default function AddCustomer() {
     mobile: "",
     notes: "",
   });
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
   useEffect(() => {
     const fetchCustomerAndAddressData = async () => {
       if (customerId && customerId !== "undefined") {
@@ -53,20 +60,23 @@ export default function AddCustomer() {
           name: customerResponse.name || "",
           email: customerResponse.email || "",
           company_name: customerResponse.company_name || "",
-          street: addressResponse.street || "",
-          houseNumber: addressResponse.house_number || "",
-          suburb: addressResponse.suburb || "",
-          town: addressResponse.town || "",
-          country: addressResponse.country || "",
-          city: addressResponse.city || "",
-          postCode: addressResponse.postcode || "",
-          addition: addressResponse.addition || "",
+          address: {
+            street: addressResponse.street || "",
+            houseNumber: addressResponse.house_number || "",
+            suburb: addressResponse.suburb || "",
+            town: addressResponse.town || "",
+            country: addressResponse.country || "",
+            city: addressResponse.city || "",
+            postCode: addressResponse.postcode || "",
+            addition: addressResponse.addition || "",
+          },
           vat_number: customerResponse.vat_number || "",
           vat_office: customerResponse.vat_office || "",
           phone: customerResponse.phone || "",
           mobile: customerResponse.mobile || "",
           notes: customerResponse.notes || "",
         });
+        
       }
     };
 
@@ -98,38 +108,6 @@ export default function AddCustomer() {
     });
   };
 
-  // const handleSubmit = async (event) => {
-  //   event.preventDefault();
-  //   const customerData = {
-  //     name: customer.name,
-  //     company_name: customer.company_name,
-  //     email: customer.email,
-  //     address: {
-  //       street: customer.address.street,
-  //       house_number: customer.address.houseNumber,
-  //       addition: customer.address.addition,
-  //       postcode: customer.address.postCode,
-  //       city: customer.address.city,
-  //       country: customer.address.country,
-  //       suburb: customer.address.suburb,
-  //       town: customer.address.town,
-  //     },
-  //     vat_number: customer.vat_number,
-  //     vat_office: customer.vat_office,
-  //     phone: customer.phone,
-  //     mobile: customer.mobile,
-  //     notes: customer.notes,
-  //   };
-
-  //   const [response, error] = await CUSTOMERS.postCustomer(customerData);
-  //   if (error) {
-  //     console.error("Müşteri kaydedilirken bir hata oluştu:", error);
-  //     return;
-  //   }
-  //   console.log("Yeni müşteri başarıyla kaydedildi:", response);
-  //   navigate("/paperbase");
-  // };
-
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -157,24 +135,39 @@ export default function AddCustomer() {
     };
 
     let response, error;
-
     if (customerId) {
-
-      [response, error] = await CUSTOMERS.patchCustomer(
-        customerId,
-        customerData
-      );
+      [response, error] = await CUSTOMERS.patchCustomer(customerId, customerData);
+      if (error) {
+        console.error("Failed to update user:", error);
+        setSnackbarMessage("Failed to update user.");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
+        return;
+      }
+      setSnackbarMessage("Updated successfully.");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+      setTimeout(() => {
+        navigate("/paperbase");
+      }, 2000);
     } else {
       [response, error] = await CUSTOMERS.postCustomer(customerData);
     }
 
     if (error) {
       console.error("İşlem sırasında bir hata oluştu:", error);
+      setSnackbarMessage("Failed to register user.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
       return;
     }
 
-    console.log("İşlem başarıyla tamamlandı:", response);
-    navigate("/paperbase");
+    setSnackbarMessage("Registered successfully.");
+    setSnackbarSeverity("success");
+    setSnackbarOpen(true);
+    setTimeout(() => {
+      window.location.reload(); 
+    }, 2000);    
   };
 
   return (
@@ -234,7 +227,7 @@ export default function AddCustomer() {
               name="street"
               label="Street"
               variant="outlined"
-              value={customer.street}
+              value={customer.address.street}
               onChange={handleChange}
               fullWidth
             />
@@ -243,7 +236,7 @@ export default function AddCustomer() {
               name="houseNumber"
               label="House Number"
               variant="outlined"
-              value={customer.houseNumber}
+              value={customer.address.houseNumber}
               onChange={handleChange}
               fullWidth
             />
@@ -252,7 +245,7 @@ export default function AddCustomer() {
               name="postCode"
               label="Post Code"
               variant="outlined"
-              value={customer.postCode}
+              value={customer.address.postCode}
               onChange={handleChange}
               fullWidth
             />
@@ -263,7 +256,7 @@ export default function AddCustomer() {
               name="suburb"
               label="Suburb"
               variant="outlined"
-              value={customer.suburb}
+              value={customer.address.suburb}
               onChange={handleChange}
               fullWidth
             />
@@ -272,7 +265,7 @@ export default function AddCustomer() {
               name="town"
               label="Town"
               variant="outlined"
-              value={customer.town}
+              value={customer.address.town}
               onChange={handleChange}
               fullWidth
             />
@@ -282,7 +275,7 @@ export default function AddCustomer() {
               id="city"
               name="city"
               label="City"
-              value={customer.city}
+              value={customer.address.city}
               variant="outlined"
               onChange={handleChange}
               fullWidth
@@ -292,7 +285,7 @@ export default function AddCustomer() {
               name="country"
               label="Country"
               variant="outlined"
-              value={customer.country}
+              value={customer.address.country}
               onChange={handleChange}
               fullWidth
             />
@@ -302,7 +295,7 @@ export default function AddCustomer() {
             name="addition"
             label="Addition"
             variant="outlined"
-            value={customer.addition}
+            value={customer.address.addition}
             onChange={handleChange}
             multiline
             rows={2}
@@ -374,6 +367,21 @@ export default function AddCustomer() {
           </Button>
         </Box>
       </Grid>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }} 
+        sx={{ '& .MuiSnackbarContent-root': { fontSize: '1.2rem', width: '100%' } }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Grid>
   );
 }

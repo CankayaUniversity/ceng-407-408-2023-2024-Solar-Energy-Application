@@ -124,7 +124,7 @@ export default function SignInSide() {
       const accestoken = localStorage.getItem("accessToken");
       if (accestoken) {
         console.log("Token alındı:", accestoken); // Konsolda token'ı log'la
-        setSnackbar({ open: true, message: "Giriş başarılı!", severity: "success" });
+        setSnackbar({ open: true, message: "Login successful!", severity: "success" });
         setTimeout(() => navigate("/paperbase"), 1000);
       }
     }, [navigate]);
@@ -136,13 +136,13 @@ export default function SignInSide() {
         const token = await auth.login(email, password);
         if (token) {
           console.log("Token alındı:", token);
-          setSnackbar({ open: true, message: "Giriş başarılı!", severity: "success" });
+          setSnackbar({ open: true, message: "Login successful!", severity: "success" });
           setTimeout(() => navigate("/paperbase"), 1000);
         } else {
-          setSnackbar({ open: true, message: "Giriş başarısız", severity: "error" });
+          setSnackbar({ open: true, message: "Login failed!", severity: "error" });
         }
       } catch (error) {
-        setSnackbar({ open: true, message: "Yanlış şifre veya e-mail.", severity: "error" });
+        setSnackbar({ open: true, message: "Incorrect password or email.", severity: "error" });
       }
     };
 
