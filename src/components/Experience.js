@@ -6,7 +6,7 @@ import { AddPanel } from "../components/AddPanel";
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
 
-function Text({ text, position, size, color }) {
+function Text({ text, position, size, color, rotation }) {
   const font = new FontLoader().parse(require('../fonts/helvetiker_regular.typeface.json')); // Replace with your font file
   const textGeometry = new TextGeometry(text, {
     font: font,
@@ -18,6 +18,8 @@ function Text({ text, position, size, color }) {
   const textMaterial = new THREE.MeshBasicMaterial({ color: color });
   const textMesh = new THREE.Mesh(textGeometry, textMaterial);
   textMesh.position.copy(position);
+  textMesh.rotation.z = rotation;
+  textMesh.geometry.center(); // Metni ortalamak için
 
   return <primitive object={textMesh} />;
 }
@@ -55,7 +57,7 @@ function createHatchTexture() {
 function calculateDistance(lat1, lon1, lat2, lon2) {
   const toRadians = (degree) => degree * (Math.PI / 180);
 
-  const R = 6371e3; // Radius of the Earth in meters
+  const R = 6371e3; // Earth's radius in meters
   const φ1 = toRadians(lat1);
   const φ2 = toRadians(lat2);
   const Δφ = toRadians(lat2 - lat1);
@@ -69,6 +71,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   const distance = R * c; // in meters
   return distance;
 }
+
 
 export const Experience = ({
   roofImage,
@@ -107,34 +110,41 @@ export const Experience = ({
 
   useEffect(() => {
     if (clickPositions.length < 2) return;
-    if(roofSelectionActive){
+    if (roofSelectionActive) {
       const [firstClick, secondClick] = clickPositions.slice(-2);
-    const distance = calculateDistance(
+      const distance = calculateDistance(
         firstClick.lat,
         firstClick.lng,
         secondClick.lat,
         secondClick.lng
-    );
-
-    console.log("Mesafe:", distance.toFixed(2), "m");
-
-    // Calculate the midpoint
-    const midPoint = new THREE.Vector3(
-      (firstClick.x + secondClick.x) / 2 ,
-      (firstClick.y + secondClick.y) / 2 - 1, // Adjust the y position to place it slightly below the line
-      (firstClick.z + secondClick.z) / 2
-    );
-
-    // Adjust the midPoint position slightly for better visibility
-    midPoint.y += 0.5; // Bu değeri ihtiyacınıza göre ayarlayabilirsiniz
-    midPoint.x += 0.5; 
-    // Add the distance text to the text positions array
-    setTextPositions(prevTextPositions => [
-      ...prevTextPositions,
-      { position: midPoint, text: `${distance.toFixed(2)} m` },
-    ]);
+      );
+  
+      console.log("Mesafe:", distance.toFixed(2), "m");
+  
+      // Calculate the midpoint
+      const midPoint = new THREE.Vector3(
+        (firstClick.x + secondClick.x) / 2,
+        (firstClick.y + secondClick.y) / 2,
+        (firstClick.z + secondClick.z) / 2
+      );
+  
+      // Calculate rotation
+      const angle = Math.atan2(
+        secondClick.y - firstClick.y,
+        secondClick.x - firstClick.x
+      );
+  
+      // Correct the angle for text rotation
+      const correctedAngle = -angle;
+  
+      // Add the distance text to the text positions array
+      setTextPositions(prevTextPositions => [
+        ...prevTextPositions,
+        { position: midPoint, text: `${distance.toFixed(2)} m`, rotation: correctedAngle },
+      ]);
     }
   }, [clickPositions]);
+  
 
   useEffect(() => {
     const handleMouseMove = (event) => {
@@ -417,13 +427,41 @@ export const Experience = ({
   // Seçilen noktaları birleştiren çizgiyi oluştur
   useEffect(() => {
     const linesToDraw = [...allLines, newSelectedPoints];
+    setTextPositions([]); // İlk olarak textPositions'ı temizle
     linesToDraw.forEach(points => {
       if (points.length < 2) return;
-
+  
       const pointsGeometry = new THREE.BufferGeometry().setFromPoints(points);
       const line = new THREE.Line(pointsGeometry, lineMaterial);
       scene.add(line);
-
+  
+      // Add distance text for each segment
+      for (let i = 0; i < points.length - 1; i++) {
+        const p1 = points[i];
+        const p2 = points[i + 1];
+  
+        // Pixel coordinates to latitude and longitude
+        const p1LatLng = pixelToLatLng(p1.x, p1.y, currentCenter, currentZoom, mapSize);
+        const p2LatLng = pixelToLatLng(p2.x, p2.y, currentCenter, currentZoom, mapSize);
+  
+        // Calculate distance
+        const distance = calculateDistance(p1LatLng[0], p1LatLng[1], p2LatLng[0], p2LatLng[1]).toFixed(2) + " m";
+  
+        const midPoint = new THREE.Vector3(
+          (p1.x + p2.x) / 2,
+          (p1.y + p2.y) / 2,
+          (p1.z + p2.z) / 2
+        );
+  
+        const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+  
+        // Set the text position only if it's on the line
+        setTextPositions(prevTextPositions => [
+          ...prevTextPositions,
+          { position: midPoint, text: distance, rotation: angle },
+        ]);
+      }
+  
       // Cleanup function: Component unmount olduğunda çizgiyi sahneden kaldır
       return () => {
         scene.remove(line);
@@ -431,50 +469,56 @@ export const Experience = ({
       };
     });
   }, [newSelectedPoints, allLines, scene]);
+  
+  
+  
+  
 
   return (
     <>
       {renderPanelPreviews()}
       {roofTexture && (
-        <mesh ref={planeRef} position={[0, 0, 0]}>
-          <planeGeometry
-            args={[window.innerWidth / 2, window.innerHeight, 1, 1]}
-          />
-          <meshBasicMaterial map={roofTexture} />
-        </mesh>
-      )}
-      {selectionStart && selectionEnd && (
-        <mesh
-          position={[
-            (selectionStart.x + selectionEnd.x) / 2,
-            (selectionStart.y + selectionEnd.y) / 2,
-            0,
-          ]}
-          scale={[
-            Math.abs(selectionEnd.x - selectionStart.x),
-            Math.abs(selectionEnd.y - selectionStart.y),
-            1,
-          ]}
-          visible={true}
-        >
-          <planeGeometry args={[1, 1, 1, 1]} />
-          <meshBasicMaterial
-            map={hatchTexture} // Taralı doku burada kullanılır
-            side={THREE.DoubleSide}
-            transparent={true}
-          />
-        </mesh>
-      )}
-      
-      {textPositions.map((textPos, index) => (
-        <Text 
-          key={index}
-          text={textPos.text}
-          position={textPos.position}
-          size={15}
-          color="black"
-        />
-      ))}
+  <mesh ref={planeRef} position={[0, 0, 0]}>
+    <planeGeometry
+      args={[window.innerWidth / 2, window.innerHeight, 1, 1]}
+    />
+    <meshBasicMaterial map={roofTexture} />
+  </mesh>
+)}
+{selectionStart && selectionEnd && (
+  <mesh
+    position={[
+      (selectionStart.x + selectionEnd.x) / 2,
+      (selectionStart.y + selectionEnd.y) / 2,
+      0,
+    ]}
+    scale={[
+      Math.abs(selectionEnd.x - selectionStart.x),
+      Math.abs(selectionEnd.y - selectionStart.y),
+      1,
+    ]}
+    visible={true}
+  >
+    <planeGeometry args={[1, 1, 1, 1]} />
+    <meshBasicMaterial
+      map={hatchTexture} // Taralı doku burada kullanılır
+      side={THREE.DoubleSide}
+      transparent={true}
+    />
+  </mesh>
+)}
+
+{textPositions.map((textPos, index) => (
+  <Text 
+    key={index}
+    text={textPos.text}
+    position={textPos.position}
+    size={15}
+    color="black"
+    rotation={textPos.rotation}
+  />
+))}
     </>
   );
+  
 };

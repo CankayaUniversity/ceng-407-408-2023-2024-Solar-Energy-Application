@@ -34,14 +34,17 @@ const MAP_WIDTH = 512;
 const MAP_HEIGHT = 512;
 const mapSize = [MAP_WIDTH, MAP_HEIGHT];
 
-
 export default function AddProject() {
   const [customers, setCustomers] = useState([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [customerDetails, setCustomerDetails] = useState({
     name: "",
     email: "",
+    company_name: "",
+    address: "",
+    phone: ""
   });
+  
   const [expanded, setExpanded] = useState(false);
   const [value, setValue] = useState("1");
   const [mapAddress, setMapAddress] = useState("");
@@ -49,7 +52,6 @@ export default function AddProject() {
   const [currentCenter, setCurrentCenter] = useState(null);
   const [currentZoom, setCurrentZoom] = useState(20);
   const [clickedLatLng, setClickedLatLng] = useState(null);
-  
 
   const onCenterChange = (center) => {
     setCurrentCenter(center);
@@ -89,8 +91,6 @@ export default function AddProject() {
     },
   });
   const [formErrors, setFormErrors] = useState({});
-
-  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -149,15 +149,18 @@ export default function AddProject() {
             name: data.name || "Ad Bilinmiyor",
             email: data.email || "E-posta Bilinmiyor",
             company_name: data.company_name || "Company name bilinmiyor",
+            address: data.address || "Adres bilinmiyor",
+            phone: data.phone || "Telefon bilinmiyor",
           });
         } else {
           console.error("Müşteri detayları yüklenirken bir hata oluştu", error);
-          setCustomerDetails({ name: "", email: "" });
+          setCustomerDetails({ name: "", email: "", company_name: "", address: "", phone: "" });
         }
       }
     };
     fetchCustomerDetails();
   }, [selectedCustomerId]);
+
 
   const handleCustomerChange = async (event) => {
     const newSelectedCustomerId = event.target.value;
@@ -173,12 +176,16 @@ export default function AddProject() {
       setCustomerDetails({
         name: data.name || "Ad Bilinmiyor",
         email: data.email || "E-posta Bilinmiyor",
+        company_name: data.company_name || "Company name bilinmiyor",
+        address: data.address || "Adres bilinmiyor",
+        phone: data.phone || "Telefon bilinmiyor",
       });
     } else {
       console.error("Müşteri detayları yüklenirken bir hata oluştu", error);
-      setCustomerDetails({ name: "", email: "" });
+      setCustomerDetails({ name: "", email: "", company_name: "", address: "", phone: "" });
     }
   };
+
 
   const handleSubmit = async () => {
     console.log(projectData);
@@ -279,9 +286,6 @@ export default function AddProject() {
     return [parseFloat(lat.toFixed(8)), parseFloat(lng.toFixed(8))];
   };
 
-  // Your latLngToPoint function adapted for React
- 
-
   const handleMapClick = (event) => {
     const rect = event.target.getBoundingClientRect();
     const x = event.clientX - rect.left; // x position within the element.
@@ -291,8 +295,6 @@ export default function AddProject() {
     console.log("latLng", latLng)
     setClickedLatLng({ lat: latLng[0], lng: latLng[1] });
   };
-
-  
 
   const validateAddressForm = () => {
     const errors = {};
@@ -520,125 +522,125 @@ export default function AddProject() {
               <Typography variant="h6">Address</Typography>
             </AccordionSummary>
             <AccordionDetails>
-            <Grid container spacing={2}>
-  <Grid item xs={12} md={6}>
-    <TextField
-      fullWidth
-      name="address.suburb"
-      label="Suburb"
-      margin="normal"
-      value={projectData.address.suburb}
-      onChange={handleInputChange}
-      error={!!formErrors.suburb}
-      helperText={formErrors.suburb}
-    />
-  </Grid>
-  <Grid item xs={12} md={6}>
-    <TextField
-      fullWidth
-      name="address.street"
-      label="Street"
-      margin="normal"
-      value={projectData.address.street}
-      onChange={handleInputChange}
-      error={!!formErrors.street}
-      helperText={formErrors.street}
-    />
-  </Grid>
-  <Grid item xs={12} md={6}>
-    <TextField
-      fullWidth
-      name="address.house_number"
-      label="House Number"
-      margin="normal"
-      value={projectData.address.house_number}
-      onChange={handleInputChange}
-      error={!!formErrors.house_number}
-      helperText={formErrors.house_number}
-    />
-  </Grid>
-  <Grid item xs={12} md={6}>
-    <TextField
-      fullWidth
-      name="address.town"
-      label="Town"
-      margin="normal"
-      value={projectData.address.town}
-      onChange={handleInputChange}
-      error={!!formErrors.town}
-      helperText={formErrors.town}
-    />
-  </Grid>
-  <Grid item xs={12} md={6}>
-    <TextField
-      fullWidth
-      name="address.city"
-      label="City"
-      margin="normal"
-      value={projectData.address.city}
-      onChange={handleInputChange}
-      error={!!formErrors.city}
-      helperText={formErrors.city}
-    />
-  </Grid>
-  <Grid item xs={12} md={6}>
-    <TextField
-      fullWidth
-      name="address.country"
-      label="Country"
-      margin="normal"
-      value={projectData.address.country}
-      onChange={handleInputChange}
-      error={!!formErrors.country}
-      helperText={formErrors.country}
-    />
-  </Grid>
-  <Grid item xs={12} md={6}>
-    <TextField
-      fullWidth
-      name="address.postcode"
-      label="Postcode"
-      margin="normal"
-      value={projectData.address.postcode}
-      onChange={handleInputChange}
-      error={!!formErrors.postcode}
-      helperText={formErrors.postcode}
-    />
-  </Grid>
-  <Grid item xs={12} md={6}>
-    <TextField
-      fullWidth
-      name="address.addition"
-      label="Addition"
-      margin="normal"
-      value={projectData.address.addition}
-      onChange={handleInputChange}
-      error={!!formErrors.addition}
-      helperText={formErrors.addition}
-    />
-  </Grid>
-  <Grid item xs={12}>
-    <Button
-      variant="contained"
-      onClick={() => {
-        if (validateAddressForm()) {
-          const fullAddress = `${projectData.address.suburb},${projectData.address.street},${projectData.address.house_number}, ${projectData.address.postcode},${projectData.address.town}, ${projectData.address.city}`;
-          setMapAddress(fullAddress);
-          setAddressExpanded(false);
-        }
-      }}
-    >
-      Show Map
-    </Button>
-  </Grid>
-</Grid>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    name="address.suburb"
+                    label="Suburb"
+                    margin="normal"
+                    value={projectData.address.suburb}
+                    onChange={handleInputChange}
+                    error={!!formErrors.suburb}
+                    helperText={formErrors.suburb}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    name="address.street"
+                    label="Street"
+                    margin="normal"
+                    value={projectData.address.street}
+                    onChange={handleInputChange}
+                    error={!!formErrors.street}
+                    helperText={formErrors.street}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    name="address.house_number"
+                    label="House Number"
+                    margin="normal"
+                    value={projectData.address.house_number}
+                    onChange={handleInputChange}
+                    error={!!formErrors.house_number}
+                    helperText={formErrors.house_number}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    name="address.town"
+                    label="Town"
+                    margin="normal"
+                    value={projectData.address.town}
+                    onChange={handleInputChange}
+                    error={!!formErrors.town}
+                    helperText={formErrors.town}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    name="address.city"
+                    label="City"
+                    margin="normal"
+                    value={projectData.address.city}
+                    onChange={handleInputChange}
+                    error={!!formErrors.city}
+                    helperText={formErrors.city}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    name="address.country"
+                    label="Country"
+                    margin="normal"
+                    value={projectData.address.country}
+                    onChange={handleInputChange}
+                    error={!!formErrors.country}
+                    helperText={formErrors.country}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    name="address.postcode"
+                    label="Postcode"
+                    margin="normal"
+                    value={projectData.address.postcode}
+                    onChange={handleInputChange}
+                    error={!!formErrors.postcode}
+                    helperText={formErrors.postcode}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    name="address.addition"
+                    label="Addition"
+                    margin="normal"
+                    value={projectData.address.addition}
+                    onChange={handleInputChange}
+                    error={!!formErrors.addition}
+                    helperText={formErrors.addition}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Button
+                    variant="contained"
+                    onClick={() => {
+                      if (validateAddressForm()) {
+                        const fullAddress = `${projectData.address.suburb},${projectData.address.street},${projectData.address.house_number}, ${projectData.address.postcode},${projectData.address.town}, ${projectData.address.city}`;
+                        setMapAddress(fullAddress);
+                        setAddressExpanded(false);
+                      }
+                    }}
+                  >
+                    Show Map
+                  </Button>
+                </Grid>
+              </Grid>
             </AccordionDetails>
           </Accordion>
           <div style={{ width: "100%", height: "75vh" }}>
             <Map
               address={mapAddress}
               onCenterChange={onCenterChange}
-              onZoomChange={onZoomChange} 
+              onZoomChange={onZoomChange}
               onMapClick={onMapClick}
             />
           </div>
@@ -653,9 +655,10 @@ export default function AddProject() {
 
         <TabPanel value="4">
           <SimulationTest 
-          screenshot={screenshot} 
-          currentCenter={currentCenter}
-          currentZoom={currentZoom}
+            screenshot={screenshot} 
+            currentCenter={currentCenter}
+            currentZoom={currentZoom}
+            projectData={projectData}
           />
           {screenshot && (
             <div>

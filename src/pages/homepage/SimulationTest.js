@@ -1,10 +1,17 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { Experience } from "../../components/Experience";
 import { AddPanel } from "../../components/AddPanel";
 import roofImage from "../../assets/images/roof.jpg";
+import reportImage from"../../assets/images/cardblog2.png";
 import * as THREE from "three";
+import 'jspdf-autotable';
+import { AddPanelArea } from "../../components/AddPanelArea";
+import { loadOriginalModel } from "../../components/LoadOriginalModel";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   Button,
   Stack,
@@ -22,14 +29,9 @@ import {
   FormControl, 
   InputLabel
 } from "@mui/material";
-import { AddPanelArea } from "../../components/AddPanelArea";
-import { loadOriginalModel } from "../../components/LoadOriginalModel";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
-//editpanelsde hep sonuncuyu ed,tlemeye çalışıyor ondan aşağıdaki paneller yukarı fırtıyor
-//sadece seçilen batch indexli panel için edit yapmalı
 
-//en sonuncu batch'in modelgroupref olarak gidiyor hep seçilen batch'i mdoelgroupref olarak yollarsak tamamdır
+
 
 export function pointInPolygon(point, polygon) {
   let isInside = false;
@@ -51,7 +53,7 @@ function CameraControlled() {
   const { camera } = useThree();
 
   useEffect(() => {
-    const initialDistance = 600;
+    const initialDistance = 500;
     const maxDistance = 1000;
     const minDistance = 200;
 
@@ -169,7 +171,7 @@ function RaycasterComponent({
  * @param {string} props.screenshot - The screenshot to be displayed.
  * @returns {JSX.Element} The SimulationTest component.
  */
-function SimulationTest({ screenshot,currentCenter,currentZoom }) {
+function SimulationTest({ screenshot, currentCenter, currentZoom, projectData,customerDetails }) {
   const [isSelecting, setIsSelecting] = useState(false);
   const [showModelPreview, setShowModelPreview] = useState(false);
   const [addPanelMode, setAddPanelMode] = useState(false);
@@ -190,17 +192,16 @@ function SimulationTest({ screenshot,currentCenter,currentZoom }) {
   const [alertMessage, setAlertMessage] = useState("");
   const [occupiedPositions, setOccupiedPositions] = useState([]);
   const placedPanelPositionsRef = useRef([]);
-  const modelGroupRef = useRef(new THREE.Group()); // Add this line
+  const modelGroupRef = useRef(new THREE.Group());
   const [batchGroups, setBatchGroups] = useState([]);
   const [currentBatch, setCurrentBatch] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState([]);
-  const [batchEditing, setBatchEditing] = useState(false); // Batch editing state
-  const [currentBatchIndex, setCurrentBatchIndex] = useState(0); // Current batch index
+  const [batchEditing, setBatchEditing] = useState(false);
+  const [currentBatchIndex, setCurrentBatchIndex] = useState(0);
   const [addPanelStart, setAddPanelStart] = useState(null);
   const [addPanelEnd, setAddPanelEnd] = useState(null);
   const [editPanel, setEditPanel] = useState(false);
-  
-  const [modelPath, setModelPath] = useState('s2.glb'); 
+  const [modelPath, setModelPath] = useState('s2.glb');
 
   const handleModelChange = (event) => {
     console.log("Model path changed to:", event.target.value);
@@ -242,9 +243,8 @@ function SimulationTest({ screenshot,currentCenter,currentZoom }) {
   useEffect(() => {
     console.log("Model path in useEffect:", modelPath);
     loadOriginalModel(modelPath, (originalModel) => {
-      console.log('original',originalModel);
-      
-     
+      console.log('original', originalModel);
+
       // Model ile ilgili işlemleriniz
     });
   }, [modelPath]);
@@ -378,45 +378,23 @@ function SimulationTest({ screenshot,currentCenter,currentZoom }) {
     setSelectedRoofPoints([]);
   };
 
-  // useEffect(() => {
-  //   if (batchGroups.length > 0) {
-  //     console.log("batchindex değişti")
-  //     setCurrentBatchIndex(batchGroups.length - 1); // Update current batch index after batchGroups update
-  //   }
-  // }, [batchGroups]);
-
   const handleBatchAddFinish = (newPanels) => {
     const positions = newPanels.current.map((panel) => panel.position);
-    // İlk olarak `currentBatch`'i `batchGroups`'a ekleyelim
     console.log("newpanels", newPanels);
     setBatchGroups((prev) => [...prev, newPanels.current]);
-
-    // `currentBatchIndex`'i güncelle
     setCurrentBatchIndex((prevIndex) => prevIndex + 1);
-
-    // Sonra diğer işlemleri yapalım
     setPanels((prev) => [...prev, ...positions]);
     setOccupiedPositions((prev) => [...prev, ...positions]);
-
-    // `currentBatch`'i sıfırla
     setCurrentBatch([]);
     setBatchAddPanelMode(false);
-
-    // Yeni batch'in `occupiedPositions`'ını ekleyin
-    // const newOccupiedPositions = newPanels.current.map(
-    //   (panel) => panel.position
-    // );
-    // setOccupiedPositions((prev) => [...prev, ...newOccupiedPositions]);
   };
 
   const handlePanelClick = (panel) => {
     const batchIndex = panel.userData.batchIndex;
     console.log("handlepanelclickdeyim ve batchgroup:", batchGroups);
     console.log("handlepanelclickdeyim ve batchindex:", batchIndex);
-
     const batchPanels = batchGroups[batchIndex];
     modelGroupRef.current.clear(); // Clear existing panels in modelGroupRef
-
     if (batchPanels) {
       setSelectedBatch(batchPanels);
       setBatchEditing(true); // Enable batch editing
@@ -438,22 +416,14 @@ function SimulationTest({ screenshot,currentCenter,currentZoom }) {
       updatedBatchGroups[index] = newPanels.current;
       return updatedBatchGroups;
     });
-
-    // `currentBatchIndex`'i güncelle
     setCurrentBatchIndex((prevIndex) => prevIndex + 1);
-
-    // Sonra diğer işlemleri yapalım
     setPanels((prev) => {
       const updatedPanels = [...prev];
       updatedPanels[index] = positions;
       return updatedPanels;
     });    
-    
     setOccupiedPositions((prev) => [...prev, ...positions]);
-
-    // `currentBatch`'i sıfırla
     setCurrentBatch([]);
-
   };
 
   useEffect(() => {
@@ -467,10 +437,108 @@ function SimulationTest({ screenshot,currentCenter,currentZoom }) {
     }
   }, [selectionStart, selectionEnd]);
 
-
   const savePanels = (newPanels) => {
     setPanels((prevPanels) => [...prevPanels, ...newPanels]);
   };
+
+  const calculateEnergy = () => {
+    const panelCount = panels.length; // Yerleştirilen panel sayısı
+    const energyPerPanel = 300; // Örnek olarak panel başına enerji üretimi (kWh)
+    const totalEnergy = panelCount * energyPerPanel; // Toplam enerji üretimi
+    const adjustedEnergy = totalEnergy * projectData.cosine_factor; // Ayar faktörü uygulanmış enerji üretimi
+    const total = adjustedEnergy * (projectData.consumption / projectData.consumption_period); // Nihai toplam enerji tasarrufu
+    return total;
+  };
+  
+
+
+  
+  const generatePDF = () => {
+    const totalEnergy = calculateEnergy();
+    const doc = new jsPDF();
+  
+    // Title
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("Solar App Energy Report", 105, 20, null, null, "center");
+  
+    // Company Information
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("Company Information", 14, 30);
+  
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    const companyInfo = [
+      ["Company Name", customerDetails?.company_name || "N/A"],
+      ["Address", customerDetails?.address || "N/A"],
+      ["Phone", customerDetails?.phone || "N/A"],
+      ["E-mail", customerDetails?.email || "N/A"]
+    ];
+    doc.autoTable({
+      startY: 34,
+      body: companyInfo,
+      theme: 'striped'
+    });
+  
+    // Report Information
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("Energy Report", 14, doc.autoTable.previous.finalY + 10);
+  
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    const reportInfo = [
+      ["Total Panels", panels.length],
+      ["Total Energy", `${totalEnergy.toFixed(2)} kWh`]
+    ];
+    doc.autoTable({
+      startY: doc.autoTable.previous.finalY + 14,
+      body: reportInfo,
+      theme: 'striped'
+    });
+  
+    // Net Parameters
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("Net Parameters", 14, doc.autoTable.previous.finalY + 10);
+  
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    const netParameters = [
+      ["Cosine Factor", projectData.cosine_factor],
+      ["Consumption", projectData.consumption],
+      ["Consumption Period", projectData.consumption_period]
+    ];
+    doc.autoTable({
+      startY: doc.autoTable.previous.finalY + 14,
+      body: netParameters,
+      theme: 'striped'
+    });
+  
+    // Footer
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "italic");
+    doc.text(
+      "This document is generated automatically by the Solar App.",
+      14,
+      290
+    );
+  
+    // Add external image
+    const img = new Image();
+    img.src = reportImage;
+    img.onload = function() {
+      doc.addImage(img, 'PNG', 15, doc.autoTable.previous.finalY + 20, 180, 100);
+      
+      // Generate the PDF
+      doc.save('Energy Report.pdf');
+    };
+  };
+  
+
+
+
 
   return (
     <>
@@ -612,6 +680,7 @@ function SimulationTest({ screenshot,currentCenter,currentZoom }) {
               {editPanel ? "Finish Edit Panels" : "Edit Panels"}
             </Button>
           </Grid>
+          
           <Grid item>
             <FormControl variant="outlined" sx={{ minWidth: "200px" }}>
               <InputLabel id="model-select-label" sx={{ color: "#1976d2" }}>Model</InputLabel>
@@ -632,21 +701,21 @@ function SimulationTest({ screenshot,currentCenter,currentZoom }) {
                 }}
                 sx={{
                   "& .MuiOutlinedInput-root": {
-                    backgroundColor: "#1976d2", // Arka plan rengini mavi yapıyoruz
-                    color: "white", // Yazı rengini beyaz yapıyoruz
-                    height: "40px", // Yüksekliği daha ince yapıyoruz
+                    backgroundColor: "#1976d2",
+                    color: "white",
+                    height: "40px",
                     "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#1976d2", // Kenar rengini mavi yapıyoruz
+                      borderColor: "#1976d2",
                     },
                     "&:hover .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#1976d2", // Hover durumunda kenar rengi
+                      borderColor: "#1976d2",
                     },
                   },
                   "& .MuiSvgIcon-root": {
-                    color: "white", // İkon rengini beyaz yapıyoruz
+                    color: "white",
                   },
                   "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#1976d2", // Odaklandığında kenar rengini mavi yapıyoruz
+                    borderColor: "#1976d2",
                   },
                 }}
               >
@@ -656,47 +725,9 @@ function SimulationTest({ screenshot,currentCenter,currentZoom }) {
             </FormControl>
           </Grid>
           <Grid item>
-            <FormControl variant="outlined" sx={{ minWidth: "200px" }}>
-              <InputLabel id="model-select-label" sx={{ color: "#1976d2" }}>Model</InputLabel>
-              <Select
-                labelId="model-select-label"
-                value={modelPath}
-                onChange={handleModelChange}
-                label="Model"
-                MenuProps={{
-                  anchorOrigin: {
-                    vertical: "bottom",
-                    horizontal: "left",
-                  },
-                  transformOrigin: {
-                    vertical: "top",
-                    horizontal: "left",
-                  },
-                }}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    backgroundColor: "#1976d2", // Arka plan rengini mavi yapıyoruz
-                    color: "white", // Yazı rengini beyaz yapıyoruz
-                    height: "40px", // Yüksekliği daha ince yapıyoruz
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#1976d2", // Kenar rengini mavi yapıyoruz
-                    },
-                    "&:hover .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#1976d2", // Hover durumunda kenar rengi
-                    },
-                  },
-                  "& .MuiSvgIcon-root": {
-                    color: "white", // İkon rengini beyaz yapıyoruz
-                  },
-                  "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#1976d2", // Odaklandığında kenar rengini mavi yapıyoruz
-                  },
-                }}
-              >
-                <MenuItem value="s1.glb">Model S1</MenuItem>
-                <MenuItem value="s2.glb">Model S2</MenuItem>
-              </Select>
-            </FormControl>
+            <Button variant="contained" onClick={generatePDF}>
+              Generate PDF
+            </Button>
           </Grid>
         </Grid>
         <Stack>
@@ -744,7 +775,7 @@ function SimulationTest({ screenshot,currentCenter,currentZoom }) {
               selectionEnd={selectionEnd}
               setSelectionEnd={setSelectionEnd}
               batchAddPanelMode={batchAddPanelMode}
-              gridPositions={gridPositions} // Pass the calculated positions
+              gridPositions={gridPositions}
               currentCenter={currentCenter}
               currentZoom={currentZoom}
             />
@@ -756,13 +787,13 @@ function SimulationTest({ screenshot,currentCenter,currentZoom }) {
                 points={obstaclesPoints}
                 occupiedPositions={occupiedPositions}
                 placedPanelPositionsRef={placedPanelPositionsRef}
-                handlePanelClick={handlePanelClick} // Pass panel click handler
-                batchGroups={batchGroups} // Pass batchGroups
-                currentBatchIndex={currentBatchIndex} // Pass currentBatchIndex
+                handlePanelClick={handlePanelClick}
+                batchGroups={batchGroups}
+                currentBatchIndex={currentBatchIndex}
                 addPanelStart={addPanelStart}
                 addPanelEnd={addPanelEnd}
-                savePanels={savePanels} // Pass savePanels function
-                modelGroupRef={modelGroupRef} // Pass modelGroupRef
+                savePanels={savePanels}
+                modelGroupRef={modelGroupRef}
                 batchAddPanelMode={batchAddPanelMode}
                 modelPath={modelPath}
               />
