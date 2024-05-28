@@ -394,14 +394,14 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
         console.log("modelref", modelRef);
         //Ayar çekilecek
         if (singleEditing) {
-          setPanels([...panels, position]);
+          setPanels([...panels, modelRef.current]);
           setIsCancelled(false);
           setIsPanelPlaced(true);
           setSingleEditing(false);
           setCurrentIndex((prevIndex) => prevIndex + 1);
           setOccupiedPositions((prev) => [...prev, ...corners]);
         } else {
-          setPanels([...panels, position]);
+          setPanels([...panels, modelRef.current]);
           setIsCancelled(false);
           setIsPanelPlaced(true);
           setAddPanelMode(false);
@@ -535,30 +535,39 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
     const batchCorners = newPanels.current.flatMap((panel) =>
       getPanelCorners(panel.position)
     );
-
+  
     setBatchGroups((prev) => {
       const updatedBatchGroups = [...prev];
       updatedBatchGroups[index] = newPanels.current;
       return updatedBatchGroups;
     });
-
+  
     // `currentBatchIndex`'i güncelle
     setCurrentBatchIndex((prevIndex) => prevIndex + 1);
-
-    // Sonra diğer işlemleri yapalım
+  
+    // panels dizisinde eski batch panellerini güncelle
     setPanels((prev) => {
       const updatedPanels = [...prev];
-      updatedPanels[index] = newPanels.current;
+      const newBatchPanels = newPanels.current;
+      newBatchPanels.forEach((panel) => {
+        const existingPanelIndex = updatedPanels.findIndex(
+          (p) => p.uuid === panel.uuid
+        );
+        if (existingPanelIndex !== -1) {
+          updatedPanels[existingPanelIndex] = panel;
+        }
+      });
       return updatedPanels;
     });
-
+  
     setOccupiedPositions((prev) => [...prev, ...batchCorners]);
-
+  
     // `currentBatch`'i sıfırla
     setCurrentBatch([]);
-
+  
     setBatchEditing(false);
   };
+  
 
   useEffect(() => {
     if (selectionStart != null && selectionEnd != null) {
