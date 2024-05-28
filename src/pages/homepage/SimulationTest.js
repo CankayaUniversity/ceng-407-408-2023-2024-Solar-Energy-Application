@@ -270,6 +270,10 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
     });
   }, [modelPath]);
 
+  useEffect(() => {
+    console.log("panels:", panels);
+  }, [panels]);
+
   const toggleRoofSelection = () =>
     setRoofSelectionActive(!roofSelectionActive);
 
@@ -386,6 +390,8 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
         return;
       }
       if (!isCancelled) {
+        console.log("position", position);
+        console.log("modelref", modelRef);
         //Ayar çekilecek
         if (singleEditing) {
           setPanels([...panels, position]);
@@ -425,19 +431,18 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
         return;
       }
       if (!isCancelled) {
+        console.log("position", position);
+        console.log("modelref", modelRef);
         //Ayar çekilecek
         if (singleEditing) {
-          console.log("selams");
-          setPanels([...panels, position]);
+          setPanels([...panels, modelRef.current]);
           setIsCancelled(false);
           setIsPanelPlaced(true);
           setSingleEditing(false);
           setCurrentIndex((prevIndex) => prevIndex + 1);
           setOccupiedPositions((prev) => [...prev, ...corners]);
         } else {
-          console.log("burdayıms");
-
-          setPanels([...panels, position]);
+          setPanels([...panels, modelRef.current]);
           setIsCancelled(false);
           setIsPanelPlaced(true);
           setAddPanelMode(false);
@@ -463,7 +468,7 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
 
     setCurrentBatchIndex((prevIndex) => prevIndex + 1);
 
-    setPanels((prev) => [...prev, ...positions]);
+    setPanels((prev) => [...prev, ...newPanels.current]);
     setOccupiedPositions((prev) => [...prev, ...batchCorners]);
 
     setCurrentBatch([]);
@@ -489,7 +494,7 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
       );
 
       setIsSingle(false);
-    } else if(panel.userData.startPosition) {
+    } else if (panel.userData.startPosition) {
       const batchIndex = panel.userData.batchIndex;
       const batchPanels = batchGroups[batchIndex];
       modelGroupRef.current.clear();
@@ -543,7 +548,7 @@ function SimulationTest({ screenshot, currentCenter, currentZoom }) {
     // Sonra diğer işlemleri yapalım
     setPanels((prev) => {
       const updatedPanels = [...prev];
-      updatedPanels[index] = positions;
+      updatedPanels[index] = newPanels.current;
       return updatedPanels;
     });
 
