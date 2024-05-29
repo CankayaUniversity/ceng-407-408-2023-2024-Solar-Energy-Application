@@ -16,6 +16,8 @@ import {
   Box,
   Tabs,
   Tab,
+  IconButton,
+  InputAdornment,
 } from "@mui/material";
 import CancelIcon from "@mui/icons-material/Cancel";
 import SaveIcon from "@mui/icons-material/Save";
@@ -23,6 +25,8 @@ import { USER } from "../../api/api";
 import { useNavigate } from "react-router-dom";
 import Header from '../dashboard/Header';
 import CssBaseline from '@mui/material/CssBaseline';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 function Profile({ onCancel }) {
   const [user, setUser] = useState({
@@ -111,11 +115,11 @@ function Profile({ onCancel }) {
   const handleSnackbarClose = () => {
     setSnackbarOpen(false);
   };
+  const [showPassword, setShowPassword] = useState(false);
+  const handleClickShowPassword = () => setShowPassword(!showPassword);
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', flexDirection: 'column' }}>
-      <CssBaseline />
-      <Header onDrawerToggle={() => {}} onTabChange={() => {}} />
       <Paper style={{ padding: "20px", maxWidth: 500, margin: "20px auto" }}>
         <Grid container spacing={2} alignItems="center" justifyContent="center">
           <Grid item xs={12} align="center">
@@ -179,10 +183,23 @@ function Profile({ onCancel }) {
               label="Current Password or New Password"
               fullWidth
               name="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={user.password}
               onChange={handleInputChange}
               placeholder="Enter new password"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={handleClickShowPassword}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
             <Box sx={{ width: '100%', mt: 2, display: 'flex', alignItems: 'center' }}>
               <LinearProgress

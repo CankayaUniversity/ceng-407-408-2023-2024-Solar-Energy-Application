@@ -16,10 +16,11 @@ import loginCover from "../../assets/images/solar.gif";
 import { useTheme } from "@mui/material/styles";
 import { Link as RouterLink } from "react-router-dom";
 import MuiLink from "@mui/material/Link";
-
+import InputAdornment from '@mui/material/InputAdornment';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import PropTypes from "prop-types";
 import Toolbar from "@mui/material/Toolbar";
-
 import IconButton from "@mui/material/IconButton";
 import SearchIcon from "@mui/icons-material/Search";
 import { auth } from "../../api/auth";
@@ -129,6 +130,9 @@ export default function SignInSide() {
       }
     }, [navigate]);
 
+    const [showPassword, setShowPassword] = useState(false);
+    const handleClickShowPassword = () => setShowPassword(!showPassword);
+
     const signin = async () => {
       const userprofile = localStorage.getItem("userProfile");
       const userProfile = JSON.parse(userprofile);
@@ -196,17 +200,29 @@ export default function SignInSide() {
                 value={email}
                 onChange={handleEmailChange}
               />
-
               <TextField
                 margin="normal"
                 required
                 fullWidth
                 name="password"
                 label="Password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 id="password"
-                value={password} // Bind the TextField to the password state variable
-                onChange={handlePasswordChange} // Update the password state on change
+                value={password}
+                onChange={handlePasswordChange}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={handleClickShowPassword}
+                        edge="end"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
               <FormControlLabel
                 control={<Checkbox value="remember" color="primary" />}
