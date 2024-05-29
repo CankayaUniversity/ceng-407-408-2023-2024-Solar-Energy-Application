@@ -1,4 +1,3 @@
-
 const express = require('express');
 const router = express.Router();
 const SolarPanel = require('../Models/SolarPanel');
@@ -24,14 +23,18 @@ router.get('/solarpanels', async (req, res) => {
   }
 });
 
+// Belirli bir çatıyı ve üzerindeki panelleri sorgulama
 router.get('/solarpanels/:id', async (req, res) => {
-    try {
-      const solarPanels = await SolarPanel.findById(req.params.id);
-      res.status(200).send(solarPanels);
-    } catch (error) {
-      res.status(500).send(error);
+  try {
+    const solarPanel = await SolarPanel.findById(req.params.id);
+    if (!solarPanel) {
+      return res.status(404).send();
     }
-  });
+    res.status(200).send(solarPanel);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
 
 // Belirli bir çatıyı ve üzerindeki panelleri güncelleme
 router.patch('/solarpanels/:id', async (req, res) => {
