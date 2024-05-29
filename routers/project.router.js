@@ -90,19 +90,20 @@ async function getCoordinatesFromAddress(address) {
 }
 
 
-router.get("/project",authenticateUser, async (req, res) => {
+router.get("/project", authenticateUser, async (req, res) => {
   try {
-    const queryParams = req.user._id;
-    console.log("projectquery", queryParams);
-    const project = await Project.find(queryParams).populate('solarpanel_id'); // SolarPanel verisini dahil edin
-    if (!project) {
+    const userId = req.user._id;
+    console.log("projectquery", userId);
+    const projects = await Project.find({ user_id: userId }).populate('solarpanel_id'); // SolarPanel verisini dahil edin
+    if (!projects || projects.length === 0) {
       throw new Error("No project found");
     }
-    res.status(200).send(project);
+    res.status(200).send(projects);
   } catch (e) {
     res.status(500).send(e.message);
   }
 });
+
 
 router.get("/project/:id", async (req, res) => {
   try {
