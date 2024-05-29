@@ -13,6 +13,7 @@ import AddCustomer from './pages/homepage/AddCustomer';
 import AddProject from './pages/dashboard/AddProject';
 import SimulationTest from "./pages/homepage/SimulationTest";
 import WelcomeScreen from './pages/welcome/WelcomeScreen';
+import ProjectScreen from './pages/homepage/ProjectScreen'
 
 const isAuthenticated = () => {
   const token = localStorage.getItem('accessToken'); 
@@ -88,6 +89,11 @@ function App() {
         <Route path="/add-sim" element={
           <ProtectedRoute>
             <SimulationTest />
+          </ProtectedRoute>
+        } />
+        <Route path="/show-project" element={
+          <ProtectedRoute>
+            <ProjectScreen />
           </ProtectedRoute>
         } />
       </Routes>

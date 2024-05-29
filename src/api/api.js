@@ -69,6 +69,12 @@ export const PROJECT = {
   },
 };
 
+export const SOLARPANEL = {
+  getPanels: async (solarPanel) => {
+      return handleRequest(() => api.get(`/solarpanels//${solarPanel}`, solarPanel));
+  },
+};
+
 export const COMPANY = {
   postCompany: async (company) => {
     return handleRequest(() => api.post("/companies/create-company", company));
