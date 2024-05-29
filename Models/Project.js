@@ -3,6 +3,10 @@ const mongoose = require("mongoose");
 
 
 const ProjectSchema = new Schema ({
+    name: {
+        type: String,
+        required: true,
+    },
     consumption: {
         type: String,
         required: true,
@@ -44,7 +48,10 @@ const ProjectSchema = new Schema ({
         type: Schema.Types.ObjectId,
         ref: "SolarPanel",
     },
-
+    user_id:{
+        type: Schema.Types.ObjectId,
+        ref: "User",
+    }
 
 },
 {timestamps: true}
