@@ -371,8 +371,8 @@ function SimulationTest({
     const modelWidth = baseModelWidth * scaleX;
     const modelHeight = baseModelHeight * scaleY;
 
-    const paddedModelWidth = modelWidth;
-    const paddedModelHeight = modelHeight;
+    const paddedModelWidth = modelWidth * 0.5; 
+    const paddedModelHeight = modelHeight * 0.4; 
 
     const corners = [
       new THREE.Vector3(-modelWidth / 2, -modelHeight / 2, 0).add(position),
@@ -387,7 +387,7 @@ function SimulationTest({
       let points = [selectionStart, topRight, selectionEnd, bottomLeft];
       setObstaclesPoints(points);
       if (pointInPolygon(position, points)) {
-        console.warn("Panel can not placed on obstacles.");
+      console.warn("Panel cannot be placed on obstacles.");
         return;
       }
       if (!pointInPolygon(position, selectedRoofPoints)) {
@@ -406,13 +406,10 @@ function SimulationTest({
             )
         )
       ) {
-        console.warn("You can not replace a panel to another panels top.");
+        console.warn("You cannot place a panel on top of another panel.");
         return;
       }
-      if (!isCancelled && modelRef.current) {
-        console.log("position", position);
-        console.log("modelref", modelRef);
-        //Ayar çekilecek
+      if (!isCancelled) {
         if (singleEditing) {
           setPanels([...panels, modelRef.current]);
           setIsCancelled(false);
@@ -446,14 +443,10 @@ function SimulationTest({
             )
         )
       ) {
-        console.warn("You can not replace a panel to another panels top.");
-        console.log("occupied'a yakalandım", occupiedPositions);
+        console.warn("You cannot place a panel on top of another panel.");
         return;
       }
-      if (!isCancelled && modelRef.current) {
-        console.log("position", position);
-        console.log("modelref", modelRef);
-        //Ayar çekilecek
+      if (!isCancelled) {
         if (singleEditing) {
           setPanels([...panels, modelRef.current]);
           setIsCancelled(false);
