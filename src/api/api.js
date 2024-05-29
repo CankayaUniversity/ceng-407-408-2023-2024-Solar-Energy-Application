@@ -2,7 +2,6 @@ import { Token } from "@mui/icons-material";
 import axios from "axios";
 
 const API_BASE_URL = "https://solar-energy-app.azurewebsites.net";
-
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {

@@ -275,6 +275,8 @@ function SimulationTest({
 
       // Model ile ilgili işlemleriniz
     });
+
+   
   }, [modelPath]);
 
   useEffect(() => {

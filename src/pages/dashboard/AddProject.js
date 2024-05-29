@@ -190,18 +190,13 @@ export default function AddProject() {
 
   const handleSubmit = async () => {
     console.log(projectData);
-
-    axios
-      .post(
-        "http://localhost:3003/project/create-project",
-        formData
-      ) // Backend URL'sini kullanarak isteği yapın
-      .then((response) => {
-        console.log("response");
-      })
-      .catch((err) => {
-        console.log("err", err);
-      });
+    let response, error;
+    [response, error] = await PROJECT.postProject(formData);
+    if(response){
+      console.log("res", response)
+    }else{
+      console.log("err", error)
+    }
 
     // const [data, error] = await PROJECT.postProject(formData);
     // if (data) {
