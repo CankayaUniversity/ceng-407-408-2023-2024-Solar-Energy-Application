@@ -39,7 +39,11 @@ const ProjectSchema = new Schema ({
     consumption_profiles_id: {
         type: Schema.Types.ObjectId,
         ref: "ConsumptionProfile",
-    }
+    },
+    solarpanel_id: {
+        type: Schema.Types.ObjectId,
+        ref: "SolarPanel",
+    },
 
 
 },
