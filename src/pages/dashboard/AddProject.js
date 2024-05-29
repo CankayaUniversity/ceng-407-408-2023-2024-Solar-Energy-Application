@@ -67,6 +67,7 @@ export default function AddProject() {
 
   const [addressExpanded, setAddressExpanded] = useState(true);
   const [projectData, setProjectData] = useState({
+    name: "",
     consumption: "",
     consumption_period: "",
     projectscol: "",
@@ -192,10 +193,10 @@ export default function AddProject() {
     console.log(projectData);
     let response, error;
     [response, error] = await PROJECT.postProject(formData);
-    if(response){
-      console.log("res", response)
-    }else{
-      console.log("err", error)
+    if (response) {
+      console.log("res", response);
+    } else {
+      console.log("err", error);
     }
 
     // const [data, error] = await PROJECT.postProject(formData);
@@ -400,6 +401,16 @@ export default function AddProject() {
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    name="name"
+                    label="Project Name"
+                    margin="normal"
+                    value={projectData.name}
+                    onChange={handleInputChange}
+                  />
+                </Grid>
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
