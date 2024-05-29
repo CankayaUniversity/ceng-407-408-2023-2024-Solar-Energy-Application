@@ -16,6 +16,8 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Map from "./Map";
@@ -177,16 +179,32 @@ export default function AddProject() {
     }
   };
 
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+
   const handleSubmit = async () => {
     console.log(projectData);
     const [data, error] = await PROJECT.postProject(formData);
     if (data) {
-      console.log("Proje başarıyla oluşturuldu:", data);
+      setSnackbarMessage("Project saved successfully!");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     } else {
       console.error("Proje oluşturulurken bir hata oluştu", error);
+      setSnackbarMessage("Project not saved!");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
   };
-
+  
   const validateForm = () => {
     const errors = {};
     if (!projectData.consumption) errors.consumption = "Fill this area";
@@ -243,14 +261,14 @@ export default function AddProject() {
     if (value > 1) {
       setValue((prevValue) => String(Number(prevValue) - 1));
     } else {
-      console.log("İlk tab'dayız, daha fazla geri gidemeyiz.");
+      console.log("İlk tab'dayız");
     }
   };
 
   const renderConfirmButton = () => {
     return value < 4 ? (
       <Button onClick={handleNext} variant="contained" color="primary">
-        Confirm
+        Next
       </Button>
     ) : (
       <Button onClick={handleFinish} variant="contained" color="primary">
@@ -258,6 +276,7 @@ export default function AddProject() {
       </Button>
     );
   };
+
 
   const handleSavePhoto = () => {
     const link = document.createElement("a");
@@ -350,7 +369,7 @@ export default function AddProject() {
       >
         <Tabs
           value={value}
-          onChange={handleChange}
+          // onChange={handleChange}
           centered
           variant="fullWidth"
           sx={{ ".MuiTabs-flexContainer": { justifyContent: "center" } }}
@@ -689,13 +708,13 @@ export default function AddProject() {
               onMapClick={onMapClick}
             />
           </div>
-          {clickedLatLng && (
+          {/* {clickedLatLng && (
             <div>
               <p>Clicked Coordinates:</p>
               <p>Latitude: {clickedLatLng.lat}</p>
               <p>Longitude: {clickedLatLng.lng}</p>
             </div>
-          )}
+          )} */}
         </TabPanel>
 
         <TabPanel value="4">
@@ -708,7 +727,7 @@ export default function AddProject() {
           />
           {screenshot && (
             <div>
-              <img
+              {/* <img
                 src={screenshot}
                 alt="Static Map"
                 width={MAP_WIDTH}
@@ -721,7 +740,7 @@ export default function AddProject() {
                   <p>Latitude: {clickedLatLng.lat}</p>
                   <p>Longitude: {clickedLatLng.lng}</p>
                 </div>
-              )}
+              )} */}
               <Button
                 variant="contained"
                 color="primary"
@@ -743,10 +762,25 @@ export default function AddProject() {
             color="secondary"
             sx={{ ml: 2 }}
           >
-            Cancel
+            Back
           </Button>
         </Grid>
       </Grid>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }} 
+        sx={{ '& .MuiSnackbarContent-root': { fontSize: '1.2rem', width: '100%' } }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
