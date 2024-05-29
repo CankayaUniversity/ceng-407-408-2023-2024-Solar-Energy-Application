@@ -188,7 +188,13 @@ function RaycasterComponent({
  * @param {string} props.screenshot - The screenshot to be displayed.
  * @returns {JSX.Element} The SimulationTest component.
  */
-function SimulationTest({ screenshot, currentCenter, currentZoom, formData, setFormData }) {
+function SimulationTest({
+  screenshot,
+  currentCenter,
+  currentZoom,
+  formData,
+  setFormData,
+}) {
   const [isSelecting, setIsSelecting] = useState(false);
   const [showModelPreview, setShowModelPreview] = useState(false);
   const [addPanelMode, setAddPanelMode] = useState(false);
@@ -222,7 +228,7 @@ function SimulationTest({ screenshot, currentCenter, currentZoom, formData, setF
   const [singleEditing, setSingleEditing] = useState(false);
   const [isSingle, setIsSingle] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [modelPath, setModelPath] = useState("s2.glb");
+  const [modelPath, setModelPath] = useState("s1.glb");
 
   const handleModelChange = (event) => {
     console.log("Model path changed to:", event.target.value);
@@ -262,7 +268,7 @@ function SimulationTest({ screenshot, currentCenter, currentZoom, formData, setF
   const canvasRef = useRef();
 
   useEffect(() => {
-    console.log("formData",formData)
+    console.log("formData", formData);
     console.log("Model path in useEffect:", modelPath);
     loadOriginalModel(modelPath, (originalModel) => {
       console.log("original", originalModel);
@@ -273,13 +279,17 @@ function SimulationTest({ screenshot, currentCenter, currentZoom, formData, setF
 
   useEffect(() => {
     console.log("panels:", panels);
-    setFormData((prevState) => ({
-      ...prevState,
-      solarPanel: {
-        ...prevState.solarPanel,
-        panels
-      }
-    }));
+    if (panels.length != 0) {
+      const panelsToJSON = panels.map((panel) => panel.toJSON());
+      console.log("panelstojson", panelsToJSON);
+      setFormData((prevState) => ({
+        ...prevState,
+        solarPanel: {
+          ...prevState.solarPanel,
+          panelsToJSON,
+        },
+      }));
+    }
   }, [panels]);
 
   const toggleRoofSelection = () =>
@@ -397,7 +407,7 @@ function SimulationTest({ screenshot, currentCenter, currentZoom, formData, setF
         console.warn("You can not replace a panel to another panels top.");
         return;
       }
-      if (!isCancelled) {
+      if (!isCancelled && modelRef.current) {
         console.log("position", position);
         console.log("modelref", modelRef);
         //Ayar çekilecek
@@ -438,7 +448,7 @@ function SimulationTest({ screenshot, currentCenter, currentZoom, formData, setF
         console.log("occupied'a yakalandım", occupiedPositions);
         return;
       }
-      if (!isCancelled) {
+      if (!isCancelled && modelRef.current) {
         console.log("position", position);
         console.log("modelref", modelRef);
         //Ayar çekilecek
@@ -543,16 +553,16 @@ function SimulationTest({ screenshot, currentCenter, currentZoom, formData, setF
     const batchCorners = newPanels.current.flatMap((panel) =>
       getPanelCorners(panel.position)
     );
-  
+
     setBatchGroups((prev) => {
       const updatedBatchGroups = [...prev];
       updatedBatchGroups[index] = newPanels.current;
       return updatedBatchGroups;
     });
-  
+
     // `currentBatchIndex`'i güncelle
     setCurrentBatchIndex((prevIndex) => prevIndex + 1);
-  
+
     // panels dizisinde eski batch panellerini güncelle
     setPanels((prev) => {
       const updatedPanels = [...prev];
@@ -567,15 +577,14 @@ function SimulationTest({ screenshot, currentCenter, currentZoom, formData, setF
       });
       return updatedPanels;
     });
-  
+
     setOccupiedPositions((prev) => [...prev, ...batchCorners]);
-  
+
     // `currentBatch`'i sıfırla
     setCurrentBatch([]);
-  
+
     setBatchEditing(false);
   };
-  
 
   useEffect(() => {
     if (selectionStart != null && selectionEnd != null) {

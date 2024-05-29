@@ -31,6 +31,7 @@ import TabList from "@mui/lab/TabList";
 import TabPanel from "@mui/lab/TabPanel";
 import { CUSTOMERS, PROJECT } from "./../../api/api";
 import SimulationTest from "../homepage/SimulationTest";
+import axios from "axios";
 
 const MAP_WIDTH = 512;
 const MAP_HEIGHT = 512;
@@ -189,22 +190,35 @@ export default function AddProject() {
 
   const handleSubmit = async () => {
     console.log(projectData);
-    const [data, error] = await PROJECT.postProject(formData);
-    if (data) {
-      setSnackbarMessage("Project saved successfully!");
-      setSnackbarSeverity("success");
-      setSnackbarOpen(true);
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-    } else {
-      console.error("Proje oluşturulurken bir hata oluştu", error);
-      setSnackbarMessage("Project not saved!");
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
-    }
+
+    axios
+      .post(
+        "http://localhost:3003/project/create-project",
+        formData
+      ) // Backend URL'sini kullanarak isteği yapın
+      .then((response) => {
+        console.log("response");
+      })
+      .catch((err) => {
+        console.log("err", err);
+      });
+
+    // const [data, error] = await PROJECT.postProject(formData);
+    // if (data) {
+    //   setSnackbarMessage("Project saved successfully!");
+    //   setSnackbarSeverity("success");
+    //   setSnackbarOpen(true);
+    //   setTimeout(() => {
+    //     window.location.reload();
+    //   }, 2000);
+    // } else {
+    //   console.error("Proje oluşturulurken bir hata oluştu", error);
+    //   setSnackbarMessage("Project not saved!");
+    //   setSnackbarSeverity("error");
+    //   setSnackbarOpen(true);
+    // }
   };
-  
+
   const validateForm = () => {
     const errors = {};
     if (!projectData.consumption) errors.consumption = "Fill this area";
@@ -238,8 +252,8 @@ export default function AddProject() {
           roofImage: staticMapURL,
           currentCenter,
           currentZoom,
-          panels: [] // başlangıçta boş panel dizisi
-        }
+          panelsToJSON: [], // başlangıçta boş panel dizisi
+        },
       }));
       setValue("4");
     } else {
@@ -253,7 +267,7 @@ export default function AddProject() {
   };
 
   const handleFinish = async () => {
-    console.log("finish formdata", formData)
+    console.log("finish formdata", formData);
     handleSubmit();
   };
 
@@ -276,7 +290,6 @@ export default function AddProject() {
       </Button>
     );
   };
-
 
   const handleSavePhoto = () => {
     const link = document.createElement("a");
@@ -722,7 +735,7 @@ export default function AddProject() {
             screenshot={screenshot}
             currentCenter={currentCenter}
             currentZoom={currentZoom}
-            formData={formData} 
+            formData={formData}
             setFormData={setFormData}
           />
           {screenshot && (
@@ -770,13 +783,15 @@ export default function AddProject() {
         open={snackbarOpen}
         autoHideDuration={6000}
         onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }} 
-        sx={{ '& .MuiSnackbarContent-root': { fontSize: '1.2rem', width: '100%' } }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        sx={{
+          "& .MuiSnackbarContent-root": { fontSize: "1.2rem", width: "100%" },
+        }}
       >
         <Alert
           onClose={handleSnackbarClose}
           severity={snackbarSeverity}
-          sx={{ width: '100%' }}
+          sx={{ width: "100%" }}
         >
           {snackbarMessage}
         </Alert>
