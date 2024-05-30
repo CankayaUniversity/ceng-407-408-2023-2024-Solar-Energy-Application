@@ -312,14 +312,14 @@ export const AddPanelArea = ({
 
   const updateSelectionBox = (startPos, currentPos) => {
     if (!selectionBoxRef.current) {
-      const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+      const material = new THREE.LineBasicMaterial({ color: 0xffffff });
       const geometry = new THREE.BufferGeometry();
       const vertices = new Float32Array(12);
       geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
       selectionBoxRef.current = new THREE.LineLoop(geometry, material);
       scene.add(selectionBoxRef.current);
     }
-    
+
     if(!batchAddPanelMode){
       setSelectionBoxWorked(true);
     }
@@ -327,7 +327,7 @@ export const AddPanelArea = ({
     const minX = Math.min(startPos.x, currentPos.x);
     const maxX = Math.max(startPos.x, currentPos.x);
     const minY = Math.min(startPos.y, currentPos.y);
-    const maxY = Math.min(startPos.y, currentPos.y);
+    const maxY = Math.max(startPos.y, currentPos.y);
 
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
@@ -350,33 +350,6 @@ export const AddPanelArea = ({
 
     positions.array.set(verticesArray);
     positions.needsUpdate = true;
-
-    // Clear previous text meshes
-    textGroupRef.current.children.forEach(child => scene.remove(child));
-    textGroupRef.current.clear();
-
-    // Add distance text at the midpoints of each line segment
-    for (let i = 0; i < rotatedVertices.length; i++) {
-      const startVertex = rotatedVertices[i];
-      const endVertex = rotatedVertices[(i + 1) % rotatedVertices.length];
-      const midpoint = new THREE.Vector3(
-        (startVertex.x + endVertex.x) / 2,
-        (startVertex.y + endVertex.y) / 2,
-        (startVertex.z + endVertex.z) / 2
-      );
-      const distance = startVertex.distanceTo(endVertex).toFixed(2);
-
-      const textMesh = new Text({
-        text: `${distance}m`,
-        position: midpoint,
-        size: 1, // Adjust the size as needed
-        color: 0xffffff,
-        rotation: -rotationAngle
-      });
-
-      textGroupRef.current.add(textMesh);
-      scene.add(textMesh);
-    }
   };
 
   const removeSelectionBox = () => {
@@ -386,10 +359,6 @@ export const AddPanelArea = ({
       selectionBoxRef.current.material.dispose();
       selectionBoxRef.current = null;
     }
-
-    // Clear text group
-    textGroupRef.current.children.forEach(child => scene.remove(child));
-    textGroupRef.current.clear();
   };
 
   return null;

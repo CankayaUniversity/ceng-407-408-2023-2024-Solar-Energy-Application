@@ -448,7 +448,7 @@ function SimulationTest({
         console.warn("You cannot place a panel on top of another panel.");
         return;
       }
-      if (!isCancelled) {
+      if (!isCancelled && modelRef.current) {
         if (singleEditing) {
           setPanels([...panels, modelRef.current]);
           setIsCancelled(false);
@@ -488,7 +488,7 @@ function SimulationTest({
         console.warn("You cannot place a panel on top of another panel.");
         return;
       }
-      if (!isCancelled) {
+      if (!isCancelled && modelRef.current) {
         if (singleEditing) {
           setPanels([...panels, modelRef.current]);
           setIsCancelled(false);
@@ -605,6 +605,8 @@ function SimulationTest({
         );
         return [...updatedPanels, ...newPanels.current];
       });
+
+      setSelectionBoxWorked(false);
     } else {
       // panels dizisinde eski batch panellerini güncelle
       setPanels((prev) => {
