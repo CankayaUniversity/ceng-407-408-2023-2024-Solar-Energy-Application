@@ -655,10 +655,10 @@ function SimulationTest({
 
     const energyPerPanel = 300; // Örnek olarak panel başına enerji üretimi (kWh)
     const totalEnergy = totalPanels * energyPerPanel; // Toplam enerji üretimi
-    const adjustedEnergy = totalEnergy * projectData.cosine_factor; // Ayar faktörü uygulanmış enerji üretimi
+    const adjustedEnergy = totalEnergy * formData.cosine_factor; // Ayar faktörü uygulanmış enerji üretimi
     const total =
       adjustedEnergy *
-      (projectData.consumption / projectData.consumption_period); // Nihai toplam enerji tasarrufu
+      (formData.consumption / formData.consumption_period); // Nihai toplam enerji tasarrufu
     return total;
   };
 
@@ -739,9 +739,9 @@ const calculateEnergy = () => {
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
     const netParameters = [
-      ["Cosine Factor", projectData.cosine_factor],
-      ["Consumption", projectData.consumption],
-      ["Consumption Period", projectData.consumption_period],
+      ["Cosine Factor", formData.cosine_factor],
+      ["Consumption", formData.consumption],
+      ["Consumption Period", formData.consumption_period],
     ];
     doc.autoTable({
       startY: doc.autoTable.previous.finalY + 14,

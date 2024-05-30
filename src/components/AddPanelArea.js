@@ -214,9 +214,9 @@ export const AddPanelArea = ({
       scaleY = 0.55; // Vertical scaling
       scaleZ = 0.4;
     } else if (currentZoom === 20) {
-      scaleX = 3.0; // Horizontal scaling
-      scaleY = 1.6; // Vertical scaling
-      scaleZ = 0.8;
+      scaleX = 4; // Horizontal scaling
+      scaleY = 2; // Vertical scaling
+      scaleZ = 1;
     }
   
     const modelWidth = baseModelWidth * scaleX;
@@ -240,7 +240,7 @@ export const AddPanelArea = ({
     const selectionCenter = new THREE.Vector3(centerX, centerY, 0);
   
     // Create a grid from red pixels
-    const gridSize = paddedModelWidth;
+    const gridSize = paddedModelWidth/1.5;
     const redPixelGrid = createGrid(redPixels3D, gridSize);
   
     scene.remove(modelRef.current);
