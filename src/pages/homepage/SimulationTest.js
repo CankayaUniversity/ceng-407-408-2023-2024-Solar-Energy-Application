@@ -442,19 +442,44 @@ function SimulationTest({ screenshot, currentCenter, currentZoom, projectData,cu
   };
 
   const calculateEnergy = () => {
-    const panelCount = panels.length; // Yerleştirilen panel sayısı
+    // Toplam panel sayısını hesapla
+    const totalPanels = batchGroups.reduce((total, batch) => total + batch.length, 0)+panels.length;
+    
     const energyPerPanel = 300; // Örnek olarak panel başına enerji üretimi (kWh)
-    const totalEnergy = panelCount * energyPerPanel; // Toplam enerji üretimi
+    const totalEnergy = totalPanels * energyPerPanel; // Toplam enerji üretimi
     const adjustedEnergy = totalEnergy * projectData.cosine_factor; // Ayar faktörü uygulanmış enerji üretimi
     const total = adjustedEnergy * (projectData.consumption / projectData.consumption_period); // Nihai toplam enerji tasarrufu
     return total;
   };
   
 
+  /*
+const calculateEnergy = () => {
+    // Tekli eklenen panellerin sayısı
+    const singlePanelsCount = panels.length;
+  
+    // Batch gruplarındaki panellerin sayısı
+    const batchPanelsCount = batchGroups.reduce((total, batch) => total + batch.length, 0);
+  
+    // Toplam panel sayısını hesapla
+    const totalPanels = singlePanelsCount + batchPanelsCount;
+  
+    const energyPerPanel = 300; // Örnek olarak panel başına enerji üretimi (kWh)
+    const totalEnergy = totalPanels * energyPerPanel; // Toplam enerji üretimi
+    const adjustedEnergy = totalEnergy * projectData.cosine_factor; // Ayar faktörü uygulanmış enerji üretimi
+    const total = adjustedEnergy * (projectData.consumption / projectData.consumption_period); // Nihai toplam enerji tasarrufu
+  
+    return total;
+  };
+  */
+  
+  
+
 
   
   const generatePDF = () => {
     const totalEnergy = calculateEnergy();
+    const totalPanels = batchGroups.reduce((total, batch) => total + batch.length, 0);
     const doc = new jsPDF();
   
     // Title
@@ -489,7 +514,7 @@ function SimulationTest({ screenshot, currentCenter, currentZoom, projectData,cu
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
     const reportInfo = [
-      ["Total Panels", panels.length],
+      ["Total Panels", totalPanels],
       ["Total Energy", `${totalEnergy.toFixed(2)} kWh`]
     ];
     doc.autoTable({
@@ -535,6 +560,7 @@ function SimulationTest({ screenshot, currentCenter, currentZoom, projectData,cu
       doc.save('Energy Report.pdf');
     };
   };
+  
   
 
 
@@ -796,6 +822,8 @@ function SimulationTest({ screenshot, currentCenter, currentZoom, projectData,cu
                 modelGroupRef={modelGroupRef}
                 batchAddPanelMode={batchAddPanelMode}
                 modelPath={modelPath}
+                currentZoom={currentZoom}
+
               />
             )}
             {addPanelMode && (

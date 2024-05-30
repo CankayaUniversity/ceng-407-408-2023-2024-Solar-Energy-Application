@@ -41,6 +41,7 @@ export const AddPanelArea = ({
   modelGroupRef, // Add modelGroupRef prop
   batchAddPanelMode,
   modelPath,
+  currentZoom
 }) => {
   const [startPosition, setStartPosition] = useState(addPanelStart);
   const [currentPosition, setCurrentPosition] = useState(addPanelEnd);
@@ -143,48 +144,64 @@ export const AddPanelArea = ({
     }
   });
 
+  useEffect(() => {
+    if (startPosition && currentPosition) {
+      updatePanelLayout(startPosition, currentPosition, orientationAngle);
+    }
+  }, [startPosition, currentPosition, rotationAngle, orientationAngle, currentZoom]); // currentZoom'u izlemeye ekle
+
   const updatePanelLayout = (startPos, currentPos, orientationAngle) => {
     if (!startPos || !currentPos) return;
-
-    const gap = 3; // Gap between panels
-    const baseModelWidth = 8; // Base model width
-    const baseModelHeight = 6.5; // Base model height
-
-    const scaleX = 1.7; // Horizontal scaling
-    const scaleY = 3.4; // Vertical scaling
+  
+    const gap = 3.2; // Gap between panels
+    const baseModelWidth = 8.2; // Base model width
+    const baseModelHeight = 5.7; // Base model height
+  
+    let scaleX = 1.0, scaleY = 1.0, scaleZ = 1.0; // Varsayılan ölçek değerleri
+  
+    if (currentZoom === 19) {
+      scaleX = 1.4; // Horizontal scaling
+      scaleY = 0.55; // Vertical scaling
+      scaleZ = 0.4;
+    } else if (currentZoom === 20) {
+      scaleX = 3.0; // Horizontal scaling
+      scaleY = 1.6; // Vertical scaling
+      scaleZ = 0.8;
+    }
+  
     const modelWidth = baseModelWidth * scaleX;
     const modelHeight = baseModelHeight * scaleY;
-
+  
     const paddedModelWidth = modelWidth + gap;
     const paddedModelHeight = modelHeight + gap;
-
+  
     const xDistance = Math.abs(currentPos.x - startPos.x);
     const yDistance = Math.abs(currentPos.y - startPos.y);
-
+  
     const numX = Math.floor(xDistance / paddedModelWidth);
     const numY = Math.floor(yDistance / paddedModelHeight);
-
+  
     const centerX = (startPos.x + currentPos.x) / 2;
     const centerY = (startPos.y + currentPos.y) / 2;
     const selectionCenter = new THREE.Vector3(centerX, centerY, 0);
-
+  
     scene.remove(modelRef.current);
     modelRef.current = new THREE.Group();
     loadOriginalModel(modelPath, (originalModel) => {
       const placedPanels = [];
       const rotationMatrix = new THREE.Matrix4().makeRotationZ(rotationAngle);
-
+  
       for (let i = 0; i < numX; i++) {
         for (let j = 0; j < numY; j++) {
           const offsetX = (i - numX / 2) * paddedModelWidth;
           const offsetY = (j - numY / 2) * paddedModelHeight;
           const panelPosition = new THREE.Vector3(offsetX, offsetY, 12).applyMatrix4(rotationMatrix).add(selectionCenter);
-
+  
           const modelClone = originalModel.scene.clone();
-          modelClone.scale.set(scaleX, scaleY, 1.7);
+          modelClone.scale.set(scaleX, scaleY, scaleZ);
           modelClone.rotation.x = orientationAngle ?? Math.PI / 2;
           modelClone.rotation.y = rotationAngle;
-
+  
           if (batchAddPanelMode) {
             modelClone.userData = {
               ...modelClone.userData,
@@ -202,7 +219,7 @@ export const AddPanelArea = ({
               currentPosition: currentPosition,
             };
           }
-
+  
           const corners = [
             new THREE.Vector3(-modelWidth / 2, -modelHeight / 2, 0),
             new THREE.Vector3(modelWidth / 2, -modelHeight / 2, 0),
@@ -211,7 +228,7 @@ export const AddPanelArea = ({
           ].map((corner) =>
             corner.applyMatrix4(rotationMatrix).add(panelPosition)
           );
-
+  
           if (
             corners.every((corner) =>
               pointInPolygon(corner, selectedRoofPoints)
@@ -261,11 +278,11 @@ export const AddPanelArea = ({
           }
         }
       }
-
+  
       placedPanelPositionsRef.current = placedPanels.map((panel) => panel);
       placedPanels.forEach((panel) => modelRef.current.add(panel));
       scene.add(modelRef.current);
-
+  
       savePanels(placedPanels.map((panel) => panel.position));
     });
   };
