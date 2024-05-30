@@ -239,13 +239,13 @@ export const Experience = ({
   useEffect(() => {
       const processImage = async () => {
         
-          if (true) { //test
-        //if (roofImage) { //original
-            roofImage = "216o.png" //test
-             // const processedImageUrl = await processRoofImage(roofImage); //orijinal
-              //console.log("processedImageUrl", processedImageUrl.path); //orijinal
-              // const masked = processedImageUrl.path; //orijinal
-              const masked = "3cab8443-af67-4d1a-8a25-1d6d0d29c216.png" //test
+          // if (true) { //test
+        if (roofImage) { //original
+            // roofImage = "216o.png" //test
+             const processedImageUrl = await processRoofImage(roofImage); //orijinal
+              console.log("processedImageUrl", processedImageUrl.path); //orijinal
+              const masked = processedImageUrl.path; //orijinal
+              // const masked = "3cab8443-af67-4d1a-8a25-1d6d0d29c216.png" //test
               if (masked) {
                   const loader = new THREE.TextureLoader();
                   loader.load(roofImage, (texture) => {

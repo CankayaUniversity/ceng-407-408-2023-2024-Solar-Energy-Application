@@ -279,8 +279,6 @@ function SimulationTest({
 
       // Model ile ilgili işlemleriniz
     });
-
-   
   }, [modelPath]);
 
   useEffect(() => {
@@ -395,34 +393,14 @@ function SimulationTest({
   const modelWidth = baseModelWidth * scaleX;
   const modelHeight = baseModelHeight * scaleY;
 
-  const paddedModelWidth = modelWidth;
-  const paddedModelHeight = modelHeight;
-
+  const paddedModelWidth = modelWidth * 0.5;
+  const paddedModelHeight = modelHeight * 0.4;
   // Create a grid from red pixels
   const gridSize = paddedModelWidth;
-  const redPixelGrid = useMemo(() => createGrid(redPixels3D, gridSize), [
-    redPixels3D,
-    gridSize,
-  ]);
-
-  const placePanel = (position) => {
-    const baseModelWidth = 8; // Base model width
-    const baseModelHeight = 6.5; // Base model height
-
-    const scaleX = 1.7; // Horizontal scaling
-    const scaleY = 3.4; // Vertical scaling
-    const modelWidth = baseModelWidth * scaleX;
-    const modelHeight = baseModelHeight * scaleY;
-
-    const paddedModelWidth = modelWidth * 0.5; 
-    const paddedModelHeight = modelHeight * 0.4; 
-
-  // Create a grid from red pixels
-  const gridSize = paddedModelWidth;
-  const redPixelGrid = useMemo(() => createGrid(redPixels3D, gridSize), [
-    redPixels3D,
-    gridSize,
-  ]);
+  const redPixelGrid = useMemo(
+    () => createGrid(redPixels3D, gridSize),
+    [redPixels3D, gridSize]
+  );
 
   const placePanel = (position) => {
     const corners = [
@@ -431,14 +409,14 @@ function SimulationTest({
       new THREE.Vector3(modelWidth / 2, modelHeight / 2, 0).add(position),
       new THREE.Vector3(-modelWidth / 2, modelHeight / 2, 0).add(position),
     ];
-  
+
     if (selectionStart != null && selectionEnd != null) {
       let topRight = { x: selectionEnd.x, y: selectionStart.y, z: 0 };
       let bottomLeft = { x: selectionStart.x, y: selectionEnd.y, z: 0 };
       let points = [selectionStart, topRight, selectionEnd, bottomLeft];
       setObstaclesPoints(points);
       if (pointInPolygon(position, points)) {
-      console.warn("Panel cannot be placed on obstacles.");
+        console.warn("Panel cannot be placed on obstacles.");
         return;
       }
       if (
@@ -448,7 +426,7 @@ function SimulationTest({
         console.warn("Panel can only be placed within the selected area.");
         return;
       }
-  
+
       if (
         occupiedPositions.some(
           (occupiedPosition) =>
@@ -523,7 +501,6 @@ function SimulationTest({
     }
   };
 
-  
   const handleCancelRoofSelection = () => {
     setRoofSelectionActive(false);
     setSelectedRoofPoints([]);
