@@ -43,7 +43,11 @@ export default function AddProject() {
   const [customerDetails, setCustomerDetails] = useState({
     name: "",
     email: "",
+    company_name: "",
+    address: "",
+    phone: ""
   });
+  
   const [expanded, setExpanded] = useState(false);
   const [value, setValue] = useState("1");
   const [mapAddress, setMapAddress] = useState("");
@@ -150,15 +154,18 @@ export default function AddProject() {
             name: data.name || "Ad Bilinmiyor",
             email: data.email || "E-posta Bilinmiyor",
             company_name: data.company_name || "Company name bilinmiyor",
+            address: data.address || "Adres bilinmiyor",
+            phone: data.phone || "Telefon bilinmiyor",
           });
         } else {
           console.error("Müşteri detayları yüklenirken bir hata oluştu", error);
-          setCustomerDetails({ name: "", email: "" });
+          setCustomerDetails({ name: "", email: "", company_name: "", address: "", phone: "" });
         }
       }
     };
     fetchCustomerDetails();
   }, [selectedCustomerId]);
+
 
   const handleCustomerChange = async (event) => {
     const newSelectedCustomerId = event.target.value;
@@ -174,10 +181,13 @@ export default function AddProject() {
       setCustomerDetails({
         name: data.name || "Ad Bilinmiyor",
         email: data.email || "E-posta Bilinmiyor",
+        company_name: data.company_name || "Company name bilinmiyor",
+        address: data.address || "Adres bilinmiyor",
+        phone: data.phone || "Telefon bilinmiyor",
       });
     } else {
       console.error("Müşteri detayları yüklenirken bir hata oluştu", error);
-      setCustomerDetails({ name: "", email: "" });
+      setCustomerDetails({ name: "", email: "", company_name: "", address: "", phone: "" });
     }
   };
 
@@ -716,6 +726,7 @@ export default function AddProject() {
             <Map
               address={mapAddress}
               onCenterChange={onCenterChange}
+              onZoomChange={onZoomChange}
               onZoomChange={onZoomChange}
               onMapClick={onMapClick}
             />

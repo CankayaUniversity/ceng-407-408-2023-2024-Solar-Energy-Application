@@ -1,10 +1,17 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { Experience } from "../../components/Experience";
 import { AddPanel } from "../../components/AddPanel";
 import roofImage from "../../assets/images/roof.jpg";
+import reportImage from"../../assets/images/cardblog2.png";
 import * as THREE from "three";
+import 'jspdf-autotable';
+import { AddPanelArea } from "../../components/AddPanelArea";
+import { loadOriginalModel } from "../../components/LoadOriginalModel";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   Button,
   Stack,
@@ -22,9 +29,7 @@ import {
   FormControl,
   InputLabel,
 } from "@mui/material";
-import { AddPanelArea } from "../../components/AddPanelArea";
-import { loadOriginalModel } from "../../components/LoadOriginalModel";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+
 
 let redPixels3D = [];
 export function setRedPixels(pixels) {
@@ -52,7 +57,7 @@ function CameraControlled({ handleCancel, isCancelled }) {
   const { camera, scene } = useThree();
 
   useEffect(() => {
-    const initialDistance = 600;
+    const initialDistance = 500;
     const maxDistance = 1000;
     const minDistance = 200;
 
@@ -194,8 +199,8 @@ function RaycasterComponent({
  */
 function SimulationTest({
   screenshot,
-  currentCenter,
-  currentZoom,
+   currentCenter,
+   currentZoom, projectData,customerDetails,
   formData,
   setFormData,
 }) {
@@ -224,8 +229,8 @@ function SimulationTest({
   const [batchGroups, setBatchGroups] = useState([]);
   const [currentBatch, setCurrentBatch] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState([]);
-  const [batchEditing, setBatchEditing] = useState(false); // Batch editing state
-  const [currentBatchIndex, setCurrentBatchIndex] = useState(0); // Current batch index
+  const [batchEditing, setBatchEditing] = useState(false);
+  const [currentBatchIndex, setCurrentBatchIndex] = useState(0);
   const [addPanelStart, setAddPanelStart] = useState(null);
   const [addPanelEnd, setAddPanelEnd] = useState(null);
   const [editPanel, setEditPanel] = useState(false);
@@ -589,8 +594,6 @@ function SimulationTest({
       updatedBatchGroups[index] = newPanels.current;
       return updatedBatchGroups;
     });
-
-    // `currentBatchIndex`'i güncelle
     setCurrentBatchIndex((prevIndex) => prevIndex + 1);
 
     // panels dizisinde eski batch panellerini güncelle
@@ -626,6 +629,135 @@ function SimulationTest({
       console.log("obstaclepoints: ", obstaclesPoints);
     }
   }, [selectionStart, selectionEnd]);
+
+  const savePanels = (newPanels) => {
+    setPanels((prevPanels) => [...prevPanels, ...newPanels]);
+  };
+
+  const calculateEnergy = () => {
+    // Toplam panel sayısını hesapla
+    const totalPanels = batchGroups.reduce((total, batch) => total + batch.length, 0)+panels.length;
+    
+    const energyPerPanel = 300; // Örnek olarak panel başına enerji üretimi (kWh)
+    const totalEnergy = totalPanels * energyPerPanel; // Toplam enerji üretimi
+    const adjustedEnergy = totalEnergy * projectData.cosine_factor; // Ayar faktörü uygulanmış enerji üretimi
+    const total = adjustedEnergy * (projectData.consumption / projectData.consumption_period); // Nihai toplam enerji tasarrufu
+    return total;
+  };
+  
+
+  /*
+const calculateEnergy = () => {
+    // Tekli eklenen panellerin sayısı
+    const singlePanelsCount = panels.length;
+  
+    // Batch gruplarındaki panellerin sayısı
+    const batchPanelsCount = batchGroups.reduce((total, batch) => total + batch.length, 0);
+  
+    // Toplam panel sayısını hesapla
+    const totalPanels = singlePanelsCount + batchPanelsCount;
+  
+    const energyPerPanel = 300; // Örnek olarak panel başına enerji üretimi (kWh)
+    const totalEnergy = totalPanels * energyPerPanel; // Toplam enerji üretimi
+    const adjustedEnergy = totalEnergy * projectData.cosine_factor; // Ayar faktörü uygulanmış enerji üretimi
+    const total = adjustedEnergy * (projectData.consumption / projectData.consumption_period); // Nihai toplam enerji tasarrufu
+  
+    return total;
+  };
+  */
+  
+  
+
+
+  
+  const generatePDF = () => {
+    const totalEnergy = calculateEnergy();
+    const totalPanels = batchGroups.reduce((total, batch) => total + batch.length, 0);
+    const doc = new jsPDF();
+  
+    // Title
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("Solar App Energy Report", 105, 20, null, null, "center");
+  
+    // Company Information
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("Company Information", 14, 30);
+  
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    const companyInfo = [
+      ["Company Name", customerDetails?.company_name || "N/A"],
+      ["Address", customerDetails?.address || "N/A"],
+      ["Phone", customerDetails?.phone || "N/A"],
+      ["E-mail", customerDetails?.email || "N/A"]
+    ];
+    doc.autoTable({
+      startY: 34,
+      body: companyInfo,
+      theme: 'striped'
+    });
+  
+    // Report Information
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("Energy Report", 14, doc.autoTable.previous.finalY + 10);
+  
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    const reportInfo = [
+      ["Total Panels", totalPanels],
+      ["Total Energy", `${totalEnergy.toFixed(2)} kWh`]
+    ];
+    doc.autoTable({
+      startY: doc.autoTable.previous.finalY + 14,
+      body: reportInfo,
+      theme: 'striped'
+    });
+  
+    // Net Parameters
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("Net Parameters", 14, doc.autoTable.previous.finalY + 10);
+  
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    const netParameters = [
+      ["Cosine Factor", projectData.cosine_factor],
+      ["Consumption", projectData.consumption],
+      ["Consumption Period", projectData.consumption_period]
+    ];
+    doc.autoTable({
+      startY: doc.autoTable.previous.finalY + 14,
+      body: netParameters,
+      theme: 'striped'
+    });
+  
+    // Footer
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "italic");
+    doc.text(
+      "This document is generated automatically by the Solar App.",
+      14,
+      290
+    );
+  
+    // Add external image
+    const img = new Image();
+    img.src = reportImage;
+    img.onload = function() {
+      doc.addImage(img, 'PNG', 15, doc.autoTable.previous.finalY + 20, 180, 100);
+      
+      // Generate the PDF
+      doc.save('Energy Report.pdf');
+    };
+  };
+  
+  
+
+
+
 
   return (
     <>
@@ -760,20 +892,15 @@ function SimulationTest({
               {editPanel ? "Finish Editing Panels" : "Edit Panels"}
             </Button>
           </Grid>
+          
           <Grid item>
-            <FormControl
-              variant="outlined"
-              sx={{
-                width: "fit-content",
-                boxShadow: "none",
-                border: "none",
-                minWidth: "200px",
-              }}
-            >
+            <FormControl variant="outlined" sx={{ minWidth: "200px" }}>
+              <InputLabel id="model-select-label" sx={{ color: "#1976d2" }}>Model</InputLabel>
               <Select
+                labelId="model-select-label"
                 value={modelPath}
                 onChange={handleModelChange}
-                displayEmpty
+                label="Model"
                 MenuProps={{
                   anchorOrigin: {
                     vertical: "bottom",
@@ -785,43 +912,34 @@ function SimulationTest({
                   },
                 }}
                 sx={{
-                  backgroundColor: "#1976d2",
-                  color: "white",
-                  height: "36.5px",
-                  borderRadius: 1,
                   "& .MuiOutlinedInput-root": {
                     backgroundColor: "#1976d2",
                     color: "white",
+                    height: "40px",
                     "& .MuiOutlinedInput-notchedOutline": {
                       borderColor: "#1976d2",
                     },
                     "&:hover .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#1565c0",
-                    },
-                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                       borderColor: "#1976d2",
                     },
                   },
                   "& .MuiSvgIcon-root": {
                     color: "white",
                   },
-                  "& .MuiList-root": {
-                    backgroundColor: "#1976d2",
-                    color: "white",
-                  },
-                  "& .MuiListItem-root": {
-                    backgroundColor: "#1976d2",
-                    color: "white",
-                    "&:hover": {
-                      backgroundColor: "#1565c0",
-                    },
+                  "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#1976d2",
                   },
                 }}
               >
-                <MenuItem value="s1.glb">Model 1</MenuItem>
-                <MenuItem value="s2.glb">Model 2</MenuItem>
+                <MenuItem value="s1.glb">Model S1</MenuItem>
+                <MenuItem value="s2.glb">Model S2</MenuItem>
               </Select>
             </FormControl>
+          </Grid>
+          <Grid item>
+            <Button variant="contained" onClick={generatePDF}>
+              Generate PDF
+            </Button>
           </Grid>
         </Grid>
         <Stack>
@@ -875,7 +993,7 @@ function SimulationTest({
               selectionEnd={selectionEnd}
               setSelectionEnd={setSelectionEnd}
               batchAddPanelMode={batchAddPanelMode}
-              gridPositions={gridPositions} // Pass the calculated positions
+              gridPositions={gridPositions}
               currentCenter={currentCenter}
               currentZoom={currentZoom}
               singleEditing={singleEditing}
@@ -888,15 +1006,17 @@ function SimulationTest({
                 points={obstaclesPoints}
                 occupiedPositions={occupiedPositions}
                 placedPanelPositionsRef={placedPanelPositionsRef}
-                handlePanelClick={handlePanelClick} // Pass panel click handler
-                batchGroups={batchGroups} // Pass batchGroups
-                currentBatchIndex={currentBatchIndex} // Pass currentBatchIndex
+                handlePanelClick={handlePanelClick}
+                batchGroups={batchGroups}
+                currentBatchIndex={currentBatchIndex}
                 addPanelStart={addPanelStart}
                 addPanelEnd={addPanelEnd}
                 modelGroupRef={modelGroupRef} // Pass modelGroupRef
                 batchAddPanelMode={batchAddPanelMode}
                 modelPath={modelPath}
                 redPixels3D={redPixels3D}
+                currentZoom={currentZoom}
+
               />
             )}
             {(addPanelMode || singleEditing) && (

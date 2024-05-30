@@ -3,6 +3,27 @@ import { useThree, useFrame } from "@react-three/fiber";
 import { loadOriginalModel } from "./LoadOriginalModel";
 import * as THREE from "three";
 import { pointInPolygon } from "../pages/homepage/SimulationTest";
+import { FontLoader } from "three/examples/jsm/loaders/FontLoader";
+import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry";
+
+function Text({ text, position, size, color, rotation }) {
+  const fontLoader = new FontLoader();
+  const font = fontLoader.parse(require('../fonts/helvetiker_regular.typeface.json')); // Replace with your font file
+  const textGeometry = new TextGeometry(text, {
+    font: font,
+    size: size,
+    height: 0.1, // Adjust as needed
+    curveSegments: 12,
+    bevelEnabled: false,
+  });
+  const textMaterial = new THREE.MeshBasicMaterial({ color: color });
+  const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+  textMesh.position.copy(position);
+  textMesh.rotation.z = rotation;
+  textMesh.geometry.center(); // Center the text
+
+  return <primitive object={textMesh} />;
+}
 
 export const AddPanelArea = ({
   selectedRoofPoints,
@@ -20,6 +41,7 @@ export const AddPanelArea = ({
   batchAddPanelMode,
   modelPath,
   redPixels3D,
+  currentZoom
 }) => {
   const [startPosition, setStartPosition] = useState(addPanelStart);
   const [currentPosition, setCurrentPosition] = useState(addPanelEnd);
@@ -31,19 +53,12 @@ export const AddPanelArea = ({
   const [panelPlaced, setPanelPlaced] = useState([]);
   const panelsToRemove = [];
   const [validPanels, setValidPanels] = useState([]); // Engellerden kaçınan geçerli paneller
-  
+  const textGroupRef = useRef(new THREE.Group()); // Group for text meshes
 
   useEffect(() => {
     if (batchAddPanelMode) {
-      console.log("batch indexxxxxx", currentBatchIndex);
-      console.log("modelGroupRef", modelGroupRef);
-
       modelGroupRef.current = new THREE.Group();
-      console.log("modelGroupRef after", modelGroupRef);
-      console.log("modelGroupRef curr", modelGroupRef.current);
     } else {
-      console.log("batch indexxxxxx", currentBatchIndex);
-      console.log("modelGroupRef curr", modelGroupRef.current);
       modelRef.current = modelGroupRef.current;
       setBatchIdx(modelGroupRef.current.children[0].userData.batchIndex);
     }
@@ -178,26 +193,46 @@ export const AddPanelArea = ({
     return grid.has(key);
   };
   
+  useEffect(() => {
+    if (startPosition && currentPosition) {
+      updatePanelLayout(startPosition, currentPosition, orientationAngle);
+    }
+  }, [startPosition, currentPosition, rotationAngle, orientationAngle, currentZoom]); // currentZoom'u izlemeye ekle
+
   const updatePanelLayout = (startPos, currentPos, orientationAngle) => {
     if (!startPos || !currentPos) return;
   
-    const gap = 3; // Gap between panels
-    const baseModelWidth = 8; // Base model width
-    const baseModelHeight = 6.5; // Base model height
+    const gap = 3.2; // Gap between panels
+    const baseModelWidth = 8.2; // Base model width
+    const baseModelHeight = 5.7; // Base model height
   
-    const scaleX = 1.7; // Horizontal scaling
-    const scaleY = 3.4; // Vertical scaling
+    let scaleX = 1.0, scaleY = 1.0, scaleZ = 1.0; // Varsayılan ölçek değerleri
+  
+    if (currentZoom === 19) {
+      scaleX = 1.4; // Horizontal scaling
+      scaleY = 0.55; // Vertical scaling
+      scaleZ = 0.4;
+    } else if (currentZoom === 20) {
+      scaleX = 3.0; // Horizontal scaling
+      scaleY = 1.6; // Vertical scaling
+      scaleZ = 0.8;
+    }
+  
     const modelWidth = baseModelWidth * scaleX;
     const modelHeight = baseModelHeight * scaleY;
+  
   
     const paddedModelWidth = modelWidth + gap;
     const paddedModelHeight = modelHeight + gap;
   
+  
     const xDistance = Math.abs(currentPos.x - startPos.x);
     const yDistance = Math.abs(currentPos.y - startPos.y);
   
+  
     const numX = Math.floor(xDistance / paddedModelWidth);
     const numY = Math.floor(yDistance / paddedModelHeight);
+  
   
     const centerX = (startPos.x + currentPos.x) / 2;
     const centerY = (startPos.y + currentPos.y) / 2;
@@ -213,6 +248,7 @@ export const AddPanelArea = ({
       const placedPanels = [];
       const rotationMatrix = new THREE.Matrix4().makeRotationZ(rotationAngle);
   
+  
       for (let i = 0; i < numX; i++) {
         for (let j = 0; j < numY; j++) {
           const offsetX = (i - numX / 2) * paddedModelWidth;
@@ -224,7 +260,7 @@ export const AddPanelArea = ({
           }
   
           const modelClone = originalModel.scene.clone();
-          modelClone.scale.set(scaleX, scaleY, 1.7);
+          modelClone.scale.set(scaleX, scaleY, scaleZ);
           modelClone.rotation.x = orientationAngle ?? Math.PI / 2;
           modelClone.rotation.y = rotationAngle;
   
@@ -245,6 +281,7 @@ export const AddPanelArea = ({
             corner.applyMatrix4(rotationMatrix).add(panelPosition)
           );
   
+  
           if (
             corners.every((corner) => pointInPolygon(corner, selectedRoofPoints)) &&
             (points === null || corners.every((corner) => !pointInPolygon(corner, points))) &&
@@ -262,6 +299,7 @@ export const AddPanelArea = ({
         }
       }
   
+  
       placedPanelPositionsRef.current = placedPanels.map((panel) => panel);
       placedPanels.forEach((panel) => modelRef.current.add(panel));
       scene.add(modelRef.current);
@@ -273,7 +311,7 @@ export const AddPanelArea = ({
 
   const updateSelectionBox = (startPos, currentPos) => {
     if (!selectionBoxRef.current) {
-      const material = new THREE.LineBasicMaterial({ color: 0xffffff });
+      const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
       const geometry = new THREE.BufferGeometry();
       const vertices = new Float32Array(12);
       geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
@@ -284,7 +322,7 @@ export const AddPanelArea = ({
     const minX = Math.min(startPos.x, currentPos.x);
     const maxX = Math.max(startPos.x, currentPos.x);
     const minY = Math.min(startPos.y, currentPos.y);
-    const maxY = Math.max(startPos.y, currentPos.y);
+    const maxY = Math.min(startPos.y, currentPos.y);
 
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
@@ -307,6 +345,33 @@ export const AddPanelArea = ({
 
     positions.array.set(verticesArray);
     positions.needsUpdate = true;
+
+    // Clear previous text meshes
+    textGroupRef.current.children.forEach(child => scene.remove(child));
+    textGroupRef.current.clear();
+
+    // Add distance text at the midpoints of each line segment
+    for (let i = 0; i < rotatedVertices.length; i++) {
+      const startVertex = rotatedVertices[i];
+      const endVertex = rotatedVertices[(i + 1) % rotatedVertices.length];
+      const midpoint = new THREE.Vector3(
+        (startVertex.x + endVertex.x) / 2,
+        (startVertex.y + endVertex.y) / 2,
+        (startVertex.z + endVertex.z) / 2
+      );
+      const distance = startVertex.distanceTo(endVertex).toFixed(2);
+
+      const textMesh = new Text({
+        text: `${distance}m`,
+        position: midpoint,
+        size: 1, // Adjust the size as needed
+        color: 0xffffff,
+        rotation: -rotationAngle
+      });
+
+      textGroupRef.current.add(textMesh);
+      scene.add(textMesh);
+    }
   };
 
   const removeSelectionBox = () => {
@@ -316,6 +381,10 @@ export const AddPanelArea = ({
       selectionBoxRef.current.material.dispose();
       selectionBoxRef.current = null;
     }
+
+    // Clear text group
+    textGroupRef.current.children.forEach(child => scene.remove(child));
+    textGroupRef.current.clear();
   };
 
   return null;
