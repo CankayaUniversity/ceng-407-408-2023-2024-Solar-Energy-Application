@@ -1,14 +1,14 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import { Experience } from "../../components/Experience";
 import { AddPanel } from "../../components/AddPanel";
 import roofImage from "../../assets/images/roof.jpg";
-import reportImage from"../../assets/images/card1.jpeg";
+import reportImage from "../../assets/images/card1.jpeg";
 import * as THREE from "three";
-import 'jspdf-autotable';
+import "jspdf-autotable";
 import { AddPanelArea } from "../../components/AddPanelArea";
 import { loadOriginalModel } from "../../components/LoadOriginalModel";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -29,7 +29,6 @@ import {
   FormControl,
   InputLabel,
 } from "@mui/material";
-
 
 let redPixels3D = [];
 export function setRedPixels(pixels) {
@@ -199,8 +198,10 @@ function RaycasterComponent({
  */
 function SimulationTest({
   screenshot,
-   currentCenter,
-   currentZoom, projectData,customerDetails,
+  currentCenter,
+  currentZoom,
+  projectData,
+  customerDetails,
   formData,
   setFormData,
 }) {
@@ -238,6 +239,7 @@ function SimulationTest({
   const [isSingle, setIsSingle] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [modelPath, setModelPath] = useState("s1.glb");
+  const [selectionBoxWorked, setSelectionBoxWorked] = useState(false);
 
   const handleModelChange = (event) => {
     console.log("Model path changed to:", event.target.value);
@@ -596,20 +598,29 @@ function SimulationTest({
     });
     setCurrentBatchIndex((prevIndex) => prevIndex + 1);
 
-    // panels dizisinde eski batch panellerini güncelle
-    setPanels((prev) => {
-      const updatedPanels = [...prev];
-      const newBatchPanels = newPanels.current;
-      newBatchPanels.forEach((panel) => {
-        const existingPanelIndex = updatedPanels.findIndex(
-          (p) => p.uuid === panel.uuid
+    if (selectionBoxWorked) {
+      setPanels((prev) => {
+        const updatedPanels = prev.filter(
+          (panel) => panel.userData.batchIndex !== index
         );
-        if (existingPanelIndex !== -1) {
-          updatedPanels[existingPanelIndex] = panel;
-        }
+        return [...updatedPanels, ...newPanels.current];
       });
-      return updatedPanels;
-    });
+    } else {
+      // panels dizisinde eski batch panellerini güncelle
+      setPanels((prev) => {
+        const updatedPanels = [...prev];
+        const newBatchPanels = newPanels.current;
+        newBatchPanels.forEach((panel) => {
+          const existingPanelIndex = updatedPanels.findIndex(
+            (p) => p.uuid === panel.uuid
+          );
+          if (existingPanelIndex !== -1) {
+            updatedPanels[existingPanelIndex] = panel;
+          }
+        });
+        return updatedPanels;
+      });
+    }
 
     setOccupiedPositions((prev) => [...prev, ...batchCorners]);
 
@@ -636,15 +647,18 @@ function SimulationTest({
 
   const calculateEnergy = () => {
     // Toplam panel sayısını hesapla
-    const totalPanels = batchGroups.reduce((total, batch) => total + batch.length, 0)+panels.length;
-    
+    const totalPanels =
+      batchGroups.reduce((total, batch) => total + batch.length, 0) +
+      panels.length;
+
     const energyPerPanel = 300; // Örnek olarak panel başına enerji üretimi (kWh)
     const totalEnergy = totalPanels * energyPerPanel; // Toplam enerji üretimi
     const adjustedEnergy = totalEnergy * projectData.cosine_factor; // Ayar faktörü uygulanmış enerji üretimi
-    const total = adjustedEnergy * (projectData.consumption / projectData.consumption_period); // Nihai toplam enerji tasarrufu
+    const total =
+      adjustedEnergy *
+      (projectData.consumption / projectData.consumption_period); // Nihai toplam enerji tasarrufu
     return total;
   };
-  
 
   /*
 const calculateEnergy = () => {
@@ -665,75 +679,74 @@ const calculateEnergy = () => {
     return total;
   };
   */
-  
-  
 
-
-  
   const generatePDF = () => {
     const totalEnergy = calculateEnergy();
-    const totalPanels = batchGroups.reduce((total, batch) => total + batch.length, 0);
+    const totalPanels = batchGroups.reduce(
+      (total, batch) => total + batch.length,
+      0
+    );
     const doc = new jsPDF();
-  
+
     // Title
     doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
     doc.text("Solar App Energy Report", 105, 20, null, null, "center");
-  
+
     // Company Information
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.text("Company Information", 14, 30);
-  
+
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
     const companyInfo = [
       ["Company Name", customerDetails?.company_name || "N/A"],
       ["Address", customerDetails?.address || "N/A"],
       ["Phone", customerDetails?.phone || "N/A"],
-      ["E-mail", customerDetails?.email || "N/A"]
+      ["E-mail", customerDetails?.email || "N/A"],
     ];
     doc.autoTable({
       startY: 34,
       body: companyInfo,
-      theme: 'striped'
+      theme: "striped",
     });
-  
+
     // Report Information
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.text("Energy Report", 14, doc.autoTable.previous.finalY + 10);
-  
+
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
     const reportInfo = [
       ["Total Panels", totalPanels],
-      ["Total Energy", `${totalEnergy.toFixed(2)} kWh`]
+      ["Total Energy", `${totalEnergy.toFixed(2)} kWh`],
     ];
     doc.autoTable({
       startY: doc.autoTable.previous.finalY + 14,
       body: reportInfo,
-      theme: 'striped'
+      theme: "striped",
     });
-  
+
     // Net Parameters
     doc.setFontSize(14);
     doc.setFont("helvetica", "bold");
     doc.text("Net Parameters", 14, doc.autoTable.previous.finalY + 10);
-  
+
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
     const netParameters = [
       ["Cosine Factor", projectData.cosine_factor],
       ["Consumption", projectData.consumption],
-      ["Consumption Period", projectData.consumption_period]
+      ["Consumption Period", projectData.consumption_period],
     ];
     doc.autoTable({
       startY: doc.autoTable.previous.finalY + 14,
       body: netParameters,
-      theme: 'striped'
+      theme: "striped",
     });
-  
+
     // Footer
     doc.setFontSize(10);
     doc.setFont("helvetica", "italic");
@@ -742,22 +755,24 @@ const calculateEnergy = () => {
       14,
       290
     );
-  
+
     // Add external image
     const img = new Image();
     img.src = reportImage;
-    img.onload = function() {
-      doc.addImage(img, 'PNG', 15, doc.autoTable.previous.finalY + 20, 180, 100);
-      
+    img.onload = function () {
+      doc.addImage(
+        img,
+        "PNG",
+        15,
+        doc.autoTable.previous.finalY + 20,
+        180,
+        100
+      );
+
       // Generate the PDF
-      doc.save('Energy Report.pdf');
+      doc.save("Energy Report.pdf");
     };
   };
-  
-  
-
-
-
 
   return (
     <>
@@ -892,10 +907,12 @@ const calculateEnergy = () => {
               {editPanel ? "Finish Editing Panels" : "Edit Panels"}
             </Button>
           </Grid>
-          
+
           <Grid item>
             <FormControl variant="outlined" sx={{ minWidth: "200px" }}>
-              <InputLabel id="model-select-label" sx={{ color: "#1976d2" }}>Model</InputLabel>
+              <InputLabel id="model-select-label" sx={{ color: "#1976d2" }}>
+                Model
+              </InputLabel>
               <Select
                 labelId="model-select-label"
                 value={modelPath}
@@ -1016,7 +1033,7 @@ const calculateEnergy = () => {
                 modelPath={modelPath}
                 redPixels3D={redPixels3D}
                 currentZoom={currentZoom}
-
+                setSelectionBoxWorked={setSelectionBoxWorked}
               />
             )}
             {(addPanelMode || singleEditing) && (

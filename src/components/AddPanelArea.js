@@ -41,7 +41,8 @@ export const AddPanelArea = ({
   batchAddPanelMode,
   modelPath,
   redPixels3D,
-  currentZoom
+  currentZoom,
+  setSelectionBoxWorked
 }) => {
   const [startPosition, setStartPosition] = useState(addPanelStart);
   const [currentPosition, setCurrentPosition] = useState(addPanelEnd);
@@ -317,6 +318,10 @@ export const AddPanelArea = ({
       geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
       selectionBoxRef.current = new THREE.LineLoop(geometry, material);
       scene.add(selectionBoxRef.current);
+    }
+    
+    if(!batchAddPanelMode){
+      setSelectionBoxWorked(true);
     }
     const positions = selectionBoxRef.current.geometry.attributes.position;
     const minX = Math.min(startPos.x, currentPos.x);
