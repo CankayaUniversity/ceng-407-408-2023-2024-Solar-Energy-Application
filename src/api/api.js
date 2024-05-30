@@ -67,6 +67,12 @@ export const PROJECT = {
   postProject: async (project) => {
       return handleRequest(() => api.post(`/project/create-project`, project));
   },
+  getAll: async () => {
+    return handleRequest(() => api.get("/project"));
+  },
+  deleteProject: async (id) => {
+    return handleRequest(() => api.delete(`/project/${id}`));
+  }, 
 };
 
 export const SOLARPANEL = {
@@ -126,5 +132,8 @@ export const USER = {
   // },
   putCustomer: async (customer) => {
     return handleRequest(() => api.put(`/customers/${customer.id}`, customer));
+  },
+  byıd: async (id) => {
+    return handleRequest(() => api.get(`/users/${id}`));
   },
 };

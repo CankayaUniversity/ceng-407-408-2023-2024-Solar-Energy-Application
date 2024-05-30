@@ -194,25 +194,18 @@ export default function AddProject() {
     let response, error;
     [response, error] = await PROJECT.postProject(formData);
     if (response) {
-      console.log("res", response);
+        setSnackbarMessage("Project saved successfully!");
+        setSnackbarSeverity("success");
+        setSnackbarOpen(true);
+        setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     } else {
-      console.log("err", error);
+        console.error("Proje oluşturulurken bir hata oluştu", error);
+        setSnackbarMessage("Project not saved!");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
     }
-
-    // const [data, error] = await PROJECT.postProject(formData);
-    // if (data) {
-    //   setSnackbarMessage("Project saved successfully!");
-    //   setSnackbarSeverity("success");
-    //   setSnackbarOpen(true);
-    //   setTimeout(() => {
-    //     window.location.reload();
-    //   }, 2000);
-    // } else {
-    //   console.error("Proje oluşturulurken bir hata oluştu", error);
-    //   setSnackbarMessage("Project not saved!");
-    //   setSnackbarSeverity("error");
-    //   setSnackbarOpen(true);
-    // }
   };
 
   const validateForm = () => {

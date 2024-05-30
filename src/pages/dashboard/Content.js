@@ -16,49 +16,65 @@ import Paper from "@mui/material/Paper";
 import Checkbox from "@mui/material/Checkbox";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Switch from "@mui/material/Switch";
-import DeleteIcon from "@mui/icons-material/Delete";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
-import FilterListIcon from "@mui/icons-material/FilterList";
-import { visuallyHidden } from "@mui/utils";
 import { Button, TextField } from "@mui/material";
-import { Link } from "react-router-dom";
 import EditIcon from "@mui/icons-material/Edit";
 import SearchIcon from "@mui/icons-material/Search";
-import PaperBase from "../dashboard/Paperbase";
-import AddProject from "../dashboard/AddProject";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
+import DeleteIcon from "@mui/icons-material/Delete";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { visuallyHidden } from "@mui/utils";
+import { useEffect } from "react";
+import {
+  PROJECT,
+  ADDRESS,
+  CUSTOMERS,
+} from "../../api/api";
+import AddProject from "../dashboard/AddProject";
 
-function createData(id, projectName, power, address, owner, lastEdited, edit) {
-  return {
-    id,
-    projectName,
-    power,
-    address,
-    owner,
-    lastEdited,
-    edit,
-  };
-}
-
-const rows = [
-  createData(
-    1,
-    "Berkay Gunes Panelleri",
-    "5.18 kWp",
-    "Frederiklaan 10A, Eindhoven, 5612 CR, Netherlands",
-    "Berkay Avcı",
-    "15 Feb. 2023 22:54"
-  ),
-  createData(
-    2,
-    "Yunus Emre Görgü",
-    "23.25 kWp",
-    "Woenselse Markt 30C, Eindhoven, 5612 CR, Netherlands",
-    "Berkay Avcı",
-    "8 Feb. 2023 23:49"
-  ),
+const headCells = [
+  { id: "name", numeric: false, disablePadding: true, label: "Project Name" },
+  {
+    id: "consumption",
+    numeric: true,
+    disablePadding: false,
+    label: "Consumption",
+  },
+  {
+    id: "consumption_period",
+    numeric: true,
+    disablePadding: false,
+    label: "Consumption Period",
+  },
+  {
+    id: "projectscol",
+    numeric: true,
+    disablePadding: false,
+    label: "Projects Scol",
+  },
+  {
+    id: "cosine_factor",
+    numeric: true,
+    disablePadding: false,
+    label: "Cosine Factor",
+  },
+  {
+    id: "export_limit",
+    numeric: true,
+    disablePadding: false,
+    label: "Export Limit",
+  },
+  { id: "notes", numeric: true, disablePadding: false, label: "Notes" },
+  { id: "address", numeric: true, disablePadding: false, label: "Address" },
+  { id: "customer", numeric: true, disablePadding: false, label: "Customer" },
+  // {
+  //   id: "consumptionProfile",
+  //   numeric: true,
+  //   disablePadding: false,
+  //   label: "Consumption Profile",
+  // },
+  // { id: "user", numeric: true, disablePadding: false, label: "User" },
+  { id: "edit", numeric: true, disablePadding: false, label: "Edit" },
 ];
 
 function descendingComparator(a, b, orderBy) {
@@ -81,33 +97,11 @@ function stableSort(array, comparator) {
   const stabilizedThis = array.map((el, index) => [el, index]);
   stabilizedThis.sort((a, b) => {
     const order = comparator(a[0], b[0]);
-    if (order !== 0) {
-      return order;
-    }
+    if (order !== 0) return order;
     return a[1] - b[1];
   });
   return stabilizedThis.map((el) => el[0]);
 }
-
-const headCells = [
-  {
-    id: "projectName",
-    numeric: false,
-    disablePadding: true,
-    label: "Project Name",
-  },
-  { id: "power", numeric: true, disablePadding: false, label: "Power" },
-
-  { id: "address", numeric: true, disablePadding: false, label: "Address" },
-  { id: "owner", numeric: true, disablePadding: false, label: "Owner" },
-  {
-    id: "lastEdited",
-    numeric: true,
-    disablePadding: false,
-    label: "Last Edited",
-  },
-  { id: "edit", numeric: true, disablePadding: false, label: "Edit" },
-];
 
 function EnhancedTableHead(props) {
   const {
@@ -131,15 +125,13 @@ function EnhancedTableHead(props) {
             indeterminate={numSelected > 0 && numSelected < rowCount}
             checked={rowCount > 0 && numSelected === rowCount}
             onChange={onSelectAllClick}
-            inputProps={{
-              "aria-label": "select all desserts",
-            }}
+            inputProps={{ "aria-label": "select all projects" }}
           />
         </TableCell>
         {headCells.map((headCell) => (
           <TableCell
             key={headCell.id}
-            align={ "left"}
+            align="left"
             padding={headCell.disablePadding ? "none" : "normal"}
             sortDirection={orderBy === headCell.id ? order : false}
           >
@@ -172,14 +164,11 @@ EnhancedTableHead.propTypes = {
 };
 
 function EnhancedTableToolbar(props) {
-  const { numSelected, onSearchChange, setShowAddProject } = props;
+  const { numSelected, onSearchChange, setShowAddProject, handleDelete } = props;
 
   const handleClickAddProject = () => {
-    console.log("Add Project clicked");
-    // Yeni state'i güncelle
     setShowAddProject(true);
   };
-
 
   return (
     <Toolbar
@@ -231,7 +220,7 @@ function EnhancedTableToolbar(props) {
       <Box sx={{ display: "flex", alignItems: "center" }}>
         {numSelected > 0 ? (
           <Tooltip title="Delete">
-            <IconButton>
+            <IconButton onClick={handleDelete}>
               <DeleteIcon />
             </IconButton>
           </Tooltip>
@@ -251,9 +240,7 @@ function EnhancedTableToolbar(props) {
           sx={{ ml: 1 }}
           onClick={handleClickAddProject}
         >
-          <Typography>Add</Typography>
-          &nbsp;
-          <Typography>Project</Typography>
+          <Typography>Add</Typography>&nbsp;<Typography>Project</Typography>
         </Button>
       </Box>
     </Toolbar>
@@ -263,7 +250,8 @@ function EnhancedTableToolbar(props) {
 EnhancedTableToolbar.propTypes = {
   numSelected: PropTypes.number.isRequired,
   onSearchChange: PropTypes.func.isRequired,
-  setShowAddProject: PropTypes.func.isRequired, // Add prop type for setShowAddProject
+  setShowAddProject: PropTypes.func.isRequired,
+  handleDelete: PropTypes.func.isRequired,
 };
 
 export default function Content() {
@@ -274,7 +262,8 @@ export default function Content() {
   const [dense, setDense] = React.useState(false);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [searchInput, setSearchInput] = React.useState("");
-  const [showAddProject, setShowAddProject] = React.useState(false); // Add state for showAddProject
+  const [showAddProject, setShowAddProject] = React.useState(false);
+  const [rows, setRows] = React.useState([]);
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === "asc";
@@ -347,6 +336,57 @@ export default function Content() {
     [filteredRows, order, orderBy, page, rowsPerPage]
   );
 
+  useEffect(() => {
+    const fetchData = async () => {
+      const [projects, error] = await PROJECT.getAll();
+
+      if (projects && projects.length > 0) {
+        const addressPromises = projects.map((project) =>
+          ADDRESS.byId(project.address_id)
+        );
+        const customerPromises = projects.map((project) =>
+          CUSTOMERS.byId(project.customer_id)
+        );
+        // const userPromises = projects.map((project) =>
+        //   USER.byId(project.user_id)
+        // );
+
+        const addresses = await Promise.all(addressPromises);
+        const customers = await Promise.all(customerPromises);
+        // const users = await Promise.all(userPromises);
+
+        const formattedProjects = projects.map((project, index) => ({
+          id: project._id,
+          name: project.name,
+          consumption: project.consumption,
+          consumption_period: project.consumption_period,
+          projectscol: project.projectscol,
+          cosine_factor: project.cosine_factor,
+          export_limit: project.export_limit !== 1  ? "Yes" : "No" ,
+          notes: project.notes,
+          address: addresses[index][0] || {},
+          customer: customers[index][0] || {},
+          // consumptionProfile: consumptionProfiles[index][0] || {},
+          // user: users[index][0] || {},
+        }));
+
+        setRows(formattedProjects);
+        console.log("data", formattedProjects);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const handleDeleteProject = async (ids) => {
+    for (const id of ids) {
+      const [response, error] = await PROJECT.deleteProject(id);
+      if (!error) {
+        setRows((prevRows) => prevRows.filter((row) => row.id !== id));
+      }
+    }
+    setSelected([]);
+  };
+
   return (
     <Box sx={{ width: "100%" }}>
       {showAddProject ? (
@@ -357,12 +397,13 @@ export default function Content() {
           <AddProject />
         </>
       ) : (
-        <Box sx={{ maxWidth: 936, margin: "auto", overflow: "hidden" }}>
+        <Box sx={{ maxWidth: 1700, margin: "auto", overflow: "hidden" }}> 
           <Paper sx={{ width: "100%", mb: 2 }}>
             <EnhancedTableToolbar
               numSelected={selected.length}
               onSearchChange={handleSearchChange}
               setShowAddProject={setShowAddProject}
+              handleDelete={() => handleDeleteProject(selected)}
             />
             <TableContainer>
               <Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle">
@@ -378,7 +419,7 @@ export default function Content() {
                   {visibleRows.map((row, index) => {
                     const isItemSelected = isSelected(row.id);
                     const labelId = `enhanced-table-checkbox-${index}`;
-
+  
                     return (
                       <TableRow
                         hover
@@ -394,9 +435,7 @@ export default function Content() {
                           <Checkbox
                             color="primary"
                             checked={isItemSelected}
-                            inputProps={{
-                              "aria-labelledby": labelId,
-                            }}
+                            inputProps={{ "aria-labelledby": labelId }}
                           />
                         </TableCell>
                         <TableCell
@@ -405,19 +444,40 @@ export default function Content() {
                           scope="row"
                           padding="none"
                         >
-                          {row.projectName}
+                          {row.name}
                         </TableCell>
-                        <TableCell align="left">{row.power}</TableCell>
-                        <TableCell align="left">{row.address}</TableCell>
-                        <TableCell align="left">{row.owner}</TableCell>
-                        <TableCell align="left">{row.lastEdited}</TableCell>
-
+                        <TableCell align="left">{row.consumption}</TableCell>
+                        <TableCell align="left">
+                          {row.consumption_period}
+                        </TableCell>
+                        <TableCell align="left">{row.projectscol}</TableCell>
+                        <TableCell align="left">{row.cosine_factor}</TableCell>
+                        <TableCell align="left">{row.export_limit}</TableCell>
+                        <TableCell align="left">{row.notes}</TableCell>
+                        <TableCell align="left">
+                          {row.address
+                            ? `${row.address.street}, ${row.address.house_number}, ${row.address.postcode}, ${row.address.city}, ${row.address.country}`
+                            : ""}
+                        </TableCell>
+                        <TableCell align="left">
+                          {row.customer
+                            ? `${row.customer.name}, ${row.customer.company_name}`
+                            : ""}
+                        </TableCell>
+                        {/* <TableCell align="left">
+                          {row.consumptionProfile
+                            ? `${row.consumptionProfile.energy_consumed}, ${row.consumptionProfile.device_name}`
+                            : ""}
+                        </TableCell> */}
+                        {/* <TableCell align="left">
+                          {row.user
+                            ? `${row.user.name}, ${row.user.email}`
+                            : ""}
+                        </TableCell> */}
                         <TableCell align="left">
                           <Tooltip title="Edit">
                             <IconButton
-                              onClick={(event) => {
-                                event.stopPropagation();
-                              }}
+                              onClick={(event) => event.stopPropagation()}
                             >
                               <EditIcon />
                             </IconButton>
