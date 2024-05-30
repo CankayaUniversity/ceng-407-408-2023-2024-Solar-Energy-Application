@@ -727,7 +727,6 @@ export default function AddProject() {
               address={mapAddress}
               onCenterChange={onCenterChange}
               onZoomChange={onZoomChange}
-              onZoomChange={onZoomChange}
               onMapClick={onMapClick}
             />
           </div>

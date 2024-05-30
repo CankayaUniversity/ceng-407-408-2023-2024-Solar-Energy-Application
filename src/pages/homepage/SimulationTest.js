@@ -6,7 +6,7 @@ import jsPDF from 'jspdf';
 import { Experience } from "../../components/Experience";
 import { AddPanel } from "../../components/AddPanel";
 import roofImage from "../../assets/images/roof.jpg";
-import reportImage from"../../assets/images/cardblog2.png";
+import reportImage from"../../assets/images/card1.jpeg";
 import * as THREE from "three";
 import 'jspdf-autotable';
 import { AddPanelArea } from "../../components/AddPanelArea";
