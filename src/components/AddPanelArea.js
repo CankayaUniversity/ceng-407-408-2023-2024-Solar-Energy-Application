@@ -19,6 +19,7 @@ export const AddPanelArea = ({
   modelGroupRef, // Add modelGroupRef prop
   batchAddPanelMode,
   modelPath,
+  redPixels3D,
 }) => {
   const [startPosition, setStartPosition] = useState(addPanelStart);
   const [currentPosition, setCurrentPosition] = useState(addPanelEnd);
@@ -30,6 +31,7 @@ export const AddPanelArea = ({
   const [panelPlaced, setPanelPlaced] = useState([]);
   const panelsToRemove = [];
   const [validPanels, setValidPanels] = useState([]); // Engellerden kaçınan geçerli paneller
+  
 
   useEffect(() => {
     if (batchAddPanelMode) {
@@ -127,6 +129,55 @@ export const AddPanelArea = ({
     }
   });
 
+ 
+  const checkRedPixelCollision = (panelPosition, redPixels3D, paddedModelWidth) => {
+    const halfSize = paddedModelWidth/2 ;
+    const panelBounds = [
+      new THREE.Vector3(panelPosition.x - halfSize, panelPosition.y - halfSize, panelPosition.z),
+      new THREE.Vector3(panelPosition.x + halfSize, panelPosition.y - halfSize, panelPosition.z),
+      new THREE.Vector3(panelPosition.x + halfSize, panelPosition.y + halfSize, panelPosition.z),
+      new THREE.Vector3(panelPosition.x - halfSize, panelPosition.y + halfSize, panelPosition.z),
+    ];
+  
+    for (let redPixel of redPixels3D) {
+      const redPixelBounds = [
+        new THREE.Vector3(redPixel.x - halfSize, redPixel.y - halfSize, redPixel.z),
+        new THREE.Vector3(redPixel.x + halfSize, redPixel.y - halfSize, redPixel.z),
+        new THREE.Vector3(redPixel.x + halfSize, redPixel.y + halfSize, redPixel.z),
+        new THREE.Vector3(redPixel.x - halfSize, redPixel.y + halfSize, redPixel.z),
+      ];
+      
+      for (let bound of panelBounds) {
+        if (pointInPolygon(bound, redPixelBounds)) {
+          return true;
+        }
+      }
+    }
+  
+    return false;
+  };
+  
+  const createGrid = (redPixels3D, gridSize) => {
+    const grid = new Map();
+    redPixels3D.forEach((pixel) => {
+      const x = Math.floor(pixel.x / gridSize);
+      const y = Math.floor(pixel.y / gridSize);
+      const key = `${x},${y}`;
+      if (!grid.has(key)) {
+        grid.set(key, []);
+      }
+      grid.get(key).push(pixel);
+    });
+    return grid;
+  };
+  
+  const isCollisionWithGrid = (panelPosition, grid, gridSize) => {
+    const x = Math.floor(panelPosition.x / gridSize);
+    const y = Math.floor(panelPosition.y / gridSize);
+    const key = `${x},${y}`;
+    return grid.has(key);
+  };
+  
   const updatePanelLayout = (startPos, currentPos, orientationAngle) => {
     if (!startPos || !currentPos) return;
   
@@ -152,6 +203,10 @@ export const AddPanelArea = ({
     const centerY = (startPos.y + currentPos.y) / 2;
     const selectionCenter = new THREE.Vector3(centerX, centerY, 0);
   
+    // Create a grid from red pixels
+    const gridSize = paddedModelWidth;
+    const redPixelGrid = createGrid(redPixels3D, gridSize);
+  
     scene.remove(modelRef.current);
     modelRef.current = new THREE.Group();
     loadOriginalModel(modelPath, (originalModel) => {
@@ -163,29 +218,23 @@ export const AddPanelArea = ({
           const offsetX = (i - numX / 2) * paddedModelWidth;
           const offsetY = (j - numY / 2) * paddedModelHeight;
           const panelPosition = new THREE.Vector3(offsetX, offsetY, 12).applyMatrix4(rotationMatrix).add(selectionCenter);
-          
+  
+          if (isCollisionWithGrid(panelPosition, redPixelGrid, gridSize)) {
+            continue; // Skip placing the panel if there's a red pixel in the grid cell
+          }
+  
           const modelClone = originalModel.scene.clone();
           modelClone.scale.set(scaleX, scaleY, 1.7);
           modelClone.rotation.x = orientationAngle ?? Math.PI / 2;
           modelClone.rotation.y = rotationAngle;
   
-          if (batchAddPanelMode) {
-            modelClone.userData = {
-              ...modelClone.userData,
-              batchIndex: currentBatchIndex,
-              isPanel: true,
-              startPosition: startPosition,
-              currentPosition: currentPosition,
-            };
-          } else {
-            modelClone.userData = {
-              ...modelClone.userData,
-              batchIndex: batchIdx,
-              isPanel: true,
-              startPosition: startPosition,
-              currentPosition: currentPosition,
-            };
-          }
+          modelClone.userData = {
+            ...modelClone.userData,
+            batchIndex: batchAddPanelMode ? currentBatchIndex : batchIdx,
+            isPanel: true,
+            startPosition: startPosition,
+            currentPosition: currentPosition,
+          };
   
           const corners = [
             new THREE.Vector3(-modelWidth / 2, -modelHeight / 2, 0),
@@ -197,36 +246,18 @@ export const AddPanelArea = ({
           );
   
           if (
-            corners.every((corner) =>
-              pointInPolygon(corner, selectedRoofPoints)
+            corners.every((corner) => pointInPolygon(corner, selectedRoofPoints)) &&
+            (points === null || corners.every((corner) => !pointInPolygon(corner, points))) &&
+            !occupiedPositions.some(
+              (occupiedPosition) =>
+                occupiedPosition &&
+                Math.abs(occupiedPosition.x - panelPosition.x) < paddedModelWidth &&
+                Math.abs(occupiedPosition.y - panelPosition.y) < paddedModelHeight
             )
           ) {
-            if (points !== null) {
-              if (
-                corners.every((corner) => !pointInPolygon(corner, points)) &&
-                !occupiedPositions.some(
-                  (occupiedPosition) =>
-                    occupiedPosition &&
-                    Math.abs(occupiedPosition.x - panelPosition.x) < paddedModelWidth &&
-                    Math.abs(occupiedPosition.y - panelPosition.y) < paddedModelHeight
-                )
-              ) {
-                modelClone.position.copy(panelPosition);
-                modelClone.callback = () => handlePanelClick(modelClone);
-                placedPanels.push(modelClone);
-              }
-            } else if (
-              !occupiedPositions.some(
-                (occupiedPosition) =>
-                  occupiedPosition &&
-                  Math.abs(occupiedPosition.x - panelPosition.x) < paddedModelWidth &&
-                  Math.abs(occupiedPosition.y - panelPosition.y) < paddedModelHeight
-              )
-            ) {
-              modelClone.position.copy(panelPosition);
-              modelClone.callback = () => handlePanelClick(modelClone);
-              placedPanels.push(modelClone);
-            }
+            modelClone.position.copy(panelPosition);
+            modelClone.callback = () => handlePanelClick(modelClone);
+            placedPanels.push(modelClone);
           }
         }
       }
@@ -236,6 +267,8 @@ export const AddPanelArea = ({
       scene.add(modelRef.current);
     });
   };
+  
+  
   
 
   const updateSelectionBox = (startPos, currentPos) => {

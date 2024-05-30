@@ -5,13 +5,15 @@ import { PlaneGeometry, MeshBasicMaterial, Mesh } from "three";
 import { AddPanel } from "../components/AddPanel";
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
+import axios from 'axios';
+import { setRedPixels } from '../pages/homepage/SimulationTest';
 
 function Text({ text, position, size, color }) {
   const font = new FontLoader().parse(require('../fonts/helvetiker_regular.typeface.json')); // Replace with your font file
   const textGeometry = new TextGeometry(text, {
     font: font,
     size: size,
-    height: 0.1, // Adjust as needed
+    depth: 0.1, // Adjust as needed
     curveSegments: 12,
     bevelEnabled: false,
   });
@@ -189,12 +191,145 @@ export const Experience = ({
 
   
 
+  const [isLoading, setIsLoading] = useState(true);
+
+
+  const processRoofImage = async (url) => {
+    try {
+      console.log("url", url);
+      const response = await axios.post('http://localhost:5000/ml', { staticmapurl: url }, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const processedImage = response.data;
+      return processedImage;
+    } catch (error) {
+      console.error('Error processing image:', error);
+      return null;
+    }
+  };
+  
+  
+  
+
+  // useEffect(() => {
+  //   const loadAndProcessImage = async () => {
+  //     if (roofImage) {
+  //       const processedImageUrl = await processRoofImage(roofImage);
+  //       console.log("processedImageUrl", processedImageUrl.path)
+  //       if (processedImageUrl) {
+  //         const loader = new THREE.TextureLoader();
+  //         loader.load(roofImage, (texture) => {
+  //           setRoofTexture(texture);
+  //           setIsLoading(false);
+  //         });
+  //       }
+  //     } else {
+  //       setIsLoading(false);
+  //     }
+  //   };
+  //   loadAndProcessImage();
+  // }, [roofImage]);
+  
+
+
+
+
   useEffect(() => {
-    const loader = new THREE.TextureLoader();
-    loader.load(roofImage, (texture) => {
-      setRoofTexture(texture);
-    });
+      const processImage = async () => {
+        
+          if (true) { //test
+        //if (roofImage) { //original
+            roofImage = "216o.png" //test
+             // const processedImageUrl = await processRoofImage(roofImage); //orijinal
+              //console.log("processedImageUrl", processedImageUrl.path); //orijinal
+              // const masked = processedImageUrl.path; //orijinal
+              const masked = "3cab8443-af67-4d1a-8a25-1d6d0d29c216.png" //test
+              if (masked) {
+                  const loader = new THREE.TextureLoader();
+                  loader.load(roofImage, (texture) => {
+                      loader.load(masked, (maskTexture) => {
+                          const applyMask = () => {
+                              const maskCanvas = document.createElement("canvas");
+                              maskCanvas.width = maskTexture.image.width;
+                              maskCanvas.height = maskTexture.image.height;
+                              const maskCtx = maskCanvas.getContext("2d");
+                              maskCtx.drawImage(maskTexture.image, 0, 0);
+                              const maskData = maskCtx.getImageData(
+                                  0,
+                                  0,
+                                  maskCanvas.width,
+                                  maskCanvas.height
+                              );
+                              const canvas = document.createElement("canvas");
+                              canvas.width = texture.image.width;
+                              canvas.height = texture.image.height;
+                              const ctx = canvas.getContext("2d");
+                              ctx.drawImage(texture.image, 0, 0);
+                              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                              const data = imageData.data;
+                              const maskDataPixels = maskData.data;
+  
+                              let redPixels2D = []; // Kırmızı piksellerin 2D koordinatlarını depolamak için bir dizi
+  
+                              for (let i = 0; i < data.length; i += 4) {
+                                  if (
+                                      !(maskDataPixels[i] === 0 && maskDataPixels[i + 1] === 0 && maskDataPixels[i + 2] === 128)
+                                  ) {
+                                      data[i] = 255; // Red
+                                      data[i + 1] = 0; // Green
+                                      data[i + 2] = 0; // Blue
+  
+                                      const index = i / 4;
+                                      const x = index % canvas.width;
+                                      const y = Math.floor(index / canvas.width);
+                                      
+                                      redPixels2D.push({ x, y });
+                                  }
+                              }
+  
+                              console.log("Red Pixels 2D: ", redPixels2D);
+  
+                              // Kırmızı pikselleri 3D koordinatlara dönüştür
+                              const redPixels3D = redPixels2D.map(({ x, y }) => {
+                                const normalizedX = (x / canvas.width) * 2 - 1;
+                                const normalizedY = -(y / canvas.height) * 2 + 1;
+                                const vector = new THREE.Vector3(normalizedX, normalizedY, 0.5);
+                                vector.unproject(camera);
+                                const dir = vector.sub(camera.position).normalize();
+                                const distance = -camera.position.z / dir.z;
+                                const pos = camera.position.clone().add(dir.multiplyScalar(distance));
+                                return { x: Math.round(pos.x), y: Math.round(pos.y), z: Math.round(pos.z) };
+                              });
+
+                          console.log("Red Pixels 3D: ", redPixels3D);
+                          setRedPixels(redPixels3D);
+                              
+  
+                              ctx.putImageData(imageData, 0, 0);
+                              const finalTexture = new THREE.CanvasTexture(canvas);
+                              setRoofTexture(finalTexture);
+                          };
+  
+                          if (maskTexture.image.complete) {
+                              applyMask();
+                          } else {
+                              maskTexture.image.onload = applyMask;
+                          }
+                          setIsLoading(false);
+                      });
+                  });
+              } else {
+                  setIsLoading(false);
+              }
+          }
+      };
+  
+      processImage();
   }, [roofImage]);
+  
+  
 
   const [newSelectedPoints, setNewSelectedPoints] = useState([]);
   const [allLines, setAllLines] = useState([]);
@@ -408,36 +543,38 @@ export const Experience = ({
   // Your latLngToPoint function adapted for React
 
   const handleMapClick = (event) => {
-    const rect = gl.domElement.getBoundingClientRect();
-    const x = event.clientX - rect.left; // x position within the element.
-    const y = event.clientY - rect.top; // y position within the element.
+    //burası tıklanılan yerin metresini ölçüyor. test için kapatıldı açılacak
+    // const rect = gl.domElement.getBoundingClientRect();
+    // const x = event.clientX - rect.left; // x position within the element.
+    // const y = event.clientY - rect.top; // y position within the element.
 
-    const latLng = pixelToLatLng(x, y, currentCenter, currentZoom, mapSize);
-    console.log("latLng", latLng);
-    setClickedLatLng({ lat: latLng[0], lng: latLng[1] });
+    // const latLng = pixelToLatLng(x, y, currentCenter, currentZoom, mapSize);
+    // console.log("latLng", latLng);
+    // setClickedLatLng({ lat: latLng[0], lng: latLng[1] });
 
-    // Convert clicked pixel position to 3D world position
-    const mouse = new THREE.Vector2();
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+    // // Convert clicked pixel position to 3D world position
+    // const mouse = new THREE.Vector2();
+    // mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    // mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
 
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObject(planeRef.current);
+    // const raycaster = new THREE.Raycaster();
+    // raycaster.setFromCamera(mouse, camera);
+    // const intersects = raycaster.intersectObject(planeRef.current);
 
-    if (intersects.length > 0) {
-      const intersect = intersects[0].point;
+    // if (intersects.length > 0) {
+    //   const intersect = intersects[0].point;
 
-      setClickPositions(prevPositions => {
-        const newPositions = [...prevPositions, { lat: latLng[0], lng: latLng[1], ...intersect }];
-        return newPositions.length > 2 ? newPositions.slice(-2) : newPositions;
-      });
-    }
+    //   setClickPositions(prevPositions => {
+    //     const newPositions = [...prevPositions, { lat: latLng[0], lng: latLng[1], ...intersect }];
+    //     return newPositions.length > 2 ? newPositions.slice(-2) : newPositions;
+    //   });
+    // }
   };
 
   useEffect(() => {
     const handleClick = (event) => {
       handleMapClick(event);
+
     };
 
     gl.domElement.addEventListener("click", handleClick);
@@ -491,10 +628,15 @@ export const Experience = ({
   return (
     <>
       {renderPanelPreviews()}
-      {roofTexture && (
+      {isLoading && (
+        <mesh position={[0, 0, 0]}>
+          <Text text="Loading..." position={[0, 0, 0]} size={1} color="black" />
+        </mesh>
+      )}
+      {!isLoading && roofTexture && (
         <mesh ref={planeRef} position={[0, 0, 0]}>
           <planeGeometry
-            args={[window.innerWidth / 2, window.innerHeight, 1, 1]}
+            args={[window.innerWidth / 1.5, window.innerHeight, 1, 1]}
           />
           <meshBasicMaterial map={roofTexture} />
         </mesh>

@@ -26,7 +26,11 @@ import { AddPanelArea } from "../../components/AddPanelArea";
 import { loadOriginalModel } from "../../components/LoadOriginalModel";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
-//cancel'e bakılacak
+let redPixels3D = [];
+export function setRedPixels(pixels) {
+  redPixels3D = pixels;
+  console.log("redPixels3Dilk", redPixels3D);
+}
 
 export function pointInPolygon(point, polygon) {
   let isInside = false;
@@ -362,6 +366,45 @@ function SimulationTest({
     return [];
   }, [batchAddPanelMode, selectedRoofPoints]);
 
+  const createGrid = (redPixels3D, gridSize) => {
+    const grid = new Map();
+    redPixels3D.forEach((pixel) => {
+      const x = Math.floor(pixel.x / gridSize);
+      const y = Math.floor(pixel.y / gridSize);
+      const key = `${x},${y}`;
+      if (!grid.has(key)) {
+        grid.set(key, []);
+      }
+      grid.get(key).push(pixel);
+    });
+    return grid;
+  };
+
+  const isCollisionWithGrid = (panelPosition, grid, gridSize) => {
+    const x = Math.floor(panelPosition.x / gridSize);
+    const y = Math.floor(panelPosition.y / gridSize);
+    const key = `${x},${y}`;
+    return grid.has(key);
+  };
+
+  const baseModelWidth = 8; // Base model width
+  const baseModelHeight = 6.5; // Base model height
+
+  const scaleX = 1.7; // Horizontal scaling
+  const scaleY = 3.4; // Vertical scaling
+  const modelWidth = baseModelWidth * scaleX;
+  const modelHeight = baseModelHeight * scaleY;
+
+  const paddedModelWidth = modelWidth;
+  const paddedModelHeight = modelHeight;
+
+  // Create a grid from red pixels
+  const gridSize = paddedModelWidth;
+  const redPixelGrid = useMemo(() => createGrid(redPixels3D, gridSize), [
+    redPixels3D,
+    gridSize,
+  ]);
+
   const placePanel = (position) => {
     const baseModelWidth = 8; // Base model width
     const baseModelHeight = 6.5; // Base model height
@@ -374,13 +417,21 @@ function SimulationTest({
     const paddedModelWidth = modelWidth * 0.5; 
     const paddedModelHeight = modelHeight * 0.4; 
 
+  // Create a grid from red pixels
+  const gridSize = paddedModelWidth;
+  const redPixelGrid = useMemo(() => createGrid(redPixels3D, gridSize), [
+    redPixels3D,
+    gridSize,
+  ]);
+
+  const placePanel = (position) => {
     const corners = [
       new THREE.Vector3(-modelWidth / 2, -modelHeight / 2, 0).add(position),
       new THREE.Vector3(modelWidth / 2, -modelHeight / 2, 0).add(position),
       new THREE.Vector3(modelWidth / 2, modelHeight / 2, 0).add(position),
       new THREE.Vector3(-modelWidth / 2, modelHeight / 2, 0).add(position),
     ];
-
+  
     if (selectionStart != null && selectionEnd != null) {
       let topRight = { x: selectionEnd.x, y: selectionStart.y, z: 0 };
       let bottomLeft = { x: selectionStart.x, y: selectionEnd.y, z: 0 };
@@ -390,11 +441,14 @@ function SimulationTest({
       console.warn("Panel cannot be placed on obstacles.");
         return;
       }
-      if (!pointInPolygon(position, selectedRoofPoints)) {
+      if (
+        isCollisionWithGrid(position, redPixelGrid, gridSize) ||
+        !pointInPolygon(position, selectedRoofPoints)
+      ) {
         console.warn("Panel can only be placed within the selected area.");
         return;
       }
-
+  
       if (
         occupiedPositions.some(
           (occupiedPosition) =>
@@ -431,7 +485,10 @@ function SimulationTest({
         console.warn("Panel can only be placed within the selected area.");
         return;
       }
-
+      if (isCollisionWithGrid(position, redPixelGrid, gridSize)) {
+        console.warn("Panel cannot be placed on red pixels.");
+        return;
+      }
       if (
         occupiedPositions.some(
           (occupiedPosition) =>
@@ -466,6 +523,7 @@ function SimulationTest({
     }
   };
 
+  
   const handleCancelRoofSelection = () => {
     setRoofSelectionActive(false);
     setSelectedRoofPoints([]);
@@ -861,6 +919,7 @@ function SimulationTest({
                 modelGroupRef={modelGroupRef} // Pass modelGroupRef
                 batchAddPanelMode={batchAddPanelMode}
                 modelPath={modelPath}
+                redPixels3D={redPixels3D}
               />
             )}
             {(addPanelMode || singleEditing) && (
