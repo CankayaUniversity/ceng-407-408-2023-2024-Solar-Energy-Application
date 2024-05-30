@@ -25,12 +25,9 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { visuallyHidden } from "@mui/utils";
 import { useEffect } from "react";
-import {
-  PROJECT,
-  ADDRESS,
-  CUSTOMERS,
-} from "../../api/api";
+import { PROJECT, ADDRESS, CUSTOMERS } from "../../api/api";
 import AddProject from "../dashboard/AddProject";
+import { useNavigate } from "react-router-dom";
 
 const headCells = [
   { id: "name", numeric: false, disablePadding: true, label: "Project Name" },
@@ -164,7 +161,8 @@ EnhancedTableHead.propTypes = {
 };
 
 function EnhancedTableToolbar(props) {
-  const { numSelected, onSearchChange, setShowAddProject, handleDelete } = props;
+  const { numSelected, onSearchChange, setShowAddProject, handleDelete } =
+    props;
 
   const handleClickAddProject = () => {
     setShowAddProject(true);
@@ -264,6 +262,7 @@ export default function Content() {
   const [searchInput, setSearchInput] = React.useState("");
   const [showAddProject, setShowAddProject] = React.useState(false);
   const [rows, setRows] = React.useState([]);
+  const navigate = useNavigate();
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === "asc";
@@ -362,10 +361,11 @@ export default function Content() {
           consumption_period: project.consumption_period,
           projectscol: project.projectscol,
           cosine_factor: project.cosine_factor,
-          export_limit: project.export_limit !== 1  ? "Yes" : "No" ,
+          export_limit: project.export_limit !== 1 ? "Yes" : "No",
           notes: project.notes,
           address: addresses[index][0] || {},
           customer: customers[index][0] || {},
+          solarpanel_id: project.solarpanel_id,
           // consumptionProfile: consumptionProfiles[index][0] || {},
           // user: users[index][0] || {},
         }));
@@ -387,6 +387,11 @@ export default function Content() {
     setSelected([]);
   };
 
+  const showpanel = (solarPanel) => {
+    console.log("solar id", solarPanel);
+    navigate(`/show-project/${solarPanel}`);
+  };
+
   return (
     <Box sx={{ width: "100%" }}>
       {showAddProject ? (
@@ -397,7 +402,7 @@ export default function Content() {
           <AddProject />
         </>
       ) : (
-        <Box sx={{ maxWidth: 1700, margin: "auto", overflow: "hidden" }}> 
+        <Box sx={{ maxWidth: 1700, margin: "auto", overflow: "hidden" }}>
           <Paper sx={{ width: "100%", mb: 2 }}>
             <EnhancedTableToolbar
               numSelected={selected.length}
@@ -419,7 +424,7 @@ export default function Content() {
                   {visibleRows.map((row, index) => {
                     const isItemSelected = isSelected(row.id);
                     const labelId = `enhanced-table-checkbox-${index}`;
-  
+
                     return (
                       <TableRow
                         hover
@@ -477,7 +482,10 @@ export default function Content() {
                         <TableCell align="left">
                           <Tooltip title="Edit">
                             <IconButton
-                              onClick={(event) => event.stopPropagation()}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                showpanel(row.solarpanel_id._id);
+                              }}
                             >
                               <EditIcon />
                             </IconButton>

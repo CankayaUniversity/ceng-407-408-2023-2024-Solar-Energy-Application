@@ -4,6 +4,8 @@ import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { Button, Grid, Box } from "@mui/material";
 import { SOLARPANEL } from "./../../api/api";
+import { useParams } from 'react-router-dom';
+
 
 function CameraControlled() {
   const { camera } = useThree();
@@ -50,6 +52,7 @@ const ProjectScreen = ({ solarPanelID }) => {
   const [currentZoom, setCurrentZoom] = useState(null);
   const [roofTexture, setRoofTexture] = useState(null);
   const planeRef = useRef();
+  const { solarPanel } = useParams();
 
 
 
@@ -57,11 +60,11 @@ const ProjectScreen = ({ solarPanelID }) => {
   const textureRef = useRef();
   const getPanels = async () => {
     let response, error;
-    [response, error] = await SOLARPANEL.getPanels("6657b8fe85cb3a7da54bea3e");
+    [response, error] = await SOLARPANEL.getPanels(solarPanel);
     if (response) {
       console.log("res", response);
        setImage(response.roofImage);
-      loadModelFromJSON(response.panelsToJSON[0].data);
+      loadModelFromJSON(response.panelsToJSON);
     } else {
       console.log("err", error);
     }
@@ -69,20 +72,23 @@ const ProjectScreen = ({ solarPanelID }) => {
 
   const loadModelFromJSON = (modelJSON) => {
     const loader = new THREE.ObjectLoader();
-    const object = loader.parse(modelJSON);
+    modelJSON.forEach(panel => {
+      const object = loader.parse(panel.data);
+      if (textureRef.current) {
+        object.traverse((child) => {
+          if (child.isMesh) {
+            child.material.map = textureRef.current;
+            child.material.needsUpdate = true;
+          }
+        });
+      }
+  
+      if (modelRef.current) {
+        modelRef.current.add(object);
+      }
+    });
     
-    if (textureRef.current) {
-      object.traverse((child) => {
-        if (child.isMesh) {
-          child.material.map = textureRef.current;
-          child.material.needsUpdate = true;
-        }
-      });
-    }
-
-    if (modelRef.current) {
-      modelRef.current.add(object);
-    }
+    
   };
 
   useEffect(() => {

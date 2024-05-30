@@ -197,9 +197,9 @@ export default function AddProject() {
         setSnackbarMessage("Project saved successfully!");
         setSnackbarSeverity("success");
         setSnackbarOpen(true);
-        setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+      //   setTimeout(() => {
+      //   window.location.reload();
+      // }, 2000);
     } else {
         console.error("Proje oluşturulurken bir hata oluştu", error);
         setSnackbarMessage("Project not saved!");

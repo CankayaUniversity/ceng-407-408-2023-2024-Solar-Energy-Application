@@ -91,7 +91,7 @@ function App() {
             <SimulationTest />
           </ProtectedRoute>
         } />
-        <Route path="/show-project" element={
+        <Route path="/show-project/:solarPanel" element={
           <ProtectedRoute>
             <ProjectScreen />
           </ProtectedRoute>
