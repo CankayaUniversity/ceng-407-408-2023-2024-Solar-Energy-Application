@@ -911,15 +911,19 @@ const calculateEnergy = () => {
           </Grid>
 
           <Grid item>
-            <FormControl variant="outlined" sx={{ minWidth: "200px" }}>
-              <InputLabel id="model-select-label" sx={{ color: "#1976d2" }}>
-                Model
-              </InputLabel>
+          <FormControl
+              variant="outlined"
+              sx={{
+                width: "fit-content",
+                boxShadow: "none",
+                border: "none",
+                minWidth: "200px",
+              }}
+            >
               <Select
-                labelId="model-select-label"
                 value={modelPath}
                 onChange={handleModelChange}
-                label="Model"
+                displayEmpty
                 MenuProps={{
                   anchorOrigin: {
                     vertical: "bottom",
@@ -931,27 +935,41 @@ const calculateEnergy = () => {
                   },
                 }}
                 sx={{
+                  backgroundColor: "#1976d2",
+                  color: "white",
+                  height: "36.5px",
+                  borderRadius: 1,
                   "& .MuiOutlinedInput-root": {
                     backgroundColor: "#1976d2",
                     color: "white",
-                    height: "40px",
                     "& .MuiOutlinedInput-notchedOutline": {
                       borderColor: "#1976d2",
                     },
                     "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#1565c0",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                       borderColor: "#1976d2",
                     },
                   },
                   "& .MuiSvgIcon-root": {
                     color: "white",
                   },
-                  "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#1976d2",
+                  "& .MuiList-root": {
+                    backgroundColor: "#1976d2",
+                    color: "white",
+                  },
+                  "& .MuiListItem-root": {
+                    backgroundColor: "#1976d2",
+                    color: "white",
+                    "&:hover": {
+                      backgroundColor: "#1565c0",
+                    },
                   },
                 }}
               >
-                <MenuItem value="s1.glb">Model S1</MenuItem>
-                <MenuItem value="s2.glb">Model S2</MenuItem>
+                <MenuItem value="s1.glb">Model 1</MenuItem>
+                <MenuItem value="s2.glb">Model 2</MenuItem>
               </Select>
             </FormControl>
           </Grid>
