@@ -651,16 +651,14 @@ function SimulationTest({
 
   const calculateEnergy = () => {
     // Toplam panel sayısını hesapla
-    const totalPanels =
-      batchGroups.reduce((total, batch) => total + batch.length, 0) +
-      panels.length;
-
-    const energyPerPanel = 300; // Örnek olarak panel başına enerji üretimi (kWh)
-    const totalEnergy = totalPanels * energyPerPanel; // Toplam enerji üretimi
-    const adjustedEnergy = totalEnergy * formData.cosine_factor; // Ayar faktörü uygulanmış enerji üretimi
-    const total =
-      adjustedEnergy * (formData.consumption / formData.consumption_period); // Nihai toplam enerji tasarrufu
-    return total;
+    const totalPanels = panels.length;
+  
+    const averageMonthlyEnergyPerPanel = 30; // Panel başına aylık ortalama enerji üretimi (kWh)
+    const totalMonthlyEnergy = totalPanels * averageMonthlyEnergyPerPanel; // Toplam aylık enerji üretimi
+    const adjustedMonthlyEnergy = totalMonthlyEnergy * formData.cosine_factor; // Ayar faktörü uygulanmış aylık enerji üretimi
+    const totalEnergySavings = adjustedMonthlyEnergy * (formData.consumption / formData.consumption_period); // Nihai toplam enerji tasarrufu
+  
+    return totalEnergySavings;
   };
 
   const generatePDF = async () => {
@@ -671,10 +669,7 @@ function SimulationTest({
     const dataURL = canvasElement.toDataURL("image/png");
 
     const totalEnergy = calculateEnergy();
-    const totalPanels = batchGroups.reduce(
-      (total, batch) => total + batch.length,
-      0
-    );
+    const totalPanels = panels.length;
     const doc = new jsPDF();
 
     // Title
