@@ -139,9 +139,14 @@ export default function AddProject() {
   };
 
   useEffect(() => {
-    console.log("Seçilen müşteri ıd:", selectedCustomerId);
     const fetchCustomers = async () => {
-      const [data, error] = await CUSTOMERS.getAll();
+      const userprofile = localStorage.getItem("userProfile");
+      const userProfile = JSON.parse(userprofile);
+      console.log("userprofilebilgi", userProfile);
+
+      const [data, error] = await CUSTOMERS.getAll({
+        company_id: userProfile.company_id,
+      });
       if (data && data.length > 0) {
         console.log("data", data);
         setCustomers(data);

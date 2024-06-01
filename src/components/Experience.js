@@ -126,30 +126,30 @@ export const Experience = ({
       console.log("Mesafe:", distance.toFixed(2), "m");
 
       // Calculate the midpoint
-      const midPoint = new THREE.Vector3(
-        (firstClick.x + secondClick.x) / 2,
-        (firstClick.y + secondClick.y) / 2,
-        (firstClick.z + secondClick.z) / 2
-      );
+      // const midPoint = new THREE.Vector3(
+      //   (firstClick.x + secondClick.x) / 2,
+      //   (firstClick.y + secondClick.y) / 2,
+      //   (firstClick.z + secondClick.z) / 2
+      // );
 
       // Calculate rotation
-      const angle = Math.atan2(
-        secondClick.y - firstClick.y,
-        secondClick.x - firstClick.x
-      );
+      // const angle = Math.atan2(
+      //   secondClick.y - firstClick.y,
+      //   secondClick.x - firstClick.x
+      // );
 
       // Correct the angle for text rotation
-      const correctedAngle = -angle;
-
-      // Add the distance text to the text positions array
-      setTextPositions((prevTextPositions) => [
-        ...prevTextPositions,
-        {
-          position: midPoint,
-          text: `${distance.toFixed(2)} m`,
-          rotation: correctedAngle,
-        },
-      ]);
+      // const correctedAngle = -angle;
+      console.log("distance", distance);
+      // // Add the distance text to the text positions array
+      // setTextPositions((prevTextPositions) => [
+      //   ...prevTextPositions,
+      //   {
+      //     position: midPoint,
+      //     text: `${distance.toFixed(2)} m`,
+      //     rotation: correctedAngle,
+      //   },
+      // ]);
     }
   }, [clickPositions]);
 
@@ -246,13 +246,13 @@ export const Experience = ({
 
   useEffect(() => {
     const processImage = async () => {
-      if (true) { //test
-      //   if (roofImage) { //original
-        roofImage = "staticmap.png"; //test
-       // const processedImageUrl = await processRoofImage(roofImage); //orijinal
-        //console.log("processedImageUrl", processedImageUrl.path); //orijinal
-        //const masked = processedImageUrl.path; //orijinal
-        const masked = "staticmapmask.png"; //test
+      // if (true) { //test
+        if (roofImage) { //original
+        // roofImage = "staticmap.png"; //test
+       const processedImageUrl = await processRoofImage(roofImage); //orijinal
+        console.log("processedImageUrl", processedImageUrl.path); //orijinal
+        const masked = processedImageUrl.path; //orijinal
+        // const masked = "staticmapmask.png"; //test
         if (masked) {
           const loader = new THREE.TextureLoader();
           loader.load(roofImage, (texture) => {
@@ -590,26 +590,26 @@ export const Experience = ({
 
   const handleMapClick = (event) => {
     //burası tıklanılan yerin metresini ölçüyor. test için kapatıldı açılacak
-    // const rect = gl.domElement.getBoundingClientRect();
-    // const x = event.clientX - rect.left; // x position within the element.
-    // const y = event.clientY - rect.top; // y position within the element.
-    // const latLng = pixelToLatLng(x, y, currentCenter, currentZoom, mapSize);
-    // console.log("latLng", latLng);
-    // setClickedLatLng({ lat: latLng[0], lng: latLng[1] });
-    // // Convert clicked pixel position to 3D world position
-    // const mouse = new THREE.Vector2();
-    // mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    // mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
-    // const raycaster = new THREE.Raycaster();
-    // raycaster.setFromCamera(mouse, camera);
-    // const intersects = raycaster.intersectObject(planeRef.current);
-    // if (intersects.length > 0) {
-    //   const intersect = intersects[0].point;
-    //   setClickPositions(prevPositions => {
-    //     const newPositions = [...prevPositions, { lat: latLng[0], lng: latLng[1], ...intersect }];
-    //     return newPositions.length > 2 ? newPositions.slice(-2) : newPositions;
-    //   });
-    // }
+    const rect = gl.domElement.getBoundingClientRect();
+    const x = event.clientX - rect.left; // x position within the element.
+    const y = event.clientY - rect.top; // y position within the element.
+    const latLng = pixelToLatLng(x, y, currentCenter, currentZoom, mapSize);
+    console.log("latLng", latLng);
+    setClickedLatLng({ lat: latLng[0], lng: latLng[1] });
+    // Convert clicked pixel position to 3D world position
+    const mouse = new THREE.Vector2();
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObject(planeRef.current);
+    if (intersects.length > 0) {
+      const intersect = intersects[0].point;
+      setClickPositions(prevPositions => {
+        const newPositions = [...prevPositions, { lat: latLng[0], lng: latLng[1], ...intersect }];
+        return newPositions.length > 2 ? newPositions.slice(-2) : newPositions;
+      });
+    }
   };
 
   useEffect(() => {
@@ -660,31 +660,31 @@ export const Experience = ({
 
       // Add distance text for each segment
       //açılacak
-      // for (let i = 0; i < points.length - 1; i++) {
-      //   const p1 = points[i];
-      //   const p2 = points[i + 1];
+      for (let i = 0; i < points.length - 1; i++) {
+        const p1 = points[i];
+        const p2 = points[i + 1];
 
-      //   // Pixel coordinates to latitude and longitude
-      //   const p1LatLng = pixelToLatLng(p1.x, p1.y, currentCenter, currentZoom, mapSize);
-      //   const p2LatLng = pixelToLatLng(p2.x, p2.y, currentCenter, currentZoom, mapSize);
+        // Pixel coordinates to latitude and longitude
+        const p1LatLng = pixelToLatLng(p1.x, p1.y, currentCenter, currentZoom, mapSize);
+        const p2LatLng = pixelToLatLng(p2.x, p2.y, currentCenter, currentZoom, mapSize);
 
-      //   // Calculate distance
-      //   const distance = calculateDistance(p1LatLng[0], p1LatLng[1], p2LatLng[0], p2LatLng[1]).toFixed(2) + " m";
+         // Calculate distance
+        const distance = calculateDistance(p1LatLng[0], p1LatLng[1], p2LatLng[0], p2LatLng[1]).toFixed(2) + " m";
 
-      //   const midPoint = new THREE.Vector3(
-      //     (p1.x + p2.x) / 2,
-      //     (p1.y + p2.y) / 2,
-      //     (p1.z + p2.z) / 2
-      //   );
+        const midPoint = new THREE.Vector3(
+          (p1.x + p2.x) / 2,
+          (p1.y + p2.y) / 2,
+          (p1.z + p2.z) / 2
+        );
 
-      //   const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+        const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
 
-      //   // Set the text position only if it's on the line
-      //   setTextPositions(prevTextPositions => [
-      //     ...prevTextPositions,
-      //     { position: midPoint, text: distance, rotation: angle },
-      //   ]);
-      // }
+        // Set the text position only if it's on the line
+        setTextPositions(prevTextPositions => [
+          ...prevTextPositions,
+          { position: midPoint, text: distance, rotation: angle },
+        ]);
+      }
 
       // Cleanup function: Component unmount olduğunda çizgiyi sahneden kaldır
       return () => {
