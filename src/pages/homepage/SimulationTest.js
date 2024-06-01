@@ -205,7 +205,6 @@ function SimulationTest({
   screenshot,
   currentCenter,
   currentZoom,
-  projectData,
   customerDetails,
   formData,
   setFormData,
@@ -286,7 +285,7 @@ function SimulationTest({
 
   useEffect(() => {
     console.log("formData", formData);
-    console.log("Model path in useEffect:", modelPath);
+    console.log("custoemrdeta",customerDetails)
     loadOriginalModel(modelPath, (originalModel) => {
       console.log("original", originalModel);
 
@@ -652,12 +651,14 @@ function SimulationTest({
   const calculateEnergy = () => {
     // Toplam panel sayısını hesapla
     const totalPanels = panels.length;
-  
+
     const averageMonthlyEnergyPerPanel = 30; // Panel başına aylık ortalama enerji üretimi (kWh)
     const totalMonthlyEnergy = totalPanels * averageMonthlyEnergyPerPanel; // Toplam aylık enerji üretimi
     const adjustedMonthlyEnergy = totalMonthlyEnergy * formData.cosine_factor; // Ayar faktörü uygulanmış aylık enerji üretimi
-    const totalEnergySavings = adjustedMonthlyEnergy * (formData.consumption / formData.consumption_period); // Nihai toplam enerji tasarrufu
-  
+    const totalEnergySavings =
+      adjustedMonthlyEnergy *
+      (formData.consumption / formData.consumption_period); // Nihai toplam enerji tasarrufu
+
     return totalEnergySavings;
   };
 
@@ -685,10 +686,9 @@ function SimulationTest({
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
     const companyInfo = [
-      ["Company Name", customerDetails?.company_name || "N/A"],
-      ["Address", customerDetails?.address || "N/A"],
-      ["Phone", customerDetails?.phone || "N/A"],
-      ["E-mail", customerDetails?.email || "N/A"],
+      ["Customer Name", customerDetails.name || "N/A"],
+      ["Customer Phone", customerDetails.phone || "N/A"],
+      ["Customer E-mail", customerDetails.email || "N/A"],
     ];
     doc.autoTable({
       startY: 34,

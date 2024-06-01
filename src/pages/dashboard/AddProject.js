@@ -762,6 +762,7 @@ export default function AddProject() {
             currentZoom={currentZoom}
             formData={formData}
             setFormData={setFormData}
+            customerDetails={customerDetails}
           />
           {screenshot && (
             <div>
