@@ -361,7 +361,7 @@ export default function Content() {
           consumption_period: project.consumption_period,
           projectscol: project.projectscol,
           cosine_factor: project.cosine_factor,
-          export_limit: project.export_limit !== 1 ? "Yes" : "No",
+          export_limit: project.export_limit === "1" ? "Yes" : "No",
           notes: project.notes,
           address: addresses[index][0] || {},
           customer: customers[index][0] || {},

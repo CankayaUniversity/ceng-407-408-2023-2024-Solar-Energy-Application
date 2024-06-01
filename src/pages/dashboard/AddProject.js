@@ -76,7 +76,7 @@ export default function AddProject() {
     consumption_period: "",
     projectscol: "",
     cosine_factor: "",
-    export_limit: "",
+    export_limit: 0,
     notes: "",
     customer_id: selectedCustomerId,
     consumption_profile: {
@@ -146,6 +146,7 @@ export default function AddProject() {
         console.log("data", data);
         setCustomers(data);
         setSelectedCustomerId(data[0]._id);
+        handleCustomerChange({ target: { value: data[0]._id } });
       } else {
         console.error("Müşteriler yüklenirken bir hata oluştu", error);
       }
@@ -208,6 +209,10 @@ export default function AddProject() {
   };
 
   const handleSubmit = async () => {
+    let updatedFormData = { ...formData, ...projectData };
+    if (!updatedFormData.export_limit) {
+      updatedFormData.export_limit = 0;
+    }
     console.log(projectData);
     let response, error;
     [response, error] = await PROJECT.postProject(formData);
@@ -233,7 +238,7 @@ export default function AddProject() {
       errors.consumption_period = "Fill this area";
     if (!projectData.projectscol) errors.projectscol = "Fill this area";
     if (!projectData.cosine_factor) errors.cosine_factor = "Fill this area";
-    if (!projectData.export_limit) errors.export_limit = "Fill this area";
+    // if (!projectData.export_limit) errors.export_limit = "Fill this area";
     if (!projectData.notes) errors.notes = "Fill this area";
     if (!projectData.consumption_profile.device_name)
       errors.device_name = "Fill this area";
@@ -270,6 +275,7 @@ export default function AddProject() {
     setFormData((prevState) => ({
       ...prevState,
       ...projectData,
+      export_limit: projectData.export_limit === 1 ? 1 : 0,
     }));
   };
 
