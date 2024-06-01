@@ -52,7 +52,7 @@ export function pointInPolygon(point, polygon) {
   return isInside;
 }
 
-function CameraControlled({ handleCancel, isCancelled }) {
+function CameraControlled({ handleCancel, isCancelled, sceneRef, cameraRef }) {
   const { camera, scene } = useThree();
 
   useEffect(() => {
@@ -92,6 +92,11 @@ function CameraControlled({ handleCancel, isCancelled }) {
       handleCancel(scene);
     }
   }, [isCancelled]);
+
+  useEffect(() => {
+    sceneRef.current = scene;
+    cameraRef.current = camera;
+  }, []);
 
   return null;
 }
@@ -240,6 +245,9 @@ function SimulationTest({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [modelPath, setModelPath] = useState("s1.glb");
   const [selectionBoxWorked, setSelectionBoxWorked] = useState(false);
+  const canvasRef = useRef();
+  const sceneRef = useRef();
+  const cameraRef = useRef();
 
   const handleModelChange = (event) => {
     console.log("Model path changed to:", event.target.value);
@@ -275,8 +283,6 @@ function SimulationTest({
   }, []);
 
   const toggleAddPanelMode = () => setAddPanelMode(!addPanelMode);
-
-  const canvasRef = useRef();
 
   useEffect(() => {
     console.log("formData", formData);
@@ -643,10 +649,6 @@ function SimulationTest({
     }
   }, [selectionStart, selectionEnd]);
 
-  const savePanels = (newPanels) => {
-    setPanels((prevPanels) => [...prevPanels, ...newPanels]);
-  };
-
   const calculateEnergy = () => {
     // Toplam panel sayısını hesapla
     const totalPanels =
@@ -657,32 +659,17 @@ function SimulationTest({
     const totalEnergy = totalPanels * energyPerPanel; // Toplam enerji üretimi
     const adjustedEnergy = totalEnergy * formData.cosine_factor; // Ayar faktörü uygulanmış enerji üretimi
     const total =
-      adjustedEnergy *
-      (formData.consumption / formData.consumption_period); // Nihai toplam enerji tasarrufu
+      adjustedEnergy * (formData.consumption / formData.consumption_period); // Nihai toplam enerji tasarrufu
     return total;
   };
 
-  /*
-const calculateEnergy = () => {
-    // Tekli eklenen panellerin sayısı
-    const singlePanelsCount = panels.length;
-  
-    // Batch gruplarındaki panellerin sayısı
-    const batchPanelsCount = batchGroups.reduce((total, batch) => total + batch.length, 0);
-  
-    // Toplam panel sayısını hesapla
-    const totalPanels = singlePanelsCount + batchPanelsCount;
-  
-    const energyPerPanel = 300; // Örnek olarak panel başına enerji üretimi (kWh)
-    const totalEnergy = totalPanels * energyPerPanel; // Toplam enerji üretimi
-    const adjustedEnergy = totalEnergy * projectData.cosine_factor; // Ayar faktörü uygulanmış enerji üretimi
-    const total = adjustedEnergy * (projectData.consumption / projectData.consumption_period); // Nihai toplam enerji tasarrufu
-  
-    return total;
-  };
-  */
+  const generatePDF = async () => {
+    const canvasElement = canvasRef.current;
+    const renderer = new THREE.WebGLRenderer({ canvas: canvasElement });
+    renderer.render(sceneRef.current, cameraRef.current);
 
-  const generatePDF = () => {
+    const dataURL = canvasElement.toDataURL("image/png");
+
     const totalEnergy = calculateEnergy();
     const totalPanels = batchGroups.reduce(
       (total, batch) => total + batch.length,
@@ -749,6 +736,16 @@ const calculateEnergy = () => {
       theme: "striped",
     });
 
+    // Ekran görüntüsünü PDF'e ekleyin
+    doc.addImage(
+      dataURL,
+      "PNG",
+      15,
+      doc.autoTable.previous.finalY + 20,
+      180,
+      100
+    );
+
     // Footer
     doc.setFontSize(10);
     doc.setFont("helvetica", "italic");
@@ -758,22 +755,8 @@ const calculateEnergy = () => {
       290
     );
 
-    // Add external image
-    const img = new Image();
-    img.src = reportImage;
-    img.onload = function () {
-      doc.addImage(
-        img,
-        "PNG",
-        15,
-        doc.autoTable.previous.finalY + 20,
-        180,
-        100
-      );
-
-      // Generate the PDF
-      doc.save("Energy Report.pdf");
-    };
+    // Generate the PDF
+    doc.save("Energy Report.pdf");
   };
 
   return (
@@ -911,7 +894,7 @@ const calculateEnergy = () => {
           </Grid>
 
           <Grid item>
-          <FormControl
+            <FormControl
               variant="outlined"
               sx={{
                 width: "fit-content",
@@ -1002,6 +985,8 @@ const calculateEnergy = () => {
             <CameraControlled
               handleCancel={handleCancel}
               isCancelled={isCancelled}
+              sceneRef={sceneRef}
+              cameraRef={cameraRef}
             />
             {editPanel && (
               <RaycasterComponent
