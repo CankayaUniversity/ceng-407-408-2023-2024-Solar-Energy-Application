@@ -116,6 +116,14 @@ export default function AddProject() {
     }
   };
 
+  const handleCheckboxChange = (e) => {
+    const isChecked = e.target.checked ? 1 : 0;
+    setProjectData((prevState) => ({
+      ...prevState,
+      export_limit: isChecked,
+    }));
+  };
+
   const handleChange = (event, newValue) => {
     setValue(newValue);
   };
@@ -462,7 +470,7 @@ export default function AddProject() {
                     helperText={formErrors.cosine_factor}
                   />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                {/* <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
                     name="export_limit"
@@ -473,7 +481,7 @@ export default function AddProject() {
                     error={!!formErrors.export_limit}
                     helperText={formErrors.export_limit}
                   />
-                </Grid>
+                </Grid> */}
                 <Grid item xs={12} md={6}>
                   <TextField
                     fullWidth
@@ -487,7 +495,15 @@ export default function AddProject() {
                   />
                 </Grid>
               </Grid>
-              <FormControlLabel control={<Checkbox />} label="Export Limit" />
+              <FormControlLabel
+                control={
+                  <Checkbox 
+                    checked={projectData.export_limit === 1}
+                    onChange={handleCheckboxChange}
+                  />
+                }
+                label="Export Limit"
+              />
             </AccordionDetails>
           </Accordion>
           <Accordion
