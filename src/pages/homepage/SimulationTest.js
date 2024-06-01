@@ -964,6 +964,7 @@ function SimulationTest({
               width: "55vw",
               height: "80vh",
               border: "2px solid #000",
+              backgroundColor: "black",
             }}
             gl={{ antialias: true }}
             shadows
