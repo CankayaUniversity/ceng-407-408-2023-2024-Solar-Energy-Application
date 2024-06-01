@@ -3,13 +3,15 @@ import * as THREE from "three";
 import { useThree, useFrame } from "@react-three/fiber";
 import { PlaneGeometry, MeshBasicMaterial, Mesh } from "three";
 import { AddPanel } from "../components/AddPanel";
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry';
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
-import axios from 'axios';
-import { setRedPixels } from '../pages/homepage/SimulationTest';
+import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry";
+import { FontLoader } from "three/examples/jsm/loaders/FontLoader";
+import axios from "axios";
+import { setRedPixels } from "../pages/homepage/SimulationTest";
 
 function Text({ text, position, size, color, rotation }) {
-  const font = new FontLoader().parse(require('../fonts/helvetiker_regular.typeface.json')); // Replace with your font file
+  const font = new FontLoader().parse(
+    require("../fonts/helvetiker_regular.typeface.json")
+  ); // Replace with your font file
   const textGeometry = new TextGeometry(text, {
     font: font,
     size: size,
@@ -28,7 +30,7 @@ function Text({ text, position, size, color, rotation }) {
 
 function createHatchTexture() {
   const canvas = document.createElement("canvas");
-  const size = 128; // Doku boyutu
+  const size = 512; // Doku boyutu
   canvas.width = size;
   canvas.height = size;
 
@@ -73,7 +75,6 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   const distance = R * c; // in meters
   return distance;
 }
-
 
 export const Experience = ({
   roofImage,
@@ -121,33 +122,36 @@ export const Experience = ({
         secondClick.lat,
         secondClick.lng
       );
-  
+
       console.log("Mesafe:", distance.toFixed(2), "m");
-  
+
       // Calculate the midpoint
       const midPoint = new THREE.Vector3(
         (firstClick.x + secondClick.x) / 2,
         (firstClick.y + secondClick.y) / 2,
         (firstClick.z + secondClick.z) / 2
       );
-  
+
       // Calculate rotation
       const angle = Math.atan2(
         secondClick.y - firstClick.y,
         secondClick.x - firstClick.x
       );
-  
+
       // Correct the angle for text rotation
       const correctedAngle = -angle;
-  
+
       // Add the distance text to the text positions array
-      setTextPositions(prevTextPositions => [
+      setTextPositions((prevTextPositions) => [
         ...prevTextPositions,
-        { position: midPoint, text: `${distance.toFixed(2)} m`, rotation: correctedAngle },
+        {
+          position: midPoint,
+          text: `${distance.toFixed(2)} m`,
+          rotation: correctedAngle,
+        },
       ]);
     }
   }, [clickPositions]);
-  
 
   useEffect(() => {
     const handleMouseMove = (event) => {
@@ -199,29 +203,27 @@ export const Experience = ({
     };
   }, [singleEditing, camera, setPanelPosition, gl.domElement, singleEditing]);
 
-  
-
   const [isLoading, setIsLoading] = useState(true);
-
 
   const processRoofImage = async (url) => {
     try {
       console.log("url", url);
-      const response = await axios.post('http://localhost:5000/ml', { staticmapurl: url }, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axios.post(
+        "http://localhost:5000/ml",
+        { staticmapurl: url },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
       const processedImage = response.data;
       return processedImage;
     } catch (error) {
-      console.error('Error processing image:', error);
+      console.error("Error processing image:", error);
       return null;
     }
   };
-  
-  
-  
 
   // useEffect(() => {
   //   const loadAndProcessImage = async () => {
@@ -241,105 +243,102 @@ export const Experience = ({
   //   };
   //   loadAndProcessImage();
   // }, [roofImage]);
-  
-
-
-
 
   useEffect(() => {
-      const processImage = async () => {
-        
-          // if (true) { //test
-        if (roofImage) { //original
-            // roofImage = "216o.png" //test
-             const processedImageUrl = await processRoofImage(roofImage); //orijinal
-              console.log("processedImageUrl", processedImageUrl.path); //orijinal
-              const masked = processedImageUrl.path; //orijinal
-              // const masked = "3cab8443-af67-4d1a-8a25-1d6d0d29c216.png" //test
-              if (masked) {
-                  const loader = new THREE.TextureLoader();
-                  loader.load(roofImage, (texture) => {
-                      loader.load(masked, (maskTexture) => {
-                          const applyMask = () => {
-                              const maskCanvas = document.createElement("canvas");
-                              maskCanvas.width = maskTexture.image.width;
-                              maskCanvas.height = maskTexture.image.height;
-                              const maskCtx = maskCanvas.getContext("2d");
-                              maskCtx.drawImage(maskTexture.image, 0, 0);
-                              const maskData = maskCtx.getImageData(
-                                  0,
-                                  0,
-                                  maskCanvas.width,
-                                  maskCanvas.height
-                              );
-                              const canvas = document.createElement("canvas");
-                              canvas.width = texture.image.width;
-                              canvas.height = texture.image.height;
-                              const ctx = canvas.getContext("2d");
-                              ctx.drawImage(texture.image, 0, 0);
-                              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                              const data = imageData.data;
-                              const maskDataPixels = maskData.data;
-  
-                              let redPixels2D = []; // Kırmızı piksellerin 2D koordinatlarını depolamak için bir dizi
-  
-                              for (let i = 0; i < data.length; i += 4) {
-                                  if (
-                                      !(maskDataPixels[i] === 0 && maskDataPixels[i + 1] === 0 && maskDataPixels[i + 2] === 128)
-                                  ) {
-                                      data[i] = 255; // Red
-                                      data[i + 1] = 0; // Green
-                                      data[i + 2] = 0; // Blue
-  
-                                      const index = i / 4;
-                                      const x = index % canvas.width;
-                                      const y = Math.floor(index / canvas.width);
-                                      
-                                      redPixels2D.push({ x, y });
-                                  }
-                              }
-  
-                              console.log("Red Pixels 2D: ", redPixels2D);
-  
-                              // Kırmızı pikselleri 3D koordinatlara dönüştür
-                              const redPixels3D = redPixels2D.map(({ x, y }) => {
-                                const normalizedX = (x / canvas.width) * 2 - 1;
-                                const normalizedY = -(y / canvas.height) * 2 + 1;
-                                const vector = new THREE.Vector3(normalizedX, normalizedY, 0.5);
-                                vector.unproject(camera);
-                                const dir = vector.sub(camera.position).normalize();
-                                const distance = -camera.position.z / dir.z;
-                                const pos = camera.position.clone().add(dir.multiplyScalar(distance));
-                                return { x: Math.round(pos.x), y: Math.round(pos.y), z: Math.round(pos.z) };
-                              });
+    const processImage = async () => {
+      //if (true) { //test
+         if (roofImage) { //original
+       // roofImage = "staticmap.png"; //test
+        const processedImageUrl = await processRoofImage(roofImage); //orijinal
+        console.log("processedImageUrl", processedImageUrl.path); //orijinal
+        const masked = processedImageUrl.path; //orijinal
+        //const masked = "staticmapmask.png"; //test
+        if (masked) {
+          const loader = new THREE.TextureLoader();
+          loader.load(roofImage, (texture) => {
+            loader.load(masked, (maskTexture) => {
+              const applyMask = () => {
+                const maskCanvas = document.createElement("canvas");
+                maskCanvas.width = maskTexture.image.width;
+                maskCanvas.height = maskTexture.image.height;
+                const maskCtx = maskCanvas.getContext("2d");
+                maskCtx.drawImage(maskTexture.image, 0, 0);
+                const maskData = maskCtx.getImageData(
+                  0,
+                  0,
+                  maskCanvas.width,
+                  maskCanvas.height
+                );
+                const canvas = document.createElement("canvas");
+                canvas.width = texture.image.width;
+                canvas.height = texture.image.height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(texture.image, 0, 0);
+                const imageData = ctx.getImageData(
+                  0,
+                  0,
+                  canvas.width,
+                  canvas.height
+                );
+                const data = imageData.data;
+                const maskDataPixels = maskData.data;
 
-                          console.log("Red Pixels 3D: ", redPixels3D);
-                          setRedPixels(redPixels3D);
-                              
-  
-                              ctx.putImageData(imageData, 0, 0);
-                              const finalTexture = new THREE.CanvasTexture(canvas);
-                              setRoofTexture(finalTexture);
-                          };
-  
-                          if (maskTexture.image.complete) {
-                              applyMask();
-                          } else {
-                              maskTexture.image.onload = applyMask;
-                          }
-                          setIsLoading(false);
-                      });
-                  });
+                let redPixels = []; // Kırmızı piksellerin koordinatlarını tutmak için dizi
+                for (let i = 0; i < data.length; i += 4) {
+                  if (
+                    !(
+                      maskDataPixels[i] === 0 &&
+                      maskDataPixels[i + 1] === 0 &&
+                      maskDataPixels[i + 2] === 128
+                    )
+                  ) {
+                    data[i] = 255; // Red
+                    data[i + 1] = 0; // Green
+                    data[i + 2] = 0; // Blue
+
+                    // Kırmızı piksellerin koordinatlarını kaydet
+                    // Kırmızı piksellerin koordinatlarını kaydet
+                    const x = (i / 4) % maskTexture.image.width;
+                    const y = Math.floor(i / 4 / maskTexture.image.width);
+                    //burada %125 ise ekran ölçeği 1.6 ile çarpılmalı
+                    //çünkü 125*1.6=200
+                    //eğer ekran ölçeği %100 ise 2 ile çarpılmalı çünkü 100*2=200
+                    const worldX =
+                      2 *
+                      ((x / canvas.width) * texture.image.width -
+                        texture.image.width / 2);
+                    const worldY =
+                      2 *
+                      ((y / canvas.height) * texture.image.height -
+                        texture.image.height / 2);
+                    redPixels.push(new THREE.Vector3(worldX, -worldY, 0));
+                  }
+                }
+
+                // Kırmızı pikselleri kaydet
+                setRedPixels(redPixels);
+
+                ctx.putImageData(imageData, 0, 0);
+                const finalTexture = new THREE.CanvasTexture(canvas);
+                setRoofTexture(finalTexture);
+              };
+
+              if (maskTexture.image.complete) {
+                applyMask();
               } else {
-                  setIsLoading(false);
+                maskTexture.image.onload = applyMask;
               }
-          }
-      };
-  
-      processImage();
+              setIsLoading(false);
+            });
+          });
+        } else {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    processImage();
   }, [roofImage]);
-  
-  
 
   const [newSelectedPoints, setNewSelectedPoints] = useState([]);
   const [allLines, setAllLines] = useState([]);
@@ -373,7 +372,14 @@ export const Experience = ({
 
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
-  }, [roofSelectionActive, camera, gl.domElement, onPanelPlace, setSelectedRoofPoints, newSelectedPoints]);
+  }, [
+    roofSelectionActive,
+    camera,
+    gl.domElement,
+    onPanelPlace,
+    setSelectedRoofPoints,
+    newSelectedPoints,
+  ]);
 
   useEffect(() => {
     const handleClick = (event) => {
@@ -413,7 +419,7 @@ export const Experience = ({
       raycaster.setFromCamera({ x: mouseX, y: mouseY }, camera);
       const intersects = raycaster.intersectObject(planeRef.current, true);
 
-      console.log("exper")
+      console.log("exper");
 
       if (intersects.length > 0 && singleEditing) {
         const intersect = intersects[0];
@@ -424,8 +430,6 @@ export const Experience = ({
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
   }, [singleEditing, camera, gl.domElement, setPanelPosition]);
-
-
 
   useEffect(() => {
     const handleMouseDown = (event) => {
@@ -536,17 +540,37 @@ export const Experience = ({
 
   const pixelToLatLng = (x, y, mapCenter, zoom, mapSize) => {
     const scale = 1 << zoom; // 2 üzeri zoom
-    console.log("x", x, "y", y, "mapCenter", mapCenter[1], "zoom", zoom, "mapSize", mapSize[1])
-    console.log("scale", scale)
+    console.log(
+      "x",
+      x,
+      "y",
+      y,
+      "mapCenter",
+      mapCenter[1],
+      "zoom",
+      zoom,
+      "mapSize",
+      mapSize[1]
+    );
+    console.log("scale", scale);
     // Longitude calculation
     const lng = mapCenter.lng + ((x - mapSize[0] / 2) / (256 * scale)) * 360;
-    console.log(mapCenter.lng + ((x - mapSize[0] / 2) / (256 * scale)) * 360)
+    console.log(mapCenter.lng + ((x - mapSize[0] / 2) / (256 * scale)) * 360);
     // Latitude calculation
-    const adjustedY = y - mapSize[1] / 2 + latLngToPoint(mapCenter.lat, mapCenter.lng, mapSize[0], mapSize[1], zoom)[1];
+    const adjustedY =
+      y -
+      mapSize[1] / 2 +
+      latLngToPoint(
+        mapCenter.lat,
+        mapCenter.lng,
+        mapSize[0],
+        mapSize[1],
+        zoom
+      )[1];
     const worldY = adjustedY / (scale * mapSize[1]);
     const n = Math.PI - 2 * Math.PI * worldY;
     const lat = (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
-    console.log("lat", lat, "lng", lng)
+    console.log("lat", lat, "lng", lng);
     return [parseFloat(lat.toFixed(8)), parseFloat(lng.toFixed(8))];
   };
 
@@ -557,23 +581,18 @@ export const Experience = ({
     // const rect = gl.domElement.getBoundingClientRect();
     // const x = event.clientX - rect.left; // x position within the element.
     // const y = event.clientY - rect.top; // y position within the element.
-
     // const latLng = pixelToLatLng(x, y, currentCenter, currentZoom, mapSize);
     // console.log("latLng", latLng);
     // setClickedLatLng({ lat: latLng[0], lng: latLng[1] });
-
     // // Convert clicked pixel position to 3D world position
     // const mouse = new THREE.Vector2();
     // mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     // mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
-
     // const raycaster = new THREE.Raycaster();
     // raycaster.setFromCamera(mouse, camera);
     // const intersects = raycaster.intersectObject(planeRef.current);
-
     // if (intersects.length > 0) {
     //   const intersect = intersects[0].point;
-
     //   setClickPositions(prevPositions => {
     //     const newPositions = [...prevPositions, { lat: latLng[0], lng: latLng[1], ...intersect }];
     //     return newPositions.length > 2 ? newPositions.slice(-2) : newPositions;
@@ -584,7 +603,6 @@ export const Experience = ({
   useEffect(() => {
     const handleClick = (event) => {
       handleMapClick(event);
-
     };
 
     gl.domElement.addEventListener("click", handleClick);
@@ -621,40 +639,40 @@ export const Experience = ({
   useEffect(() => {
     const linesToDraw = [...allLines, newSelectedPoints];
     setTextPositions([]); // İlk olarak textPositions'ı temizle
-    linesToDraw.forEach(points => {
+    linesToDraw.forEach((points) => {
       if (points.length < 2) return;
-  
+
       const pointsGeometry = new THREE.BufferGeometry().setFromPoints(points);
       const line = new THREE.Line(pointsGeometry, lineMaterial);
       scene.add(line);
-  
+
       // Add distance text for each segment
       for (let i = 0; i < points.length - 1; i++) {
         const p1 = points[i];
         const p2 = points[i + 1];
-  
+
         // Pixel coordinates to latitude and longitude
         const p1LatLng = pixelToLatLng(p1.x, p1.y, currentCenter, currentZoom, mapSize);
         const p2LatLng = pixelToLatLng(p2.x, p2.y, currentCenter, currentZoom, mapSize);
-  
+
         // Calculate distance
         const distance = calculateDistance(p1LatLng[0], p1LatLng[1], p2LatLng[0], p2LatLng[1]).toFixed(2) + " m";
-  
+
         const midPoint = new THREE.Vector3(
           (p1.x + p2.x) / 2,
           (p1.y + p2.y) / 2,
           (p1.z + p2.z) / 2
         );
-  
+
         const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
-  
+
         // Set the text position only if it's on the line
         setTextPositions(prevTextPositions => [
           ...prevTextPositions,
           { position: midPoint, text: distance, rotation: angle },
         ]);
       }
-  
+
       // Cleanup function: Component unmount olduğunda çizgiyi sahneden kaldır
       return () => {
         scene.remove(line);
@@ -662,10 +680,6 @@ export const Experience = ({
       };
     });
   }, [newSelectedPoints, allLines, scene]);
-  
-  
-  
-  
 
   return (
     <>
@@ -676,47 +690,46 @@ export const Experience = ({
         </mesh>
       )}
       {!isLoading && roofTexture && (
-  <mesh ref={planeRef} position={[0, 0, 0]}>
-    <planeGeometry
-      args={[window.innerWidth / 2, window.innerHeight, 1, 1]}
-    />
-    <meshBasicMaterial map={roofTexture} />
-  </mesh>
-)}
-{selectionStart && selectionEnd && (
-  <mesh
-    position={[
-      (selectionStart.x + selectionEnd.x) / 2,
-      (selectionStart.y + selectionEnd.y) / 2,
-      0,
-    ]}
-    scale={[
-      Math.abs(selectionEnd.x - selectionStart.x),
-      Math.abs(selectionEnd.y - selectionStart.y),
-      1,
-    ]}
-    visible={true}
-  >
-    <planeGeometry args={[1, 1, 1, 1]} />
-    <meshBasicMaterial
-      map={hatchTexture} // Taralı doku burada kullanılır
-      side={THREE.DoubleSide}
-      transparent={true}
-    />
-  </mesh>
-)}
+        <mesh ref={planeRef} position={[0, 0, 0]}>
+          <planeGeometry
+            args={[window.innerWidth / 2, window.innerHeight, 1, 1]}
+          />
+          <meshBasicMaterial map={roofTexture} />
+        </mesh>
+      )}
+      {selectionStart && selectionEnd && (
+        <mesh
+          position={[
+            (selectionStart.x + selectionEnd.x) / 2,
+            (selectionStart.y + selectionEnd.y) / 2,
+            0,
+          ]}
+          scale={[
+            Math.abs(selectionEnd.x - selectionStart.x),
+            Math.abs(selectionEnd.y - selectionStart.y),
+            1,
+          ]}
+          visible={true}
+        >
+          <planeGeometry args={[1, 1, 1, 1]} />
+          <meshBasicMaterial
+            map={hatchTexture} // Taralı doku burada kullanılır
+            side={THREE.DoubleSide}
+            transparent={true}
+          />
+        </mesh>
+      )}
 
-{textPositions.map((textPos, index) => (
-  <Text 
-    key={index}
-    text={textPos.text}
-    position={textPos.position}
-    size={15}
-    color="black"
-    rotation={textPos.rotation}
-  />
-))}
+      {textPositions.map((textPos, index) => (
+        <Text
+          key={index}
+          text={textPos.text}
+          position={textPos.position}
+          size={15}
+          color="black"
+          rotation={textPos.rotation}
+        />
+      ))}
     </>
   );
-  
 };

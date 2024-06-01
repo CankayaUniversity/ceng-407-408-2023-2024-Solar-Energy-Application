@@ -146,32 +146,32 @@ export const AddPanelArea = ({
   });
 
  
-  const checkRedPixelCollision = (panelPosition, redPixels3D, paddedModelWidth) => {
-    const halfSize = paddedModelWidth/2 ;
-    const panelBounds = [
-      new THREE.Vector3(panelPosition.x - halfSize, panelPosition.y - halfSize, panelPosition.z),
-      new THREE.Vector3(panelPosition.x + halfSize, panelPosition.y - halfSize, panelPosition.z),
-      new THREE.Vector3(panelPosition.x + halfSize, panelPosition.y + halfSize, panelPosition.z),
-      new THREE.Vector3(panelPosition.x - halfSize, panelPosition.y + halfSize, panelPosition.z),
-    ];
+  // const checkRedPixelCollision = (panelPosition, redPixels3D, paddedModelWidth) => {
+  //   const halfSize = paddedModelWidth/2 ;
+  //   const panelBounds = [
+  //     new THREE.Vector3(panelPosition.x - halfSize, panelPosition.y - halfSize, panelPosition.z),
+  //     new THREE.Vector3(panelPosition.x + halfSize, panelPosition.y - halfSize, panelPosition.z),
+  //     new THREE.Vector3(panelPosition.x + halfSize, panelPosition.y + halfSize, panelPosition.z),
+  //     new THREE.Vector3(panelPosition.x - halfSize, panelPosition.y + halfSize, panelPosition.z),
+  //   ];
   
-    for (let redPixel of redPixels3D) {
-      const redPixelBounds = [
-        new THREE.Vector3(redPixel.x - halfSize, redPixel.y - halfSize, redPixel.z),
-        new THREE.Vector3(redPixel.x + halfSize, redPixel.y - halfSize, redPixel.z),
-        new THREE.Vector3(redPixel.x + halfSize, redPixel.y + halfSize, redPixel.z),
-        new THREE.Vector3(redPixel.x - halfSize, redPixel.y + halfSize, redPixel.z),
-      ];
+  //   for (let redPixel of redPixels3D) {
+  //     const redPixelBounds = [
+  //       new THREE.Vector3(redPixel.x - halfSize, redPixel.y - halfSize, redPixel.z),
+  //       new THREE.Vector3(redPixel.x + halfSize, redPixel.y - halfSize, redPixel.z),
+  //       new THREE.Vector3(redPixel.x + halfSize, redPixel.y + halfSize, redPixel.z),
+  //       new THREE.Vector3(redPixel.x - halfSize, redPixel.y + halfSize, redPixel.z),
+  //     ];
       
-      for (let bound of panelBounds) {
-        if (pointInPolygon(bound, redPixelBounds)) {
-          return true;
-        }
-      }
-    }
+  //     for (let bound of panelBounds) {
+  //       if (pointInPolygon(bound, redPixelBounds)) {
+  //         return true;
+  //       }
+  //     }
+  //   }
   
-    return false;
-  };
+  //   return false;
+  // };
   
   const createGrid = (redPixels3D, gridSize) => {
     const grid = new Map();
@@ -207,7 +207,7 @@ export const AddPanelArea = ({
     const baseModelWidth = 8.2; // Base model width
     const baseModelHeight = 5.7; // Base model height
   
-    let scaleX = 1.0, scaleY = 1.0, scaleZ = 1.0; // Varsayılan ölçek değerleri
+    let scaleX = 1.0, scaleY = 1.0, scaleZ = 1.0; // Default scale values
   
     if (currentZoom === 19) {
       scaleX = 1.4; // Horizontal scaling
@@ -222,25 +222,21 @@ export const AddPanelArea = ({
     const modelWidth = baseModelWidth * scaleX;
     const modelHeight = baseModelHeight * scaleY;
   
-  
     const paddedModelWidth = modelWidth + gap;
     const paddedModelHeight = modelHeight + gap;
-  
   
     const xDistance = Math.abs(currentPos.x - startPos.x);
     const yDistance = Math.abs(currentPos.y - startPos.y);
   
-  
     const numX = Math.floor(xDistance / paddedModelWidth);
     const numY = Math.floor(yDistance / paddedModelHeight);
-  
   
     const centerX = (startPos.x + currentPos.x) / 2;
     const centerY = (startPos.y + currentPos.y) / 2;
     const selectionCenter = new THREE.Vector3(centerX, centerY, 0);
   
     // Create a grid from red pixels
-    const gridSize = paddedModelWidth/1.5;
+    const gridSize = paddedModelWidth / 1.2;
     const redPixelGrid = createGrid(redPixels3D, gridSize);
   
     scene.remove(modelRef.current);
@@ -248,7 +244,6 @@ export const AddPanelArea = ({
     loadOriginalModel(modelPath, (originalModel) => {
       const placedPanels = [];
       const rotationMatrix = new THREE.Matrix4().makeRotationZ(rotationAngle);
-  
   
       for (let i = 0; i < numX; i++) {
         for (let j = 0; j < numY; j++) {
@@ -282,7 +277,6 @@ export const AddPanelArea = ({
             corner.applyMatrix4(rotationMatrix).add(panelPosition)
           );
   
-  
           if (
             corners.every((corner) => pointInPolygon(corner, selectedRoofPoints)) &&
             (points === null || corners.every((corner) => !pointInPolygon(corner, points))) &&
@@ -300,12 +294,12 @@ export const AddPanelArea = ({
         }
       }
   
-  
       placedPanelPositionsRef.current = placedPanels.map((panel) => panel);
       placedPanels.forEach((panel) => modelRef.current.add(panel));
       scene.add(modelRef.current);
     });
   };
+  
   
   
   
