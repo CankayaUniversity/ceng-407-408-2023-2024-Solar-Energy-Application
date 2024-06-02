@@ -31,16 +31,20 @@ export default function SignInSide() {
   const navigate = useNavigate();
   const [openSnackbar, setOpenSnackbar] = useState(false);
 
-  const handleOpenSnackbar = () => {
-    setOpenSnackbar(true);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+
+  const handleOpenSnackbar = (message, severity) => {
+    setSnackbar({
+      open: true,
+      message: message,
+      severity: severity,
+    });
   };
 
-  const handleCloseSnackbar = (event, reason) => {
-    if (reason === "clickaway") {
-      return;
-    }
-    setOpenSnackbar(false);
-  };
 
   const handleDateChange = (date) => {
     setSelectedDate(date);
@@ -77,7 +81,7 @@ export default function SignInSide() {
         return;
       }
       if (activeStep === 2) {
-        navigate("/login");
+        navigate("/blog");
         handleOpenSnackbar();
       }
       userDetails.name = userDetails.firstName + " " + userDetails.lastName;
@@ -88,11 +92,13 @@ export default function SignInSide() {
         userDetails,
         companyDetails
       );
-      console.log("error: ",error)
+      console.log("error: ", error);
       if (error) {
         console.error("Kayıt sırasında hata oluştu:", error);
+        handleOpenSnackbar("Kayıt sırasında hata oluştu", "error");
       } else {
         console.log("Kullanıcı başarıyla kaydedildi:", response);
+        handleOpenSnackbar("Kullanıcı başarıyla kaydedildi", "success");
       }
     } else {
       handleNext();
@@ -575,16 +581,20 @@ export default function SignInSide() {
           </Box>
         </Box>
         <Snackbar
-          open={openSnackbar}
+          open={snackbar.open}
           autoHideDuration={6000}
-          onClose={handleCloseSnackbar}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          anchorOrigin={{ vertical: "top", horizontal: "right" }}
+          sx={{
+            "& .MuiSnackbarContent-root": { fontSize: "1.2rem", width: "100%" },
+          }}
         >
           <Alert
-            onClose={handleCloseSnackbar}
-            severity="success"
+            onClose={() => setSnackbar({ ...snackbar, open: false })}
+            severity={snackbar.severity}
             sx={{ width: "100%" }}
           >
-            Account created successfully. 
+            {snackbar.message}
           </Alert>
         </Snackbar>
       </Container>

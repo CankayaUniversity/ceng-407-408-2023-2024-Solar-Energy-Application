@@ -964,7 +964,12 @@ function SimulationTest({
               width: "55vw",
               height: "80vh",
               border: "2px solid #000",
-              backgroundColor: "black",
+              backgroundColor: "#1d1d1d", // Temel siyah ton
+              backgroundImage: `
+                linear-gradient(0deg, transparent 24%, rgba(255,255,255,.05) 25%, rgba(255,255,255,.05) 26%, transparent 27%, transparent 74%, rgba(255,255,255,.05) 75%, rgba(255,255,255,.05) 76%, transparent 77%, transparent),
+                linear-gradient(90deg, transparent 24%, rgba(255,255,255,.05) 25%, rgba(255,255,255,.05) 26%, transparent 27%, transparent 74%, rgba(255,255,255,.05) 75%, rgba(255,255,255,.05) 76%, transparent 77%, transparent)
+              `,
+              backgroundSize: "50px 50px" // Desenin büyüklüğü
             }}
             gl={{ antialias: true }}
             shadows
