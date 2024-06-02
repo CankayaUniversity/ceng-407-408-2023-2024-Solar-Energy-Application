@@ -400,7 +400,7 @@ export default function AddProject() {
       >
         <Tabs
           value={value}
-          onChange={handleChange}
+          // onChange={handleChange}
           centered
           variant="fullWidth"
           sx={{ ".MuiTabs-flexContainer": { justifyContent: "center" } }}

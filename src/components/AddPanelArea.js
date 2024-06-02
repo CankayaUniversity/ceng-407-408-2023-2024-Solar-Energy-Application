@@ -208,7 +208,7 @@ export const AddPanelArea = ({
     const baseModelHeight = 5.7; // Base model height
   
     let scaleX = 1.0, scaleY = 1.0, scaleZ = 1.0; // Default scale values
-  
+    console.log("currentZ", currentZoom)
     if (currentZoom === 19) {
       scaleX = 1.4; // Horizontal scaling
       scaleY = 0.55; // Vertical scaling

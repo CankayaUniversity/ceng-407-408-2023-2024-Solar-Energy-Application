@@ -23,6 +23,7 @@ export const AddPanel = ({
   singleEditing,
   rotationAngle,
   orientationAngle,
+  currentZoom,
 }) => {
   const modelRef = useRef();
   const { scene } = useThree();
@@ -60,11 +61,20 @@ export const AddPanel = ({
     }
 
     if (!modelRef.current) {
-
+      let scaleX = 1.0, scaleY = 1.0, scaleZ = 1.0; // Default scale values
+      if (currentZoom === 19) {
+        scaleX = 1.4; // Horizontal scaling
+        scaleY = 0.55; // Vertical scaling
+        scaleZ = 0.4;
+      } else if (currentZoom === 20) {
+        scaleX = 4; // Horizontal scaling
+        scaleY = 2; // Vertical scaling
+        scaleZ = 1;
+      }
       loadOriginalModel(modelPath, (originalModel) => {
         const modelClone = originalModel.scene.clone();
         modelClone.rotation.y = Math.PI / 2;
-        modelClone.scale.set(1.7, 3.4, 1.7); // Boyutları iki katına çıkarır
+        modelClone.scale.set(scaleX, scaleY, scaleZ); // Boyutları iki katına çıkarır
         modelClone.rotation.x = Math.PI / 2;
         modelClone.position.copy(position);
         modelClone.userData = {

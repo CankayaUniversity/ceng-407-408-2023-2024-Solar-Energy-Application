@@ -1047,6 +1047,7 @@ function SimulationTest({
                 singleEditing={singleEditing}
                 rotationAngle={(rotationAngle * Math.PI) / 180}
                 orientationAngle={(orientationAngle * Math.PI) / 180}
+                currentZoom={currentZoom}
               />
             )}
           </Canvas>
